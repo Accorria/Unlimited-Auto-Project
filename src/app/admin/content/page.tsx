@@ -208,12 +208,12 @@ export default function ContentManagement() {
                   {currentSection.fields.subtitle && (
                     <p className="text-blue-600 font-semibold mb-2">{currentSection.fields.subtitle}</p>
                   )}
-                  {currentSection.fields.description && (
-                    <p className="text-gray-600 mb-4">{currentSection.fields.description}</p>
+                  {(currentSection.fields as any).description && (
+                    <p className="text-gray-600 mb-4">{(currentSection.fields as any).description}</p>
                   )}
-                  {currentSection.fields.ctaText && (
+                  {(currentSection.fields as any).ctaText && (
                     <button className="bg-blue-600 text-white px-6 py-2 rounded-lg">
-                      {currentSection.fields.ctaText}
+                      {(currentSection.fields as any).ctaText}
                     </button>
                   )}
                 </div>
