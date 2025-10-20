@@ -17,12 +17,12 @@ export default function Footer() {
               </div>
             </div>
             <p className="text-gray-300 mb-6 max-w-md">
-              Your trusted local car dealer. We specialize in quality used vehicles with transparent pricing and exceptional customer service.
+              Your trusted local auto repair and collision center. We specialize in quality used vehicles, auto repair, collision services, and more with transparent pricing and exceptional customer service.
             </p>
             <div className="text-gray-300 space-y-2">
-              <p>📍 123 Main Street, Your City, ST 12345</p>
-              <p>📞 (123) 456-7890</p>
-              <p>📧 info@unlimitedauto.com</p>
+              <p>📍 24645 Plymouth Rd, Redford, MI 48239</p>
+              <p>📞 (313) 766-4475</p>
+              <p>📧 unlimitedautocollision@gmail.com</p>
             </div>
           </div>
 

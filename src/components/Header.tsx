@@ -15,11 +15,11 @@ export default function Header() {
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-2">
                 <span>📍</span>
-                <span>123 Main Street, Your City, ST 12345</span>
+                <span>24645 Plymouth Rd, Redford, MI 48239</span>
               </div>
               <div className="flex items-center space-x-2">
                 <span>📞</span>
-                <span>(123) 456-7890</span>
+                <span>(313) 766-4475</span>
               </div>
             </div>
             <div className="hidden md:flex items-center space-x-4">

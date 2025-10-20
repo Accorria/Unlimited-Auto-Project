@@ -145,8 +145,8 @@ export default function Contact() {
                   <div>
                     <h4 className="font-semibold text-lg">Address</h4>
                     <p className="text-gray-300">
-                      123 Main Street<br />
-                      Your City, ST 12345
+                      24645 Plymouth Rd<br />
+                      Redford, MI 48239
                     </p>
                   </div>
                 </div>
@@ -156,8 +156,8 @@ export default function Contact() {
                   <div>
                     <h4 className="font-semibold text-lg">Phone</h4>
                     <p className="text-gray-300">
-                      <a href="tel:+1234567890" className="hover:text-white transition-colors">
-                        (123) 456-7890
+                      <a href="tel:+13137664475" className="hover:text-white transition-colors">
+                        (313) 766-4475
                       </a>
                     </p>
                   </div>
@@ -168,8 +168,8 @@ export default function Contact() {
                   <div>
                     <h4 className="font-semibold text-lg">Email</h4>
                     <p className="text-gray-300">
-                      <a href="mailto:info@unlimitedauto.com" className="hover:text-white transition-colors">
-                        info@unlimitedauto.com
+                      <a href="mailto:unlimitedautocollision@gmail.com" className="hover:text-white transition-colors">
+                        unlimitedautocollision@gmail.com
                       </a>
                     </p>
                   </div>

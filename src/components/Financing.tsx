@@ -29,13 +29,56 @@ export default function Financing() {
           </div>
         </div>
 
+        {/* Financing Partners */}
+        <div className="text-center mb-16">
+          <h3 className="text-2xl font-bold mb-8">Trusted Financing Partners</h3>
+          <div className="flex flex-wrap justify-center items-center gap-8 opacity-80">
+            <div className="bg-white px-6 py-3 rounded-lg shadow-md">
+              <span className="text-gray-700 font-semibold">Westlake Financial</span>
+            </div>
+            <div className="bg-white px-6 py-3 rounded-lg shadow-md">
+              <span className="text-gray-700 font-semibold">Credit Acceptance</span>
+            </div>
+            <div className="bg-white px-6 py-3 rounded-lg shadow-md">
+              <span className="text-gray-700 font-semibold">UACC</span>
+            </div>
+            <div className="bg-white px-6 py-3 rounded-lg shadow-md">
+              <span className="text-gray-700 font-semibold">Santander</span>
+            </div>
+          </div>
+        </div>
+
         <div className="bg-white text-gray-900 p-8 rounded-xl shadow-2xl max-w-4xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <div>
-              <h3 className="text-3xl font-bold mb-4">Get Pre-Approved Today!</h3>
+              <h3 className="text-3xl font-bold mb-4">Redford's Easiest Credit Approval!</h3>
               <p className="text-gray-600 mb-6 leading-relaxed">
-                Start your car buying journey by getting pre-approved for a loan. It's quick, easy, and secure.
+                We work with ALL credit types - good, bad, or no credit. Get approved in minutes, not days!
               </p>
+              
+              {/* Document Checklist */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                <h4 className="font-bold text-green-800 mb-3">What You Need:</h4>
+                <ul className="space-y-1 text-green-700 text-sm">
+                  <li className="flex items-center">
+                    <span className="text-green-600 mr-2">✓</span>
+                    Valid Driver's License
+                  </li>
+                  <li className="flex items-center">
+                    <span className="text-green-600 mr-2">✓</span>
+                    Proof of Income (2 recent pay stubs)
+                  </li>
+                  <li className="flex items-center">
+                    <span className="text-green-600 mr-2">✓</span>
+                    Proof of Residence
+                  </li>
+                  <li className="flex items-center">
+                    <span className="text-green-600 mr-2">✓</span>
+                    Down Payment (varies by credit)
+                  </li>
+                </ul>
+              </div>
+
               <ul className="space-y-2 text-gray-600">
                 <li className="flex items-center">
                   <span className="text-green-600 mr-2">✓</span>
@@ -48,6 +91,10 @@ export default function Financing() {
                 <li className="flex items-center">
                   <span className="text-green-600 mr-2">✓</span>
                   Same-day approval available
+                </li>
+                <li className="flex items-center">
+                  <span className="text-green-600 mr-2">✓</span>
+                  Bad credit? No problem!
                 </li>
               </ul>
             </div>

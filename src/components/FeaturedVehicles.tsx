@@ -51,11 +51,6 @@ export default function FeaturedVehicles() {
           <p className="text-xl text-gray-600 mb-6">
             Quality cars at great prices. All vehicles come with our satisfaction guarantee.
           </p>
-          <div className="bg-green-100 border border-green-300 rounded-lg p-4 max-w-2xl mx-auto">
-            <p className="text-green-800 font-semibold">
-              ✓ All vehicles come with 30-day warranty • ✓ Free vehicle history report • ✓ No hidden fees
-            </p>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
