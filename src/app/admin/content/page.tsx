@@ -203,7 +203,7 @@ export default function ContentManagement() {
               <div className="p-6">
                 <div className="bg-gray-50 rounded-lg p-4">
                   <h3 className="text-lg font-bold text-gray-900 mb-2">
-                    {currentSection.fields.title || currentSection.fields.mainTitle}
+                    {(currentSection.fields as any).title || (currentSection.fields as any).mainTitle || 'Content Title'}
                   </h3>
                   {currentSection.fields.subtitle && (
                     <p className="text-blue-600 font-semibold mb-2">{currentSection.fields.subtitle}</p>
