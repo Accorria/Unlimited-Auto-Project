@@ -285,7 +285,7 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
         setFormData(prev => ({ ...prev, trim: '' }))
       }
       if (formData.make && (name === 'model' ? value : formData.model) && (name === 'year' ? value : formData.year)) {
-        loadTrims(formData.make, name === 'model' ? value : formData.model, name === 'year' ? value : formData.year)
+        loadTrims(formData.make, String(name === 'model' ? value : formData.model), String(name === 'year' ? value : formData.year))
       }
     }
   }
