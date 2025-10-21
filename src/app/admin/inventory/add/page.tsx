@@ -16,53 +16,51 @@ const conditionOptions = [
   'Rebuilt'
 ]
 
-// CarQuery API integration
-interface CarQueryMake {
-  make_id: string
-  make_display: string
-  make_is_common: string
-  make_country: string
+// Common vehicle colors
+const colorOptions = [
+  'Black', 'White', 'Silver', 'Gray', 'Red', 'Blue', 'Green', 'Brown', 'Gold', 'Orange', 'Yellow', 'Purple', 'Beige', 'Tan', 'Maroon', 'Navy', 'Other'
+]
+
+// Common vehicle makes (static list for better performance)
+const commonMakes = [
+  'Acura', 'Audi', 'BMW', 'Buick', 'Cadillac', 'Chevrolet', 'Chrysler', 'Dodge', 'Ford', 'GMC', 'Honda', 'Hyundai', 'Infiniti', 'Jeep', 'Kia', 'Lexus', 'Lincoln', 'Mazda', 'Mercedes-Benz', 'Mitsubishi', 'Nissan', 'Ram', 'Subaru', 'Tesla', 'Toyota', 'Volkswagen', 'Volvo'
+]
+
+// Common models by make (simplified for better performance)
+const commonModels: Record<string, string[]> = {
+  'Chevrolet': ['Trailblazer', 'Equinox', 'Malibu', 'Silverado', 'Tahoe', 'Suburban', 'Camaro', 'Corvette', 'Cruze', 'Impala', 'Sonic', 'Spark', 'Traverse', 'Colorado', 'Express'],
+  'Ford': ['F-150', 'Explorer', 'Escape', 'Edge', 'Expedition', 'Mustang', 'Focus', 'Fusion', 'Transit', 'Ranger', 'Bronco', 'Maverick'],
+  'Honda': ['Civic', 'Accord', 'CR-V', 'Pilot', 'HR-V', 'Passport', 'Ridgeline', 'Insight', 'Fit'],
+  'Toyota': ['Camry', 'Corolla', 'RAV4', 'Highlander', 'Prius', 'Tacoma', 'Tundra', '4Runner', 'Sienna', 'Avalon', 'C-HR', 'Venza'],
+  'Nissan': ['Altima', 'Sentra', 'Rogue', 'Murano', 'Pathfinder', 'Armada', 'Frontier', 'Titan', 'Versa', 'Maxima', '370Z', 'GT-R'],
+  'BMW': ['3 Series', '5 Series', '7 Series', 'X1', 'X3', 'X5', 'X7', 'i3', 'i8', 'Z4'],
+  'Mercedes-Benz': ['C-Class', 'E-Class', 'S-Class', 'GLA', 'GLC', 'GLE', 'GLS', 'A-Class', 'CLA', 'G-Class'],
+  'Audi': ['A3', 'A4', 'A6', 'A8', 'Q3', 'Q5', 'Q7', 'Q8', 'TT', 'R8'],
+  'Hyundai': ['Elantra', 'Sonata', 'Tucson', 'Santa Fe', 'Palisade', 'Veloster', 'Genesis', 'Kona', 'Venue'],
+  'Kia': ['Forte', 'Optima', 'Sorento', 'Telluride', 'Sportage', 'Soul', 'Stinger', 'Niro', 'Seltos'],
+  'Mazda': ['Mazda3', 'Mazda6', 'CX-3', 'CX-5', 'CX-9', 'MX-5 Miata', 'CX-30'],
+  'Subaru': ['Impreza', 'Legacy', 'Outback', 'Forester', 'Ascent', 'WRX', 'BRZ', 'Crosstrek'],
+  'Volkswagen': ['Jetta', 'Passat', 'Tiguan', 'Atlas', 'Golf', 'Beetle', 'Arteon', 'ID.4'],
+  'Lexus': ['ES', 'IS', 'GS', 'LS', 'NX', 'RX', 'GX', 'LX', 'LC', 'RC'],
+  'Acura': ['ILX', 'TLX', 'RLX', 'RDX', 'MDX', 'NSX', 'CDX'],
+  'Infiniti': ['Q50', 'Q60', 'Q70', 'QX50', 'QX60', 'QX80', 'G37', 'FX'],
+  'Cadillac': ['ATS', 'CTS', 'XTS', 'XT4', 'XT5', 'XT6', 'Escalade', 'CT6'],
+  'Lincoln': ['MKZ', 'Continental', 'MKC', 'MKT', 'MKX', 'Navigator', 'Corsair', 'Aviator'],
+  'Jeep': ['Wrangler', 'Grand Cherokee', 'Cherokee', 'Compass', 'Renegade', 'Gladiator', 'Grand Wagoneer'],
+  'Ram': ['1500', '2500', '3500', 'ProMaster', 'ProMaster City'],
+  'GMC': ['Sierra', 'Canyon', 'Acadia', 'Terrain', 'Yukon', 'Savana'],
+  'Buick': ['Encore', 'Envision', 'Enclave', 'LaCrosse', 'Regal', 'Cascada'],
+  'Chrysler': ['300', 'Pacifica', 'Voyager'],
+  'Dodge': ['Challenger', 'Charger', 'Durango', 'Journey', 'Grand Caravan'],
+  'Mitsubishi': ['Mirage', 'Lancer', 'Outlander', 'Eclipse Cross', 'Mirage G4'],
+  'Volvo': ['S60', 'S90', 'V60', 'V90', 'XC40', 'XC60', 'XC90'],
+  'Tesla': ['Model S', 'Model 3', 'Model X', 'Model Y', 'Roadster', 'Cybertruck']
 }
 
-interface CarQueryModel {
-  model_id: string
-  model_make_id: string
-  model_name: string
-  model_trim: string
-  model_year: string
-  model_body: string
-  model_engine_position: string
-  model_engine_cc: string
-  model_engine_cyl: string
-  model_engine_type: string
-  model_engine_valves_per_cyl: string
-  model_engine_power_ps: string
-  model_engine_power_rpm: string
-  model_engine_torque_nm: string
-  model_engine_torque_rpm: string
-  model_engine_bore_mm: string
-  model_engine_stroke_mm: string
-  model_engine_compression: string
-  model_engine_fuel: string
-  model_top_speed_kph: string
-  model_0_to_100_kph: string
-  model_drive: string
-  model_transmission_type: string
-  model_seats: string
-  model_doors: string
-  model_weight_kg: string
-  model_length_mm: string
-  model_width_mm: string
-  model_height_mm: string
-  model_wheelbase_mm: string
-  model_lkm_hwy: string
-  model_lkm_mixed: string
-  model_lkm_city: string
-  model_fuel_cap_l: string
-  model_sold_in_us: string
-  model_co2: string
-  model_make_display: string
-}
+// Common trims
+const commonTrims = [
+  'Base', 'LS', 'LT', 'LTZ', 'LT1', 'LT2', 'LT3', 'LE', 'XLE', 'SE', 'SEL', 'Limited', 'Premium', 'Sport', 'Touring', 'Platinum', 'Titanium', 'Hybrid', 'Electric', 'RS', 'SS', 'Z71', 'Denali', 'SR5', 'TRD', 'Type R', 'M Sport', 'AMG', 'S-Line', 'F-Sport'
+]
 
 export default function AddVehicle() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -95,13 +93,8 @@ export default function AddVehicle() {
     images: [] as string[]
   })
   
-  // CarQuery API state
-  const [makes, setMakes] = useState<CarQueryMake[]>([])
-  const [models, setModels] = useState<CarQueryModel[]>([])
-  const [trims, setTrims] = useState<CarQueryModel[]>([])
-  const [loadingMakes, setLoadingMakes] = useState(false)
-  const [loadingModels, setLoadingModels] = useState(false)
-  const [loadingTrims, setLoadingTrims] = useState(false)
+  // Form validation state
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     // Check authentication
@@ -111,169 +104,51 @@ export default function AddVehicle() {
     } else {
       router.push('/admin/login')
     }
-
-    // Load makes on component mount
-    loadMakes()
   }, [router])
 
-  // CarQuery API functions
-  const loadMakes = async () => {
-    setLoadingMakes(true)
-    try {
-      // Try with CORS proxy first, then fallback to direct API
-      const proxyUrl = 'https://api.allorigins.win/raw?url='
-      const apiUrl = 'https://www.carqueryapi.com/api/0.3/?cmd=getMakes'
-      
-      let response
-      try {
-        // First try with CORS proxy
-        response = await fetch(proxyUrl + encodeURIComponent(apiUrl), {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-          },
-        })
-      } catch (proxyError) {
-        console.log('Proxy failed, trying direct API...')
-        // Fallback to direct API call
-        response = await fetch(apiUrl, {
-          method: 'GET',
-          mode: 'cors',
-          headers: {
-            'Accept': 'application/json',
-          },
-        })
-      }
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-      
-      const data = await response.json()
-      setMakes(data.Makes || [])
-    } catch (error) {
-      console.error('Error loading makes:', error)
-      // Fallback to static makes list if API fails
-      setMakes([
-        { make_id: 'honda', make_display: 'Honda', make_is_common: '1', make_country: 'Japan' },
-        { make_id: 'toyota', make_display: 'Toyota', make_is_common: '1', make_country: 'Japan' },
-        { make_id: 'ford', make_display: 'Ford', make_is_common: '1', make_country: 'USA' },
-        { make_id: 'chevrolet', make_display: 'Chevrolet', make_is_common: '1', make_country: 'USA' },
-        { make_id: 'nissan', make_display: 'Nissan', make_is_common: '1', make_country: 'Japan' },
-        { make_id: 'bmw', make_display: 'BMW', make_is_common: '1', make_country: 'Germany' },
-        { make_id: 'mercedes-benz', make_display: 'Mercedes-Benz', make_is_common: '1', make_country: 'Germany' },
-        { make_id: 'audi', make_display: 'Audi', make_is_common: '1', make_country: 'Germany' },
-        { make_id: 'tesla', make_display: 'Tesla', make_is_common: '1', make_country: 'USA' },
-        { make_id: 'hyundai', make_display: 'Hyundai', make_is_common: '1', make_country: 'South Korea' },
-        { make_id: 'kia', make_display: 'Kia', make_is_common: '1', make_country: 'South Korea' },
-        { make_id: 'subaru', make_display: 'Subaru', make_is_common: '1', make_country: 'Japan' },
-        { make_id: 'mazda', make_display: 'Mazda', make_is_common: '1', make_country: 'Japan' },
-        { make_id: 'volkswagen', make_display: 'Volkswagen', make_is_common: '1', make_country: 'Germany' },
-        { make_id: 'lexus', make_display: 'Lexus', make_is_common: '1', make_country: 'Japan' },
-        { make_id: 'acura', make_display: 'Acura', make_is_common: '1', make_country: 'Japan' },
-        { make_id: 'infiniti', make_display: 'Infiniti', make_is_common: '1', make_country: 'Japan' },
-        { make_id: 'cadillac', make_display: 'Cadillac', make_is_common: '1', make_country: 'USA' },
-        { make_id: 'lincoln', make_display: 'Lincoln', make_is_common: '1', make_country: 'USA' },
-        { make_id: 'jeep', make_display: 'Jeep', make_is_common: '1', make_country: 'USA' }
-      ])
-    } finally {
-      setLoadingMakes(false)
-    }
+  // Format number with commas
+  const formatNumber = (value: string): string => {
+    const number = value.replace(/,/g, '')
+    if (number === '') return ''
+    return parseInt(number).toLocaleString()
   }
 
-  const loadModels = async (make: string) => {
-    if (!make) return
-    setLoadingModels(true)
-    try {
-      const proxyUrl = 'https://api.allorigins.win/raw?url='
-      const apiUrl = `https://www.carqueryapi.com/api/0.3/?cmd=getModels&make=${encodeURIComponent(make)}`
-      
-      let response
-      try {
-        response = await fetch(proxyUrl + encodeURIComponent(apiUrl), {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' },
-        })
-      } catch (proxyError) {
-        response = await fetch(apiUrl, {
-          method: 'GET',
-          mode: 'cors',
-          headers: { 'Accept': 'application/json' },
-        })
-      }
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-      
-      const data = await response.json()
-      setModels(data.Models || [])
-    } catch (error) {
-      console.error('Error loading models:', error)
-      // Fallback to empty array if API fails
-      setModels([])
-    } finally {
-      setLoadingModels(false)
-    }
-  }
-
-  const loadTrims = async (make: string, model: string, year: string) => {
-    if (!make || !model || !year) return
-    setLoadingTrims(true)
-    try {
-      const proxyUrl = 'https://api.allorigins.win/raw?url='
-      const apiUrl = `https://www.carqueryapi.com/api/0.3/?cmd=getTrims&make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&year=${year}`
-      
-      let response
-      try {
-        response = await fetch(proxyUrl + encodeURIComponent(apiUrl), {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' },
-        })
-      } catch (proxyError) {
-        response = await fetch(apiUrl, {
-          method: 'GET',
-          mode: 'cors',
-          headers: { 'Accept': 'application/json' },
-        })
-      }
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-      
-      const data = await response.json()
-      setTrims(data.Trims || [])
-    } catch (error) {
-      console.error('Error loading trims:', error)
-      // Fallback to empty array if API fails
-      setTrims([])
-    } finally {
-      setLoadingTrims(false)
-    }
+  // Parse number from formatted string
+  const parseNumber = (value: string): string => {
+    return value.replace(/,/g, '')
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }))
+    }
+
+    // Handle number formatting for price and miles
+    if (name === 'price' || name === 'miles') {
+      const numericValue = parseNumber(value)
+      if (numericValue === '' || /^\d+$/.test(numericValue)) {
+        setFormData(prev => ({
+          ...prev,
+          [name]: numericValue
+        }))
+      }
+      return
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: value
     }))
 
-    // Auto-load models when make changes
+    // Reset dependent fields when make or model changes
     if (name === 'make') {
-      loadModels(value)
       setFormData(prev => ({ ...prev, model: '', trim: '' }))
     }
-
-    // Auto-load trims when model or year changes
-    if (name === 'model' || name === 'year') {
-      if (name === 'model') {
-        setFormData(prev => ({ ...prev, trim: '' }))
-      }
-      if (formData.make && (name === 'model' ? value : formData.model) && (name === 'year' ? value : formData.year)) {
-        loadTrims(formData.make, name === 'model' ? value : formData.model, name === 'year' ? value : formData.year)
-      }
+    if (name === 'model') {
+      setFormData(prev => ({ ...prev, trim: '' }))
     }
   }
 
@@ -296,7 +171,7 @@ export default function AddVehicle() {
       await new Promise(resolve => setTimeout(resolve, 2000))
       
       // Mock AI-generated description
-      const aiDescription = `This ${formData.year} ${formData.make} ${formData.model} ${formData.trim} is in ${formData.condition.toLowerCase()} condition with ${formData.miles ? formData.miles.toLocaleString() : 'low'} miles. Features include ${formData.features || 'modern amenities'}. This vehicle offers excellent value and reliability.`
+      const aiDescription = `This ${formData.year} ${formData.make} ${formData.model} ${formData.trim} is in ${formData.condition.toLowerCase()} condition with ${formData.miles ? formatNumber(formData.miles) : 'low'} miles. Features include ${formData.features || 'modern amenities'}. This vehicle offers excellent value and reliability.`
       
       setFormData(prev => ({
         ...prev,
@@ -310,19 +185,61 @@ export default function AddVehicle() {
     }
   }
 
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {}
+
+    // Required fields validation
+    if (!formData.year) newErrors.year = 'Year is required'
+    if (!formData.make) newErrors.make = 'Make is required'
+    if (!formData.model) newErrors.model = 'Model is required'
+    if (!formData.price) newErrors.price = 'Price is required'
+    if (!formData.miles) newErrors.miles = 'Miles is required'
+    if (!formData.description.trim()) newErrors.description = 'Description is required'
+
+    // Numeric validation
+    if (formData.price && (isNaN(Number(parseNumber(formData.price))) || Number(parseNumber(formData.price)) <= 0)) {
+      newErrors.price = 'Please enter a valid price'
+    }
+    if (formData.miles && (isNaN(Number(parseNumber(formData.miles))) || Number(parseNumber(formData.miles)) < 0)) {
+      newErrors.miles = 'Please enter valid mileage'
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!validateForm()) {
+      alert('Please fix the errors in the form before submitting.')
+      return
+    }
+
     setLoading(true)
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    try {
+      // Prepare data for submission
+      const submitData = {
+        ...formData,
+        price: parseNumber(formData.price),
+        miles: parseNumber(formData.miles)
+      }
 
-    // In production, this would save to your database
-    console.log('Vehicle data:', formData)
-    
-    alert('Vehicle added successfully!')
-    router.push('/admin/inventory')
-    setLoading(false)
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
+      // In production, this would save to your database
+      console.log('Vehicle data:', submitData)
+      
+      alert('Vehicle added successfully!')
+      router.push('/admin/inventory')
+    } catch (error) {
+      console.error('Error adding vehicle:', error)
+      alert('Failed to add vehicle. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (!isAuthenticated) {
@@ -396,10 +313,12 @@ export default function AddVehicle() {
                   value={formData.year}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base ${
+                    errors.year ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 >
-                  <option key="year-placeholder" value="">Select Year</option>
-                  {Array.from({ length: 115 }, (_, i) => {
+                  <option value="">Select Year</option>
+                  {Array.from({ length: 25 }, (_, i) => {
                     const year = 2024 - i
                     return (
                       <option key={year} value={year}>
@@ -408,6 +327,7 @@ export default function AddVehicle() {
                     )
                   })}
                 </select>
+                {errors.year && <p className="text-red-500 text-sm mt-1">{errors.year}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Make *</label>
@@ -416,16 +336,18 @@ export default function AddVehicle() {
                   value={formData.make}
                   onChange={handleInputChange}
                   required
-                  disabled={loadingMakes}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base ${
+                    errors.make ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 >
-                  <option key="make-placeholder" value="">{loadingMakes ? 'Loading makes...' : 'Select Make'}</option>
-                  {makes.map((make) => (
-                    <option key={make.make_id} value={make.make_display}>
-                      {make.make_display}
+                  <option value="">Select Make</option>
+                  {commonMakes.map((make) => (
+                    <option key={make} value={make}>
+                      {make}
                     </option>
                   ))}
                 </select>
+                {errors.make && <p className="text-red-500 text-sm mt-1">{errors.make}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Model *</label>
@@ -434,16 +356,19 @@ export default function AddVehicle() {
                   value={formData.model}
                   onChange={handleInputChange}
                   required
-                  disabled={loadingModels || !formData.make}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                  disabled={!formData.make}
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base ${
+                    errors.model ? 'border-red-500' : 'border-gray-300'
+                  } ${!formData.make ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  <option key="model-placeholder" value="">{loadingModels ? 'Loading models...' : 'Select Model'}</option>
-                  {models.map((model) => (
-                    <option key={model.model_id} value={model.model_name}>
-                      {model.model_name}
+                  <option value="">Select Model</option>
+                  {formData.make && commonModels[formData.make]?.map((model) => (
+                    <option key={model} value={model}>
+                      {model}
                     </option>
                   ))}
                 </select>
+                {errors.model && <p className="text-red-500 text-sm mt-1">{errors.model}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Trim</label>
@@ -451,40 +376,51 @@ export default function AddVehicle() {
                   name="trim"
                   value={formData.trim}
                   onChange={handleInputChange}
-                  disabled={loadingTrims || !formData.model || !formData.year}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                  disabled={!formData.model}
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base ${
+                    'border-gray-300'
+                  } ${!formData.model ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  <option key="trim-placeholder" value="">{loadingTrims ? 'Loading trims...' : 'Select Trim'}</option>
-                  {trims.map((trim, index) => (
-                    <option key={`trim-${index}-${trim.model_trim}`} value={trim.model_trim}>
-                      {trim.model_trim}
+                  <option value="">Select Trim</option>
+                  {commonTrims.map((trim) => (
+                    <option key={trim} value={trim}>
+                      {trim}
                     </option>
                   ))}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Price *</label>
-                <input
-                  type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleInputChange}
-                  required
-                  min="0"
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                  <input
+                    type="text"
+                    name="price"
+                    value={formData.price ? formatNumber(formData.price) : ''}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="25,000"
+                    className={`w-full pl-8 pr-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base ${
+                      errors.price ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  />
+                </div>
+                {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Miles *</label>
                 <input
-                  type="number"
+                  type="text"
                   name="miles"
-                  value={formData.miles}
+                  value={formData.miles ? formatNumber(formData.miles) : ''}
                   onChange={handleInputChange}
                   required
-                  min="0"
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                  placeholder="45,000"
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base ${
+                    errors.miles ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 />
+                {errors.miles && <p className="text-red-500 text-sm mt-1">{errors.miles}</p>}
               </div>
             </div>
           </div>
@@ -532,12 +468,12 @@ export default function AddVehicle() {
                   name="fuelType"
                   value={formData.fuelType}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base appearance-none cursor-pointer"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 >
-                  <option value="Gas" className="text-gray-900 bg-white">Gas</option>
-                  <option value="Diesel" className="text-gray-900 bg-white">Diesel</option>
-                  <option value="Hybrid" className="text-gray-900 bg-white">Hybrid</option>
-                  <option value="Electric" className="text-gray-900 bg-white">Electric</option>
+                  <option value="Gas">Gas</option>
+                  <option value="Diesel">Diesel</option>
+                  <option value="Hybrid">Hybrid</option>
+                  <option value="Electric">Electric</option>
                 </select>
               </div>
               <div>
@@ -546,11 +482,11 @@ export default function AddVehicle() {
                   name="transmission"
                   value={formData.transmission}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base appearance-none cursor-pointer"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 >
-                  <option value="Automatic" className="text-gray-900 bg-white">Automatic</option>
-                  <option value="Manual" className="text-gray-900 bg-white">Manual</option>
-                  <option value="CVT" className="text-gray-900 bg-white">CVT</option>
+                  <option value="Automatic">Automatic</option>
+                  <option value="Manual">Manual</option>
+                  <option value="CVT">CVT</option>
                 </select>
               </div>
               <div>
@@ -559,23 +495,29 @@ export default function AddVehicle() {
                   name="drivetrain"
                   value={formData.drivetrain}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base appearance-none cursor-pointer"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 >
-                  <option value="FWD" className="text-gray-900 bg-white">FWD</option>
-                  <option value="RWD" className="text-gray-900 bg-white">RWD</option>
-                  <option value="AWD" className="text-gray-900 bg-white">AWD</option>
-                  <option value="4WD" className="text-gray-900 bg-white">4WD</option>
+                  <option value="FWD">FWD</option>
+                  <option value="RWD">RWD</option>
+                  <option value="AWD">AWD</option>
+                  <option value="4WD">4WD</option>
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
-                <input
-                  type="text"
+                <select
                   name="color"
                   value={formData.color}
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
-                />
+                >
+                  <option value="">Select Color</option>
+                  {colorOptions.map((color) => (
+                    <option key={color} value={color}>
+                      {color}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
@@ -585,14 +527,14 @@ export default function AddVehicle() {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Technical Specifications</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">VIN *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">VIN</label>
                 <input
                   type="text"
                   name="vin"
                   value={formData.vin}
                   onChange={handleInputChange}
-                  required
                   maxLength={17}
+                  placeholder="Optional"
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 />
               </div>
@@ -624,15 +566,15 @@ export default function AddVehicle() {
                   name="bodyStyle"
                   value={formData.bodyStyle}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base appearance-none cursor-pointer"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 >
-                  <option value="Sedan" className="text-gray-900 bg-white">Sedan</option>
-                  <option value="SUV" className="text-gray-900 bg-white">SUV</option>
-                  <option value="Truck" className="text-gray-900 bg-white">Truck</option>
-                  <option value="Coupe" className="text-gray-900 bg-white">Coupe</option>
-                  <option value="Convertible" className="text-gray-900 bg-white">Convertible</option>
-                  <option value="Hatchback" className="text-gray-900 bg-white">Hatchback</option>
-                  <option value="Wagon" className="text-gray-900 bg-white">Wagon</option>
+                  <option value="Sedan">Sedan</option>
+                  <option value="SUV">SUV</option>
+                  <option value="Truck">Truck</option>
+                  <option value="Coupe">Coupe</option>
+                  <option value="Convertible">Convertible</option>
+                  <option value="Hatchback">Hatchback</option>
+                  <option value="Wagon">Wagon</option>
                 </select>
               </div>
               <div>
@@ -709,8 +651,11 @@ export default function AddVehicle() {
                   required
                   rows={4}
                   placeholder="Enter a detailed description of the vehicle..."
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base ${
+                    errors.description ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 />
+                {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
                 {aiEnabled && (
                   <p className="text-sm text-purple-600 mt-1">
                     💡 AI Assistant is enabled. Upload photos and click &quot;Generate with AI&quot; to auto-create descriptions.

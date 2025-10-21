@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import imageCompression from 'browser-image-compression'
 
 interface ImageUploadProps {
   onImagesChange: (images: string[]) => void
@@ -13,23 +12,51 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
   const [images, setImages] = useState<string[]>(existingImages)
   const [dragActive, setDragActive] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<Record<number, number>>({})
 
-  const compressImage = async (file: File): Promise<File> => {
-    try {
-      const options = {
-        maxSizeMB: 2, // Compress to max 2MB
-        maxWidthOrHeight: 1920, // Max width or height
-        useWebWorker: true,
-        fileType: 'image/jpeg',
-        quality: 0.8
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      const img = new Image()
+      
+      img.onload = () => {
+        // Calculate new dimensions (max 1920px width/height)
+        const maxSize = 1920
+        let { width, height } = img
+        
+        if (width > height) {
+          if (width > maxSize) {
+            height = (height * maxSize) / width
+            width = maxSize
+          }
+        } else {
+          if (height > maxSize) {
+            width = (width * maxSize) / height
+            height = maxSize
+          }
+        }
+        
+        canvas.width = width
+        canvas.height = height
+        
+        // Draw and compress
+        ctx?.drawImage(img, 0, 0, width, height)
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const compressedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            })
+            resolve(compressedFile)
+          } else {
+            resolve(file)
+          }
+        }, 'image/jpeg', 0.8)
       }
       
-      const compressedFile = await imageCompression(file, options)
-      return compressedFile
-    } catch (error) {
-      console.error('Image compression failed:', error)
-      return file // Return original if compression fails
-    }
+      img.src = URL.createObjectURL(file)
+    })
   }
 
   const handleFileUpload = async (files: FileList) => {
@@ -41,6 +68,7 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
 
     setUploading(true)
     const newImages: string[] = []
+    const totalFiles = files.length
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
@@ -51,32 +79,42 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
         continue
       }
 
-      // Compress image if it's too large (instead of rejecting)
-      let processedFile = file
-      if (file.size > 5 * 1024 * 1024) { // If larger than 5MB
-        try {
-          processedFile = await compressImage(file)
-        } catch (error) {
-          console.error('Failed to compress image:', error)
-          // Continue with original file if compression fails
-        }
-      }
+      // Update progress
+      setUploadProgress(prev => ({ ...prev, [i]: 0 }))
 
-      // Convert to base64 for demo purposes
-      // In production, you'd upload to a server
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const result = e.target?.result as string
-        newImages.push(result)
-        
-        if (newImages.length === files.length) {
-          const updatedImages = [...images, ...newImages]
-          setImages(updatedImages)
-          onImagesChange(updatedImages)
-          setUploading(false)
+      try {
+        // Compress image if it's too large
+        let processedFile = file
+        if (file.size > 2 * 1024 * 1024) { // If larger than 2MB
+          processedFile = await compressImage(file)
         }
+
+        // Update progress
+        setUploadProgress(prev => ({ ...prev, [i]: 50 }))
+
+        // Convert to base64
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const result = e.target?.result as string
+          newImages.push(result)
+          
+          // Update progress
+          setUploadProgress(prev => ({ ...prev, [i]: 100 }))
+          
+          // Check if all files are processed
+          if (newImages.length === totalFiles) {
+            const updatedImages = [...images, ...newImages]
+            setImages(updatedImages)
+            onImagesChange(updatedImages)
+            setUploading(false)
+            setUploadProgress({})
+          }
+        }
+        reader.readAsDataURL(processedFile)
+      } catch (error) {
+        console.error('Error processing image:', error)
+        alert(`Failed to process ${file.name}`)
       }
-      reader.readAsDataURL(processedFile)
     }
   }
 
@@ -173,6 +211,27 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
         </div>
       </div>
 
+      {/* Upload Progress */}
+      {uploading && Object.keys(uploadProgress).length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h4 className="text-sm font-medium text-blue-900 mb-2">Upload Progress</h4>
+          {Object.entries(uploadProgress).map(([index, progress]) => (
+            <div key={index} className="mb-2">
+              <div className="flex justify-between text-sm text-blue-700 mb-1">
+                <span>Image {parseInt(index) + 1}</span>
+                <span>{progress}%</span>
+              </div>
+              <div className="w-full bg-blue-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Image Preview Grid */}
       {images.length > 0 && (
         <div className="space-y-4">
@@ -182,11 +241,16 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
             {images.map((image, index) => (
               <div key={index} className="relative group">
-                <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+                <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border-2 border-gray-200">
                   <img
                     src={image}
                     alt={`Vehicle image ${index + 1}`}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback for broken images
+                      const target = e.target as HTMLImageElement
+                      target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzlmYTJhNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIEVycm9yPC90ZXh0Pjwvc3ZnPg=='
+                    }}
                   />
                 </div>
                 
@@ -196,7 +260,7 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
                     {index > 0 && (
                       <button
                         onClick={() => moveImage(index, index - 1)}
-                        className="bg-white text-gray-800 p-2 rounded-full hover:bg-gray-100"
+                        className="bg-white text-gray-800 p-2 rounded-full hover:bg-gray-100 shadow-lg"
                         title="Move left"
                       >
                         ←
@@ -205,7 +269,7 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
                     {index < images.length - 1 && (
                       <button
                         onClick={() => moveImage(index, index + 1)}
-                        className="bg-white text-gray-800 p-2 rounded-full hover:bg-gray-100"
+                        className="bg-white text-gray-800 p-2 rounded-full hover:bg-gray-100 shadow-lg"
                         title="Move right"
                       >
                         →
@@ -213,7 +277,7 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
                     )}
                     <button
                       onClick={() => removeImage(index)}
-                      className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600"
+                      className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 shadow-lg"
                       title="Remove image"
                     >
                       ×
@@ -223,18 +287,25 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
 
                 {/* Main Image Indicator */}
                 {index === 0 && (
-                  <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                  <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow-lg">
                     Main Photo
                   </div>
                 )}
+
+                {/* Image Number */}
+                <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
+                  {index + 1}
+                </div>
               </div>
             ))}
           </div>
           
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-600 bg-gray-50 p-4 rounded-lg">
+            <p className="font-medium mb-2">📋 Instructions:</p>
             <p>• First image will be used as the main photo</p>
             <p>• Drag and drop to reorder images</p>
             <p>• Click the × to remove images</p>
+            <p>• Use arrow buttons to move images left/right</p>
           </div>
         </div>
       )}
@@ -250,7 +321,12 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
           rows={3}
           onChange={(e) => {
             const urls = e.target.value.split('\n').filter(url => url.trim())
-            onImagesChange([...images, ...urls])
+            if (urls.length > 0) {
+              const updatedImages = [...images, ...urls]
+              setImages(updatedImages)
+              onImagesChange(updatedImages)
+              e.target.value = '' // Clear the textarea
+            }
           }}
         />
         <p className="text-sm text-gray-500 mt-1">
