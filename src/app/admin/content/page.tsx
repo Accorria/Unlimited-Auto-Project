@@ -203,17 +203,19 @@ export default function ContentManagement() {
               <div className="p-6">
                 <div className="bg-gray-50 rounded-lg p-4">
                   <h3 className="text-lg font-bold text-gray-900 mb-2">
-                    {(currentSection.fields as any).title || (currentSection.fields as any).mainTitle || 'Content Title'}
+                    {'title' in currentSection.fields ? currentSection.fields.title : 
+                     'mainTitle' in currentSection.fields ? currentSection.fields.mainTitle : 
+                     'Content Title'}
                   </h3>
-                  {currentSection.fields.subtitle && (
+                  {'subtitle' in currentSection.fields && currentSection.fields.subtitle && (
                     <p className="text-blue-600 font-semibold mb-2">{currentSection.fields.subtitle}</p>
                   )}
-                  {(currentSection.fields as any).description && (
-                    <p className="text-gray-600 mb-4">{(currentSection.fields as any).description}</p>
+                  {'description' in currentSection.fields && currentSection.fields.description && (
+                    <p className="text-gray-600 mb-4">{currentSection.fields.description}</p>
                   )}
-                  {(currentSection.fields as any).ctaText && (
+                  {'ctaText' in currentSection.fields && currentSection.fields.ctaText && (
                     <button className="bg-blue-600 text-white px-6 py-2 rounded-lg">
-                      {(currentSection.fields as any).ctaText}
+                      {currentSection.fields.ctaText}
                     </button>
                   )}
                 </div>

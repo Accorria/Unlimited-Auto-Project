@@ -1,1 +1,202 @@
-{"version":3,"caseSensitive":false,"basePath":"","rewrites":{"beforeFiles":[],"afterFiles":[],"fallback":[]},"redirects":[{"source":"/:path+/","destination":"/:path+","permanent":true,"internal":true,"regex":"^(?:\\/((?:[^\\/]+?)(?:\\/(?:[^\\/]+?))*))\\/$"}],"headers":[]}
+{
+  "version": 3,
+  "pages404": true,
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    }
+  ],
+  "headers": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [],
+    "fallback": []
+  },
+  "dynamicRoutes": [
+    {
+      "page": "/admin/inventory/[id]/edit",
+      "regex": "^/admin/inventory/([^/]+?)/edit(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/admin/inventory/(?<nxtPid>[^/]+?)/edit(?:/)?$"
+    },
+    {
+      "page": "/inventory/[id]",
+      "regex": "^/inventory/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/inventory/(?<nxtPid>[^/]+?)(?:/)?$"
+    }
+  ],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/about",
+      "regex": "^/about(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/about(?:/)?$"
+    },
+    {
+      "page": "/admin/analytics",
+      "regex": "^/admin/analytics(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/analytics(?:/)?$"
+    },
+    {
+      "page": "/admin/content",
+      "regex": "^/admin/content(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/content(?:/)?$"
+    },
+    {
+      "page": "/admin/dashboard",
+      "regex": "^/admin/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/dashboard(?:/)?$"
+    },
+    {
+      "page": "/admin/dealers",
+      "regex": "^/admin/dealers(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/dealers(?:/)?$"
+    },
+    {
+      "page": "/admin/inventory",
+      "regex": "^/admin/inventory(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/inventory(?:/)?$"
+    },
+    {
+      "page": "/admin/inventory/add",
+      "regex": "^/admin/inventory/add(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/inventory/add(?:/)?$"
+    },
+    {
+      "page": "/admin/leads",
+      "regex": "^/admin/leads(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/leads(?:/)?$"
+    },
+    {
+      "page": "/admin/login",
+      "regex": "^/admin/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/login(?:/)?$"
+    },
+    {
+      "page": "/admin/settings",
+      "regex": "^/admin/settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/settings(?:/)?$"
+    },
+    {
+      "page": "/admin/upload",
+      "regex": "^/admin/upload(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/upload(?:/)?$"
+    },
+    {
+      "page": "/admin/users",
+      "regex": "^/admin/users(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/users(?:/)?$"
+    },
+    {
+      "page": "/contact",
+      "regex": "^/contact(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/contact(?:/)?$"
+    },
+    {
+      "page": "/favicon.ico",
+      "regex": "^/favicon\\.ico(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/favicon\\.ico(?:/)?$"
+    },
+    {
+      "page": "/financing",
+      "regex": "^/financing(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/financing(?:/)?$"
+    },
+    {
+      "page": "/inventory",
+      "regex": "^/inventory(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/inventory(?:/)?$"
+    },
+    {
+      "page": "/services",
+      "regex": "^/services(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/services(?:/)?$"
+    },
+    {
+      "page": "/services/collision",
+      "regex": "^/services/collision(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/services/collision(?:/)?$"
+    },
+    {
+      "page": "/services/detailing",
+      "regex": "^/services/detailing(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/services/detailing(?:/)?$"
+    },
+    {
+      "page": "/services/repair",
+      "regex": "^/services/repair(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/services/repair(?:/)?$"
+    },
+    {
+      "page": "/services/tinting",
+      "regex": "^/services/tinting(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/services/tinting(?:/)?$"
+    },
+    {
+      "page": "/services/wrapping",
+      "regex": "^/services/wrapping(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/services/wrapping(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSuffix": ".prefetch.rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments"
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}
