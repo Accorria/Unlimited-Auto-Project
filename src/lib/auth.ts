@@ -3,20 +3,47 @@
 import { createClient } from '@supabase/supabase-js';
 import { AuthUser, UserRole, Permission } from './types';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Check if we're in a build environment
+const isBuildTime = typeof window === 'undefined' && !process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-  }
-});
+// Create a dummy client for build time
+const dummyClient = {
+  auth: { 
+    getUser: () => Promise.resolve({ data: { user: null }, error: null }),
+    signOut: () => Promise.resolve({ error: null })
+  },
+  from: () => ({ 
+    select: () => ({ 
+      eq: () => ({ 
+        eq: () => ({ 
+          single: () => Promise.resolve({ data: null, error: null }) 
+        }) 
+      }) 
+    }) 
+  })
+};
+
+export const supabase = isBuildTime 
+  ? dummyClient as any
+  : createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+        }
+      }
+    );
 
 // Server-side service role client
 export function createServerClient() {
+  if (isBuildTime) {
+    return dummyClient as any;
+  }
+  
   return createClient(
-    supabaseUrl,
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE!,
     { auth: { persistSession: false } }
   );
