@@ -3,24 +3,14 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { supabase } from '@/lib/auth'
-import { useAuth } from '@/contexts/AuthContext'
 
 function AdminLoginForm() {
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [message, setMessage] = useState('')
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { user } = useAuth()
-
-  // Redirect if already logged in
-  useEffect(() => {
-    if (user) {
-      router.push('/admin/dashboard')
-    }
-  }, [user, router])
 
   // Check for error messages from URL params
   useEffect(() => {
@@ -32,24 +22,32 @@ function AdminLoginForm() {
     }
   }, [searchParams])
 
+  // Check if already logged in
+  useEffect(() => {
+    const isLoggedIn = localStorage.getItem('adminAuth')
+    if (isLoggedIn === 'true') {
+      router.push('/admin/dashboard')
+    }
+  }, [router])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
-    setMessage('')
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/admin/dashboard`
-        }
-      })
-
-      if (error) {
-        setError(error.message)
+      // Simple admin login - in production, this would be more secure
+      if (email === 'admin@unlimitedauto.com' && password === 'unlimited2024') {
+        localStorage.setItem('adminAuth', 'true')
+        localStorage.setItem('adminUser', JSON.stringify({
+          id: 1,
+          email: 'admin@unlimitedauto.com',
+          name: 'Admin User',
+          role: 'admin'
+        }))
+        router.push('/admin/dashboard')
       } else {
-        setMessage('Check your email for the login link!')
+        setError('Invalid email or password. Use admin@unlimitedauto.com / unlimited2024')
       }
     } catch (error) {
       setError('An unexpected error occurred. Please try again.')
@@ -70,7 +68,7 @@ function AdminLoginForm() {
           Admin Login
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Enter your email to receive a secure login link
+          Enter your admin credentials to access the dashboard
         </p>
       </div>
 
@@ -83,12 +81,6 @@ function AdminLoginForm() {
               </div>
             )}
 
-            {message && (
-              <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md">
-                {message}
-              </div>
-            )}
-            
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email Address
@@ -102,7 +94,25 @@ function AdminLoginForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Enter your email address"
+                  placeholder="admin@unlimitedauto.com"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
+              <div className="mt-1">
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  placeholder="Enter your password"
                 />
               </div>
             </div>
@@ -113,7 +123,7 @@ function AdminLoginForm() {
                 disabled={loading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Sending...' : 'Send Login Link'}
+                {loading ? 'Signing In...' : 'Sign In'}
               </button>
             </div>
           </form>

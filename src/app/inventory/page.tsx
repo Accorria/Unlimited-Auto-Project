@@ -1,13 +1,31 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 
-// Sample vehicle data - in a real app, this would come from an API
-const vehicles = [
+interface Vehicle {
+  id: number
+  year: number
+  make: string
+  model: string
+  trim: string
+  price: number
+  miles: number
+  coverPhoto?: string
+  features: string[]
+  condition: string
+  fuelType: string
+  transmission: string
+  drivetrain: string
+  color: string
+  vin: string
+}
+
+// Fallback vehicle data
+const fallbackVehicles = [
   {
     id: 1,
     year: 2020,
@@ -16,7 +34,7 @@ const vehicles = [
     trim: 'LX',
     price: 18995,
     miles: 45000,
-    image: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop',
+    coverPhoto: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop',
     features: ['Automatic', 'Bluetooth', 'Backup Camera', 'Cruise Control'],
     condition: 'Excellent',
     fuelType: 'Gas',
@@ -33,7 +51,7 @@ const vehicles = [
     trim: 'LE',
     price: 21995,
     miles: 38000,
-    image: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=500&h=300&fit=crop',
+    coverPhoto: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=500&h=300&fit=crop',
     features: ['Automatic', 'Lane Assist', 'Cruise Control', 'Heated Seats'],
     condition: 'Very Good',
     fuelType: 'Gas',
@@ -50,7 +68,7 @@ const vehicles = [
     trim: 'SV',
     price: 23995,
     miles: 25000,
-    image: 'https://images.unsplash.com/photo-1549317336-206569e8475c?w=500&h=300&fit=crop',
+    coverPhoto: 'https://images.unsplash.com/photo-1549317336-206569e8475c?w=500&h=300&fit=crop',
     features: ['CVT', 'Apple CarPlay', 'Heated Seats', 'Sunroof'],
     condition: 'Like New',
     fuelType: 'Gas',
@@ -67,7 +85,7 @@ const vehicles = [
     trim: 'XLT',
     price: 32995,
     miles: 52000,
-    image: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=500&h=300&fit=crop',
+    coverPhoto: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=500&h=300&fit=crop',
     features: ['4WD', 'Towing Package', 'Bed Liner', 'Backup Camera'],
     condition: 'Good',
     fuelType: 'Gas',
@@ -84,7 +102,7 @@ const vehicles = [
     trim: 'LT',
     price: 24995,
     miles: 41000,
-    image: 'https://images.unsplash.com/photo-1619767886558-efdc259cde1a?w=500&h=300&fit=crop',
+    coverPhoto: 'https://images.unsplash.com/photo-1619767886558-efdc259cde1a?w=500&h=300&fit=crop',
     features: ['AWD', 'Leather Seats', 'Navigation', 'Heated Seats'],
     condition: 'Very Good',
     fuelType: 'Gas',
@@ -101,7 +119,7 @@ const vehicles = [
     trim: 'SE',
     price: 16995,
     miles: 48000,
-    image: 'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=500&h=300&fit=crop',
+    coverPhoto: 'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=500&h=300&fit=crop',
     features: ['Automatic', 'Bluetooth', 'Backup Camera', 'Remote Start'],
     condition: 'Good',
     fuelType: 'Gas',
@@ -113,11 +131,35 @@ const vehicles = [
 ]
 
 export default function InventoryPage() {
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedMake, setSelectedMake] = useState('')
   const [selectedPriceRange, setSelectedPriceRange] = useState('')
   const [selectedYear, setSelectedYear] = useState('')
   const [sortBy, setSortBy] = useState('price-low')
+
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      try {
+        const response = await fetch('/api/vehicles')
+        if (response.ok) {
+          const data = await response.json()
+          setVehicles(data.vehicles || [])
+        } else {
+          // Fallback to hardcoded data if API fails
+          setVehicles(fallbackVehicles)
+        }
+      } catch (error) {
+        console.error('Error fetching vehicles:', error)
+        setVehicles(fallbackVehicles)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchVehicles()
+  }, [])
 
   // Get unique makes and years for filters
   const makes = [...new Set(vehicles.map(v => v.make))].sort()
@@ -269,7 +311,12 @@ export default function InventoryPage() {
       {/* Vehicle Grid */}
       <section className="py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {filteredVehicles.length === 0 ? (
+          {loading ? (
+            <div className="flex justify-center items-center py-16">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <span className="ml-3 text-gray-600">Loading vehicles...</span>
+            </div>
+          ) : filteredVehicles.length === 0 ? (
             <div className="text-center py-16">
               <h3 className="text-2xl font-bold text-gray-900 mb-4">No vehicles found</h3>
               <p className="text-gray-600 mb-8">Try adjusting your search criteria</p>
@@ -291,13 +338,13 @@ export default function InventoryPage() {
                 <div key={vehicle.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100">
                   <div className="relative h-64">
                     <Image
-                      src={vehicle.image}
+                      src={vehicle.coverPhoto || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop'}
                       alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
                       fill
                       className="object-cover"
                     />
                     <div className="absolute top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-full text-lg font-bold shadow-lg">
-                      ${vehicle.price.toLocaleString()}
+                      $999 Down
                     </div>
                     <div className="absolute top-4 left-4 bg-green-500 text-white px-3 py-1 rounded-lg text-sm font-semibold">
                       {vehicle.condition}
@@ -308,9 +355,14 @@ export default function InventoryPage() {
                   </div>
 
                   <div className="p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim}
-                    </h3>
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="text-xl font-bold text-gray-900">
+                        {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim}
+                      </h3>
+                      <span className="text-2xl font-bold text-blue-600">
+                        ${vehicle.price.toLocaleString()}
+                      </span>
+                    </div>
                     
                     <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 mb-4">
                       <div>Transmission: {vehicle.transmission}</div>

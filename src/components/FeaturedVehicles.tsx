@@ -1,46 +1,126 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 
-const featuredVehicles = [
-  {
-    id: 1,
-    year: 2020,
-    make: 'Honda',
-    model: 'Civic',
-    trim: 'LX',
-    price: 18995,
-    miles: 45000,
-    image: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop',
-    features: ['Automatic', 'Bluetooth', 'Backup Camera'],
-    condition: 'Excellent'
-  },
-  {
-    id: 2,
-    year: 2019,
-    make: 'Toyota',
-    model: 'Camry',
-    trim: 'LE',
-    price: 21995,
-    miles: 38000,
-    image: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=500&h=300&fit=crop',
-    features: ['Automatic', 'Lane Assist', 'Cruise Control'],
-    condition: 'Very Good'
-  },
-  {
-    id: 3,
-    year: 2021,
-    make: 'Nissan',
-    model: 'Altima',
-    trim: 'SV',
-    price: 23995,
-    miles: 25000,
-    image: 'https://images.unsplash.com/photo-1549317336-206569e8475c?w=500&h=300&fit=crop',
-    features: ['CVT', 'Apple CarPlay', 'Heated Seats'],
-    condition: 'Like New'
-  }
-]
+interface Vehicle {
+  id: number
+  year: number
+  make: string
+  model: string
+  trim: string
+  price: number
+  miles: number
+  coverPhoto?: string
+  features: string[]
+  condition: string
+}
 
 export default function FeaturedVehicles() {
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      try {
+        const response = await fetch('/api/vehicles')
+        if (response.ok) {
+          const data = await response.json()
+          // Get the 3 most expensive vehicles for featured section
+          const featuredVehicles = data.vehicles
+            .sort((a: Vehicle, b: Vehicle) => b.price - a.price)
+            .slice(0, 3)
+          setVehicles(featuredVehicles)
+        } else {
+          // Fallback to hardcoded data if API fails
+          setVehicles([
+            {
+              id: 1,
+              year: 2020,
+              make: 'Honda',
+              model: 'Civic',
+              trim: 'LX',
+              price: 18995,
+              miles: 45000,
+              coverPhoto: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop',
+              features: ['Automatic', 'Bluetooth', 'Backup Camera'],
+              condition: 'Excellent'
+            },
+            {
+              id: 2,
+              year: 2019,
+              make: 'Toyota',
+              model: 'Camry',
+              trim: 'LE',
+              price: 21995,
+              miles: 38000,
+              coverPhoto: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=500&h=300&fit=crop',
+              features: ['Automatic', 'Lane Assist', 'Cruise Control'],
+              condition: 'Very Good'
+            },
+            {
+              id: 3,
+              year: 2021,
+              make: 'Nissan',
+              model: 'Altima',
+              trim: 'SV',
+              price: 23995,
+              miles: 25000,
+              coverPhoto: 'https://images.unsplash.com/photo-1549317336-206569e8475c?w=500&h=300&fit=crop',
+              features: ['CVT', 'Apple CarPlay', 'Heated Seats'],
+              condition: 'Like New'
+            }
+          ])
+        }
+      } catch (error) {
+        console.error('Error fetching vehicles:', error)
+        // Fallback to hardcoded data
+        setVehicles([
+          {
+            id: 1,
+            year: 2020,
+            make: 'Honda',
+            model: 'Civic',
+            trim: 'LX',
+            price: 18995,
+            miles: 45000,
+            coverPhoto: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop',
+            features: ['Automatic', 'Bluetooth', 'Backup Camera'],
+            condition: 'Excellent'
+          },
+          {
+            id: 2,
+            year: 2019,
+            make: 'Toyota',
+            model: 'Camry',
+            trim: 'LE',
+            price: 21995,
+            miles: 38000,
+            coverPhoto: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=500&h=300&fit=crop',
+            features: ['Automatic', 'Lane Assist', 'Cruise Control'],
+            condition: 'Very Good'
+          },
+          {
+            id: 3,
+            year: 2021,
+            make: 'Nissan',
+            model: 'Altima',
+            trim: 'SV',
+            price: 23995,
+            miles: 25000,
+            coverPhoto: 'https://images.unsplash.com/photo-1549317336-206569e8475c?w=500&h=300&fit=crop',
+            features: ['CVT', 'Apple CarPlay', 'Heated Seats'],
+            condition: 'Like New'
+          }
+        ])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchVehicles()
+  }, [])
   return (
     <section className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -53,18 +133,24 @@ export default function FeaturedVehicles() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {featuredVehicles.map((vehicle) => (
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <span className="ml-3 text-gray-600">Loading vehicles...</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {vehicles.map((vehicle) => (
             <div key={vehicle.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100">
               <div className="relative h-64">
                 <Image
-                  src={vehicle.image}
+                  src={vehicle.coverPhoto || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop'}
                   alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
                   fill
                   className="object-cover"
                 />
                 <div className="absolute top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-full text-lg font-bold shadow-lg">
-                  ${vehicle.price.toLocaleString()}
+                  $999 Down
                 </div>
                 <div className="absolute top-4 left-4 bg-green-500 text-white px-3 py-1 rounded-lg text-sm font-semibold">
                   {vehicle.condition}
@@ -75,9 +161,14 @@ export default function FeaturedVehicles() {
               </div>
 
               <div className="p-6">
-                <h3 className="text-xl font-bold text-gray-900 mb-3">
-                  {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim}
-                </h3>
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="text-xl font-bold text-gray-900">
+                    {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim}
+                  </h3>
+                  <span className="text-2xl font-bold text-blue-600">
+                    ${vehicle.price.toLocaleString()}
+                  </span>
+                </div>
 
                 <div className="flex flex-wrap gap-2 mb-6">
                   {vehicle.features.map((feature, index) => (
@@ -104,7 +195,8 @@ export default function FeaturedVehicles() {
               </div>
             </div>
           ))}
-        </div>
+          </div>
+        )}
 
         <div className="text-center mt-16">
           <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-8 rounded-xl shadow-lg">

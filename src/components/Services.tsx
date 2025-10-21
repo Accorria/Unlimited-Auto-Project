@@ -3,19 +3,19 @@ import Link from 'next/link'
 export default function Services() {
   const services = [
     {
-      icon: '🚗',
+      icon: '',
       title: 'Vehicle Sales',
       description: 'Quality used cars with comprehensive inspections and warranties.',
       link: '/inventory'
     },
     {
-      icon: '🔧',
+      icon: '',
       title: 'Auto Repair',
       description: 'Professional mechanical services for all makes and models.',
       link: '/services/repair'
     },
     {
-      icon: '💥',
+      icon: '',
       title: 'Collision Repair',
       description: 'Expert body work and paint services to restore your vehicle.',
       link: '/services/collision'

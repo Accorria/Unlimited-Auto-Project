@@ -3,9 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useAuth } from '@/contexts/AuthContext'
-import ProtectedRoute from '@/components/ProtectedRoute'
-import RoleBasedNav from '@/components/RoleBasedNav'
+import AdminLayout from '@/components/AdminLayout'
 
 // Sample data - in production, this would come from an API
 const sampleVehicles = [
@@ -45,11 +43,19 @@ const sampleVehicles = [
 ]
 
 export default function AdminDashboard() {
-  const { user, signOut } = useAuth()
+  const [user, setUser] = useState<any>(null)
   const router = useRouter()
 
-  const handleLogout = async () => {
-    await signOut()
+  useEffect(() => {
+    const userData = localStorage.getItem('adminUser')
+    if (userData) {
+      setUser(JSON.parse(userData))
+    }
+  }, [])
+
+  const handleLogout = () => {
+    localStorage.removeItem('adminAuth')
+    localStorage.removeItem('adminUser')
     router.push('/admin/login')
   }
 
@@ -61,9 +67,8 @@ export default function AdminDashboard() {
   ]
 
   return (
-    <ProtectedRoute>
+    <AdminLayout>
       <div className="min-h-screen bg-gray-50">
-        <RoleBasedNav user={user} />
         
         {/* Header */}
         <header className="bg-white shadow">
@@ -75,7 +80,7 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-                  <p className="text-sm text-gray-600">Welcome back, {user?.name}</p>
+                  <p className="text-sm text-gray-600">Welcome back, {user?.name || 'Admin'}</p>
                 </div>
               </div>
             <div className="flex items-center space-x-4">
@@ -149,6 +154,15 @@ export default function AdminDashboard() {
                 <div className="text-2xl mb-2">📝</div>
                 <div className="font-semibold">Edit Content</div>
                 <div className="text-sm opacity-90">Update descriptions</div>
+              </Link>
+              
+              <Link
+                href="/admin/users"
+                className="bg-orange-600 text-white p-4 rounded-lg hover:bg-orange-700 transition-colors text-center"
+              >
+                <div className="text-2xl mb-2">👥</div>
+                <div className="font-semibold">Manage Users</div>
+                <div className="text-sm opacity-90">Add & manage users</div>
               </Link>
               
               <Link
@@ -246,7 +260,6 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
-    </div>
-    </ProtectedRoute>
+    </AdminLayout>
   )
 }
