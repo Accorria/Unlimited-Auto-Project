@@ -3,14 +3,17 @@
 import { createClient } from '@supabase/supabase-js';
 import { AuthUser, UserRole, Permission } from './types';
 
-// Check if we're in a build environment
+// Check if we're in a build environment (no env vars available)
 const isBuildTime = typeof window === 'undefined' && !process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 // Create a dummy client for build time
 const dummyClient = {
   auth: { 
     getUser: () => Promise.resolve({ data: { user: null }, error: null }),
-    signOut: () => Promise.resolve({ error: null })
+    signOut: () => Promise.resolve({ error: null }),
+    onAuthStateChange: () => ({ 
+      data: { subscription: { unsubscribe: () => {} } } 
+    })
   },
   from: () => ({ 
     select: () => ({ 
