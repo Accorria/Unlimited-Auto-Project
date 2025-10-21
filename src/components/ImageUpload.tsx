@@ -59,6 +59,45 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
     })
   }
 
+  const convertHeicToJpeg = (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      const img = new Image()
+      
+      img.onload = () => {
+        // Set canvas dimensions to match image
+        canvas.width = img.width
+        canvas.height = img.height
+        
+        // Draw the image on canvas
+        ctx?.drawImage(img, 0, 0)
+        
+        // Convert to JPEG blob
+        canvas.toBlob((blob) => {
+          if (blob) {
+            // Create new file with JPEG extension
+            const newFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg')
+            const jpegFile = new File([blob], newFileName, {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            })
+            resolve(jpegFile)
+          } else {
+            reject(new Error('Failed to convert HEIC to JPEG'))
+          }
+        }, 'image/jpeg', 0.9) // High quality JPEG
+      }
+      
+      img.onerror = () => {
+        reject(new Error('Failed to load HEIC image'))
+      }
+      
+      // Try to load the HEIC file
+      img.src = URL.createObjectURL(file)
+    })
+  }
+
   const handleFileUpload = async (files: FileList) => {
     // Check if adding these files would exceed the maximum
     if (images.length + files.length > maxImages) {
@@ -73,9 +112,14 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        alert(`${file.name} is not an image file`)
+      // Validate file type - accept HEIC files from iPhone
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
+      const isValidImage = validTypes.includes(file.type.toLowerCase()) || 
+                          file.name.toLowerCase().endsWith('.heic') || 
+                          file.name.toLowerCase().endsWith('.heif')
+      
+      if (!isValidImage) {
+        alert(`${file.name} is not a supported image file. Please use JPEG, PNG, WebP, or HEIC files.`)
         continue
       }
 
@@ -83,9 +127,17 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
       setUploadProgress(prev => ({ ...prev, [i]: 0 }))
 
       try {
-        // Compress image if it's too large
+        // Always convert HEIC files to JPEG
         let processedFile = file
-        if (file.size > 2 * 1024 * 1024) { // If larger than 2MB
+        if (file.type.toLowerCase() === 'image/heic' || 
+            file.type.toLowerCase() === 'image/heif' || 
+            file.name.toLowerCase().endsWith('.heic') || 
+            file.name.toLowerCase().endsWith('.heif')) {
+          
+          // Convert HEIC to JPEG
+          processedFile = await convertHeicToJpeg(file)
+        } else if (file.size > 2 * 1024 * 1024) { // If larger than 2MB
+          // Compress other image types if too large
           processedFile = await compressImage(file)
         }
 
@@ -113,7 +165,7 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
         reader.readAsDataURL(processedFile)
       } catch (error) {
         console.error('Error processing image:', error)
-        alert(`Failed to process ${file.name}`)
+        alert(`Failed to process ${file.name}. Please try converting it to JPEG format first.`)
       }
     }
   }
@@ -186,7 +238,7 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
           <input
             type="file"
             multiple
-            accept="image/*"
+            accept="image/*,.heic,.heif"
             onChange={handleFileInput}
             className="hidden"
             id="image-upload"
@@ -201,7 +253,7 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
             {uploading ? 'Uploading...' : images.length >= maxImages ? 'Maximum Reached' : 'Choose Files'}
           </label>
           <p className="text-sm text-gray-500">
-            Supports JPG, PNG, WebP. Large images will be automatically compressed.
+            Supports JPG, PNG, WebP, HEIC (iPhone photos). Large images will be automatically compressed and HEIC files will be converted to JPEG.
             {images.length >= maxImages && (
               <span className="block text-red-600 font-medium mt-1">
                 Maximum of {maxImages} photos reached. Remove some photos to add more.
