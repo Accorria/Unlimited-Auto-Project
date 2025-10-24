@@ -5,6 +5,21 @@
   --foreground: #171717;
 }
 
+/* Make all form text black for better visibility */
+input, select, textarea, select option {
+  color: #000000 !important;
+}
+
+input:focus, select:focus, textarea:focus {
+  color: #000000 !important;
+}
+
+/* Ensure placeholder text is visible but not too dark */
+input::placeholder, textarea::placeholder {
+  color: #6b7280 !important;
+  opacity: 0.8 !important;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

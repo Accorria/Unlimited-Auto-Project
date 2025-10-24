@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/auth'
+import { Resend } from 'resend'
+
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function GET(req: NextRequest) {
   try {
@@ -182,9 +185,32 @@ export async function POST(req: NextRequest) {
 
     console.log('Lead submitted successfully:', lead.id)
     
-    // TODO: Send email notification to dealer
-    // TODO: Send confirmation email to customer
-    // TODO: Integrate with CRM system
+    // Send email notification to dealer
+    try {
+      await resend.emails.send({
+        from: 'noreply@unlimitedauto.com', // You'll need to verify this domain
+        to: 'unlimitedautoredford@gmail.com',
+        subject: `New Lead from ${lead.name} - Unlimited Auto`,
+        html: `
+          <h2>New Lead Received!</h2>
+          <p><strong>Name:</strong> ${lead.name}</p>
+          <p><strong>Email:</strong> ${lead.email}</p>
+          <p><strong>Phone:</strong> ${lead.phone}</p>
+          <p><strong>Message:</strong> ${lead.message || 'N/A'}</p>
+          <p><strong>Vehicle Interest:</strong> ${lead.vehicle_interest || 'N/A'}</p>
+          <p><strong>Service:</strong> ${lead.service || 'N/A'}</p>
+          <p><strong>Income:</strong> ${lead.income || 'N/A'}</p>
+          <p><strong>Down Payment:</strong> ${lead.down_payment || 'N/A'}</p>
+          <p><strong>Credit Score:</strong> ${lead.credit_score || 'N/A'}</p>
+          <p><strong>Source:</strong> ${lead.source || 'Website'}</p>
+          <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
+        `,
+      })
+      console.log('Email notification sent successfully')
+    } catch (emailError) {
+      console.error('Error sending email notification:', emailError)
+      // Continue even if email fails
+    }
 
     return NextResponse.json({ 
       success: true, 

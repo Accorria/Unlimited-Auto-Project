@@ -47,8 +47,7 @@ interface Vehicle {
   }>
 }
 
-// Import vehicle data
-import vehicleData from '@/data/vehicle-data.json';
+// We'll fetch vehicles from the API instead of using static data
 
 // Fallback vehicle data (keep as backup)
 const fallbackVehicles = [
@@ -170,32 +169,33 @@ export default function InventoryPage() {
   const [selectedMake, setSelectedMake] = useState('')
   const [selectedPriceRange, setSelectedPriceRange] = useState('')
   const [selectedYear, setSelectedYear] = useState('')
+  const [selectedMileageRange, setSelectedMileageRange] = useState('')
   const [sortBy, setSortBy] = useState('price-low')
 
   useEffect(() => {
     const fetchVehicles = async () => {
       try {
-        // First try to load from our generated vehicle data
-        if (vehicleData && vehicleData.length > 0) {
-          setVehicles(vehicleData)
-          setLoading(false)
-          return
-        }
-        
-        // Fallback to API if no local data
+        // First try to load from API (this will include the Mini Cooper)
         const response = await fetch('/api/vehicles?dealer=unlimited-auto')
         
         if (response.ok) {
           const data = await response.json()
-          setVehicles(data.vehicles || [])
-        } else {
-          console.error('API failed with status:', response.status)
-          // Fallback to hardcoded data if API fails
-          setVehicles(fallbackVehicles)
+          const apiVehicles = data.vehicles || []
+          
+          // If we have vehicles from API, use them
+          if (apiVehicles.length > 0) {
+            setVehicles(apiVehicles)
+            setLoading(false)
+            return
+          }
         }
+        
+        // No fallback - if API has no vehicles, show empty state
+        console.log('No vehicles found in API')
+        setVehicles([])
       } catch (error) {
         console.error('Error fetching vehicles:', error)
-        setVehicles(fallbackVehicles)
+        setVehicles([])
       } finally {
         setLoading(false)
       }
@@ -230,7 +230,17 @@ export default function InventoryPage() {
         }
       }
 
-      return matchesSearch && matchesMake && matchesYear && matchesPrice
+      let matchesMileage = true
+      if (selectedMileageRange && vehicle.miles) {
+        const [min, max] = selectedMileageRange.split('-').map(Number)
+        if (max) {
+          matchesMileage = vehicle.miles >= min && vehicle.miles <= max
+        } else {
+          matchesMileage = vehicle.miles >= min
+        }
+      }
+
+      return matchesSearch && matchesMake && matchesYear && matchesPrice && matchesMileage
     })
 
     // Sort vehicles
@@ -254,7 +264,7 @@ export default function InventoryPage() {
     })
 
     return filtered
-  }, [vehicles, searchTerm, selectedMake, selectedPriceRange, selectedYear, sortBy])
+  }, [vehicles, searchTerm, selectedMake, selectedPriceRange, selectedYear, selectedMileageRange, sortBy])
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -331,6 +341,22 @@ export default function InventoryPage() {
                 <option value="30000">Over $30,000</option>
               </select>
             </div>
+
+            {/* Mileage Range Filter */}
+            <div>
+              <select
+                value={selectedMileageRange}
+                onChange={(e) => setSelectedMileageRange(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All Mileage</option>
+                <option value="0-25000">Under 25,000 miles</option>
+                <option value="25000-50000">25,000 - 50,000 miles</option>
+                <option value="50000-75000">50,000 - 75,000 miles</option>
+                <option value="75000-100000">75,000 - 100,000 miles</option>
+                <option value="100000">Over 100,000 miles</option>
+              </select>
+            </div>
           </div>
 
           {/* Sort Options */}
@@ -368,19 +394,26 @@ export default function InventoryPage() {
               {/* Debug info removed - issue fixed! */}
               {filteredVehicles.length === 0 ? (
             <div className="text-center py-16">
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">No vehicles found</h3>
-              <p className="text-gray-600 mb-8">Try adjusting your search criteria</p>
-              <button
-                onClick={() => {
-                  setSearchTerm('')
-                  setSelectedMake('')
-                  setSelectedPriceRange('')
-                  setSelectedYear('')
-                }}
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Clear All Filters
-              </button>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                {vehicles.length === 0 ? 'No vehicles currently available' : 'No vehicles match your search'}
+              </h3>
+              <p className="text-gray-600 mb-8">
+                {vehicles.length === 0 ? 'Check back soon for new inventory!' : 'Try adjusting your search criteria'}
+              </p>
+              {vehicles.length > 0 && (
+                <button
+                  onClick={() => {
+                    setSearchTerm('')
+                    setSelectedMake('')
+                    setSelectedPriceRange('')
+                    setSelectedYear('')
+                    setSelectedMileageRange('')
+                  }}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Clear All Filters
+                </button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -388,19 +421,14 @@ export default function InventoryPage() {
                 <div key={vehicle.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100">
                   <div className="relative h-64">
                     <Image
-                      src={vehicle.coverPhoto || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop'}
+                      src={vehicle.vehicle_photos?.[0]?.public_url || vehicle.coverPhoto || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop'}
                       alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
                       fill
                       className="object-cover"
                     />
-                    <div className="absolute top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-full text-lg font-bold shadow-lg">
+                    {/* Only show $999 Down badge, positioned to not touch the car */}
+                    <div className="absolute top-2 left-2 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-bold shadow-lg">
                       $999 Down
-                    </div>
-                    <div className="absolute top-4 left-4 bg-green-500 text-white px-3 py-1 rounded-lg text-sm font-semibold">
-                      {vehicle.condition || vehicle.status || 'Available'}
-                    </div>
-                    <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-1 rounded-lg text-sm">
-                      {vehicle.miles ? `${vehicle.miles.toLocaleString()} miles` : 'Miles TBD'}
                     </div>
                   </div>
 
@@ -415,10 +443,10 @@ export default function InventoryPage() {
                     </div>
                     
                     <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 mb-4">
-                      <div>Transmission: {vehicle.transmission || 'N/A'}</div>
-                      <div>Drivetrain: {vehicle.drivetrain || 'N/A'}</div>
-                      <div>Fuel: {vehicle.fuelType || 'N/A'}</div>
-                      <div>Color: {vehicle.color || 'N/A'}</div>
+                      <div><strong>Mileage:</strong> {vehicle.miles ? `${vehicle.miles.toLocaleString()}` : 'TBD'}</div>
+                      <div><strong>Condition:</strong> {vehicle.condition || 'Good'}</div>
+                      <div><strong>Trans:</strong> {vehicle.transmission || 'N/A'}</div>
+                      <div><strong>Drive:</strong> {vehicle.drivetrain || 'N/A'}</div>
                     </div>
 
                     <div className="flex flex-wrap gap-2 mb-6">

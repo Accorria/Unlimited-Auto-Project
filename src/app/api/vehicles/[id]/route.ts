@@ -1,6 +1,108 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/auth'
 
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: vehicleId } = await params
+
+    // Use service role client to bypass RLS
+    const supabase = createServerClient()
+
+    // Fetch the vehicle with its photos
+    const { data: vehicle, error } = await supabase
+      .from('vehicles')
+      .select(`
+        *,
+        vehicle_photos (
+          id,
+          angle,
+          public_url,
+          file_path
+        )
+      `)
+      .eq('id', vehicleId)
+      .single()
+
+    if (error) {
+      console.error('Error fetching vehicle:', error)
+      return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 })
+    }
+
+    // Transform data to include cover photo
+    const photos = vehicle.vehicle_photos || []
+    const coverPhoto = photos.find(photo => photo.angle === 'FDS') || 
+                      photos.find(photo => photo.angle === 'FPS') || 
+                      photos.find(photo => photo.angle === 'F') || 
+                      photos[0]
+
+    const transformedVehicle = {
+      ...vehicle,
+      coverPhoto: coverPhoto?.public_url || null,
+      photos: photos.sort((a, b) => {
+        const angleOrder = ['FDS','FPS','SDS','SPS','SRDS','SRPS','RDS','R','F','INT','INTB','ENG','TRK','ODOM','VIN']
+        return angleOrder.indexOf(a.angle) - angleOrder.indexOf(b.angle)
+      })
+    }
+
+    return NextResponse.json(transformedVehicle)
+
+  } catch (error: any) {
+    console.error('API error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: vehicleId } = await params
+    const body = await req.json()
+    console.log('Updating vehicle:', vehicleId, body)
+
+    // Use service role client to bypass RLS
+    const supabase = createServerClient()
+
+    // Update the vehicle
+    const { data: vehicle, error } = await supabase
+      .from('vehicles')
+      .update({
+        year: body.year,
+        make: body.make,
+        model: body.model,
+        trim: body.trim,
+        miles: body.miles,
+        price: body.price,
+        vin: body.vin,
+        description: body.description,
+        status: body.status || 'active'
+      })
+      .eq('id', vehicleId)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error updating vehicle:', error)
+      return NextResponse.json({ error: 'Failed to update vehicle' }, { status: 500 })
+    }
+
+    console.log('Vehicle updated successfully:', vehicle)
+    return NextResponse.json({ 
+      success: true, 
+      vehicle: vehicle,
+      message: 'Vehicle updated successfully!' 
+    })
+
+  } catch (error: any) {
+    console.error('API error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

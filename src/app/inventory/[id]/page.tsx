@@ -39,28 +39,36 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
   const [showAllFeatures, setShowAllFeatures] = useState(false)
   const [vehicle, setVehicle] = useState<Vehicle | null>(null)
   const [loading, setLoading] = useState(true)
+  const [downPayment, setDownPayment] = useState(0)
+  const [loanTerm, setLoanTerm] = useState(48)
+  const [interestRate, setInterestRate] = useState(6.9)
+  const [monthlyPayment, setMonthlyPayment] = useState(0)
   const resolvedParams = use(params)
 
   useEffect(() => {
     const fetchVehicle = async () => {
       try {
-        // First try to find in our generated vehicle data
-        if (vehicleData && vehicleData.length > 0) {
-          const foundVehicle = vehicleData.find((v: Vehicle) => v.id === resolvedParams.id)
-          setVehicle(foundVehicle || null)
-          setLoading(false)
-          return
-        }
-        
-        // Fallback to API
+        // First try to fetch from API (this will include the Mini Cooper)
         const response = await fetch('/api/vehicles?dealer=unlimited-auto')
+        
         if (response.ok) {
           const data = await response.json()
           const foundVehicle = data.vehicles.find((v: Vehicle) => v.id === resolvedParams.id)
-          setVehicle(foundVehicle || null)
+          
+          if (foundVehicle) {
+            setVehicle(foundVehicle)
+            setLoading(false)
+            return
+          }
         }
+        
+        // Fallback to static data if API fails
+        console.log('Using fallback vehicle data')
+        const foundVehicle = vehicleData.find((v: Vehicle) => v.id === resolvedParams.id)
+        setVehicle(foundVehicle || null)
       } catch (error) {
         console.error('Error fetching vehicle:', error)
+        setVehicle(null)
       } finally {
         setLoading(false)
       }
@@ -68,6 +76,23 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
 
     fetchVehicle()
   }, [resolvedParams.id])
+
+  // Calculate monthly payment when inputs change
+  useEffect(() => {
+    if (vehicle?.price) {
+      const principal = vehicle.price - downPayment
+      const monthlyRate = interestRate / 100 / 12
+      const numPayments = loanTerm
+      
+      if (monthlyRate > 0) {
+        const payment = principal * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
+                       (Math.pow(1 + monthlyRate, numPayments) - 1)
+        setMonthlyPayment(Math.round(payment))
+      } else {
+        setMonthlyPayment(Math.round(principal / numPayments))
+      }
+    }
+  }, [vehicle?.price, downPayment, loanTerm, interestRate])
   
   if (loading) {
     return (
@@ -106,7 +131,8 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
   }
 
   // Get images from photos array or use cover photo
-  const vehicleImages = vehicle.photos?.map(photo => photo.public_url) || 
+  const vehicleImages = vehicle.vehicle_photos?.map(photo => photo.public_url) || 
+                       vehicle.photos?.map(photo => photo.public_url) ||
                        (vehicle.coverPhoto ? [vehicle.coverPhoto] : [])
   
   const displayedFeatures = vehicle.features ? 
@@ -173,7 +199,7 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
                 {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim}
               </h1>
               <div className="flex items-center space-x-4 text-gray-600 mb-4">
-                <span className="text-2xl font-bold text-blue-600">$9.99 Down</span>
+                <span className="text-2xl font-bold text-blue-600">$999 Down</span>
                 {vehicle.miles && (
                   <>
                     <span>•</span>
@@ -255,21 +281,21 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
               </div>
             )}
 
-            {/* Warranty & History */}
+            {/* Benefits & Guarantees */}
             <div className="bg-white rounded-lg p-6 shadow-sm border">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Warranty & History</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Benefits & Guarantees</h3>
               <div className="space-y-2">
                 <div className="flex items-center">
                   <span className="text-green-600 mr-2">✓</span>
-                  <span>{vehicle.warranty}</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="text-green-600 mr-2">✓</span>
-                  <span>{vehicle.history}</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="text-green-600 mr-2">✓</span>
                   <span>No Hidden Fees</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-green-600 mr-2">✓</span>
+                  <span>Fast Approval</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-green-600 mr-2">✓</span>
+                  <span>Quality Guaranteed</span>
                 </div>
               </div>
             </div>
@@ -292,7 +318,7 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
                   Schedule Test Drive
                 </Link>
                 <Link
-                  href="/financing"
+                  href="/credit-application"
                   className="border-2 border-blue-600 text-blue-600 text-center py-4 rounded-lg hover:bg-blue-600 hover:text-white transition-colors font-semibold text-lg"
                 >
                   Get Pre-Approved
@@ -322,13 +348,18 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
               <input
                 type="number"
                 placeholder="0"
-                defaultValue="0"
+                value={downPayment}
+                onChange={(e) => setDownPayment(Number(e.target.value))}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Loan Term (months)</label>
-              <select className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" defaultValue="48">
+              <select 
+                value={loanTerm}
+                onChange={(e) => setLoanTerm(Number(e.target.value))}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
                 <option value="36">36 months</option>
                 <option value="48">48 months</option>
                 <option value="60">60 months</option>
@@ -342,7 +373,8 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
                 type="number"
                 placeholder="6.9"
                 step="0.1"
-                defaultValue="6.9"
+                value={interestRate}
+                onChange={(e) => setInterestRate(Number(e.target.value))}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -350,7 +382,7 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">
             <div className="text-center">
               <p className="text-gray-600">Estimated Monthly Payment</p>
-              <p className="text-3xl font-bold text-blue-600">$299/month*</p>
+              <p className="text-3xl font-bold text-blue-600">${monthlyPayment.toLocaleString()}/month*</p>
               <p className="text-sm text-gray-500 mt-2">*Actual payment may vary based on credit approval</p>
             </div>
           </div>

@@ -37,21 +37,39 @@ export default function FeaturedVehicles() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const loadFeaturedVehicles = () => {
+    const loadFeaturedVehicles = async () => {
       try {
-        // Use our vehicle data and show 6 featured vehicles
-        const featuredVehicles = vehicleData
-          .filter(vehicle => vehicle.status === 'available' && vehicle.price)
-          .sort((a: Vehicle, b: Vehicle) => {
-            // Sort by price (higher prices first for featured section)
-            const aPrice = a.price || 0
-            const bPrice = b.price || 0
-            if (aPrice !== bPrice) return bPrice - aPrice
-            // Then by year (newer first)
-            return b.year - a.year
-          })
-          .slice(0, 6) // Show 6 vehicles instead of 3
-        setVehicles(featuredVehicles)
+        // Fetch vehicles from API (this will include the Mini Cooper)
+        const response = await fetch('/api/vehicles?dealer=unlimited-auto')
+        
+        if (response.ok) {
+          const data = await response.json()
+          const apiVehicles = data.vehicles || []
+          
+          if (apiVehicles.length > 0) {
+            // Show 6 featured vehicles from API
+            const featuredVehicles = apiVehicles
+              .filter(vehicle => vehicle.status === 'active' && vehicle.price && vehicle.price > 0)
+              .sort((a: Vehicle, b: Vehicle) => {
+                // Sort by price (higher prices first for featured section)
+                const aPrice = a.price || 0
+                const bPrice = b.price || 0
+                if (aPrice !== bPrice) return bPrice - aPrice
+                // Then by year (newer first)
+                return b.year - a.year
+              })
+              .slice(0, 6) // Show 6 vehicles instead of 3
+            
+            console.log('Featured vehicles found:', featuredVehicles.length, featuredVehicles)
+            setVehicles(featuredVehicles)
+            setLoading(false)
+            return
+          }
+        }
+        
+        // No fallback - if API has no vehicles, show empty state
+        console.log('No vehicles found in API')
+        setVehicles([])
       } catch (error) {
         console.error('Error loading vehicles:', error)
       } finally {
@@ -84,25 +102,25 @@ export default function FeaturedVehicles() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             <span className="ml-3 text-gray-600">Loading vehicles...</span>
           </div>
+        ) : vehicles.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-gray-500 text-lg mb-4">No vehicles currently available</div>
+            <p className="text-gray-400">Check back soon for new inventory!</p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {vehicles.map((vehicle) => (
             <div key={vehicle.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100">
               <div className="relative h-64">
                 <Image
-                  src={vehicle.coverPhoto || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop'}
+                  src={vehicle.vehicle_photos?.[0]?.public_url || vehicle.coverPhoto || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop'}
                   alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
                   fill
                   className="object-cover"
                 />
-                <div className="absolute top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-full text-lg font-bold shadow-lg">
+                {/* Only show $999 Down badge, positioned to not touch the car */}
+                <div className="absolute top-2 left-2 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-bold shadow-lg">
                   $999 Down
-                </div>
-                <div className="absolute top-4 left-4 bg-green-500 text-white px-3 py-1 rounded-lg text-sm font-semibold">
-                  {vehicle.condition || vehicle.status || 'Available'}
-                </div>
-                <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-1 rounded-lg text-sm">
-                  {vehicle.miles ? `${vehicle.miles.toLocaleString()} miles` : 'Miles TBD'}
                 </div>
               </div>
 
@@ -114,6 +132,14 @@ export default function FeaturedVehicles() {
                   <span className="text-2xl font-bold text-blue-600">
                     {vehicle.price ? `$${vehicle.price.toLocaleString()}` : 'Call for Price'}
                   </span>
+                </div>
+
+                {/* Vehicle details like Twins Auto Sales */}
+                <div className="grid grid-cols-2 gap-2 text-sm text-gray-700 mb-4">
+                  <p><strong>Mileage:</strong> {vehicle.miles ? `${vehicle.miles.toLocaleString()}` : 'TBD'}</p>
+                  <p><strong>Condition:</strong> {vehicle.condition || 'Good'}</p>
+                  {vehicle.transmission && <p><strong>Trans:</strong> {vehicle.transmission}</p>}
+                  {vehicle.drivetrain && <p><strong>Drive:</strong> {vehicle.drivetrain}</p>}
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-6">

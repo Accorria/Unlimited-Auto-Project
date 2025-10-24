@@ -92,13 +92,13 @@ interface CarQueryModel {
 
 export default function EditVehicle({ params }: { params: Promise<{ id: string }> }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [loading, setLoading] = useState(false)
   const [aiEnabled, setAiEnabled] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
   const router = useRouter()
   const resolvedParams = use(params)
 
-  const [formData, setFormData] = useState(sampleVehicle)
+  const [formData, setFormData] = useState<any>({})
+  const [loading, setLoading] = useState(true)
   
   // CarQuery API state
   const [makes, setMakes] = useState<CarQueryMake[]>([])
@@ -120,13 +120,28 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
     // Load makes on component mount
     loadMakes()
 
-    // In production, fetch vehicle data by ID
-    // const fetchVehicle = async () => {
-    //   const response = await fetch(`/api/vehicles/${resolvedParams.id}`)
-    //   const vehicle = await response.json()
-    //   setFormData(vehicle)
-    // }
-    // fetchVehicle()
+    // Fetch vehicle data by ID
+    const fetchVehicle = async () => {
+      try {
+        const response = await fetch(`/api/vehicles/${resolvedParams.id}`)
+        if (response.ok) {
+          const vehicle = await response.json()
+          console.log('Fetched vehicle for editing:', vehicle)
+          setFormData(vehicle)
+        } else {
+          console.error('Failed to fetch vehicle')
+          // Fallback to sample data if fetch fails
+          setFormData(sampleVehicle)
+        }
+      } catch (error) {
+        console.error('Error fetching vehicle:', error)
+        // Fallback to sample data if fetch fails
+        setFormData(sampleVehicle)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchVehicle()
   }, [router, resolvedParams.id])
 
   // CarQuery API functions
@@ -327,15 +342,31 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
     e.preventDefault()
     setLoading(true)
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    try {
+      // Update the vehicle via API
+      const response = await fetch(`/api/vehicles/${resolvedParams.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      })
 
-    // In production, this would update the vehicle in your database
-    console.log('Vehicle updated:', formData)
-    
-    alert('Vehicle updated successfully!')
-    router.push('/admin/inventory')
-    setLoading(false)
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update vehicle')
+      }
+
+      console.log('Vehicle updated successfully:', result)
+      alert('Vehicle updated successfully!')
+      router.push('/admin/inventory')
+    } catch (error) {
+      console.error('Error updating vehicle:', error)
+      alert(`Failed to update vehicle: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (!isAuthenticated) {
@@ -344,6 +375,17 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading vehicle data...</p>
         </div>
       </div>
     )

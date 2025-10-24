@@ -47,7 +47,7 @@ const commonModels: Record<string, string[]> = {
   'Lincoln': ['Aviator', 'Continental', 'Corsair', 'MKC', 'MKT', 'MKX', 'MKZ', 'Navigator'],
   'Mazda': ['CX-3', 'CX-30', 'CX-5', 'CX-9', 'Mazda3', 'Mazda6', 'MX-5 Miata'],
   'Mercedes-Benz': ['A-Class', 'C-Class', 'CLA', 'E-Class', 'G-Class', 'GLA', 'GLC', 'GLE', 'GLS', 'S-Class'],
-  'Mini': ['Cooper', 'Cooper S', 'Countryman', 'Hardtop', 'Convertible', 'Clubman'],
+  'Mini': ['Cooper', 'Cooper S', 'Cooper SE', 'Cooper JCW', 'Countryman', 'Countryman S', 'Countryman JCW', 'Hardtop', 'Hardtop S', 'Hardtop JCW', 'Convertible', 'Convertible S', 'Convertible JCW', 'Clubman', 'Clubman S', 'Clubman JCW', 'Paceman', 'Roadster'],
   'Mitsubishi': ['Eclipse Cross', 'Lancer', 'Mirage', 'Mirage G4', 'Outlander'],
   'Nissan': ['370Z', 'Altima', 'Armada', 'Frontier', 'GT-R', 'Maxima', 'Murano', 'Pathfinder', 'Rogue', 'Sentra', 'Titan', 'Versa'],
   'Ram': ['1500', '2500', '3500', 'ProMaster', 'ProMaster City'],
@@ -58,10 +58,35 @@ const commonModels: Record<string, string[]> = {
   'Volvo': ['S60', 'S90', 'V60', 'V90', 'XC40', 'XC60', 'XC90']
 }
 
-// Common trims (alphabetical order)
-const commonTrims = [
-  'AMG', 'Base', 'Denali', 'Electric', 'F-Sport', 'Hybrid', 'LE', 'Limited', 'LS', 'LT', 'LT1', 'LT2', 'LT3', 'LTZ', 'M Sport', 'Platinum', 'Premium', 'RS', 'SE', 'SEL', 'S-Line', 'Sport', 'SR5', 'SS', 'Titanium', 'Touring', 'TRD', 'Type R', 'XLE', 'Z71'
-]
+// Make-specific trims
+const makeSpecificTrims: Record<string, string[]> = {
+  'Mini': ['Base', 'Cooper', 'Cooper S', 'Cooper SE', 'Cooper JCW', 'Hardtop', 'Hardtop S', 'Hardtop JCW', 'Convertible', 'Convertible S', 'Convertible JCW', 'Clubman', 'Clubman S', 'Clubman JCW', 'Countryman', 'Countryman S', 'Countryman JCW', 'Paceman', 'Roadster'],
+  'BMW': ['Base', 'M Sport', 'M Performance', 'xDrive', 'sDrive', 'M3', 'M5', 'M8', 'Alpina'],
+  'Mercedes-Benz': ['Base', 'AMG', 'AMG Line', '4MATIC', 'EQ', 'Maybach'],
+  'Audi': ['Base', 'S-Line', 'RS', 'Quattro', 'e-tron', 'S', 'RS'],
+  'Toyota': ['Base', 'LE', 'XLE', 'Limited', 'Platinum', 'TRD', 'Hybrid', 'Prime'],
+  'Honda': ['Base', 'LX', 'EX', 'EX-L', 'Touring', 'Sport', 'Type R', 'Hybrid'],
+  'Ford': ['Base', 'S', 'SE', 'SEL', 'Titanium', 'ST', 'RS', 'Platinum', 'King Ranch'],
+  'Chevrolet': ['Base', 'LS', 'LT', 'LTZ', 'SS', 'RS', 'Z71', 'Premier'],
+  'Nissan': ['Base', 'S', 'SV', 'SL', 'Platinum', 'NISMO', 'SR'],
+  'Hyundai': ['Base', 'SE', 'SEL', 'Limited', 'N Line', 'N'],
+  'Kia': ['Base', 'LX', 'EX', 'SX', 'GT-Line', 'GT'],
+  'Mazda': ['Base', 'Sport', 'Touring', 'Grand Touring', 'Signature'],
+  'Subaru': ['Base', 'Premium', 'Limited', 'Touring', 'STI', 'Wilderness'],
+  'Volkswagen': ['Base', 'S', 'SE', 'SEL', 'R-Line', 'GTI', 'R'],
+  'Lexus': ['Base', 'F Sport', 'Luxury', 'Ultra Luxury', 'F'],
+  'Acura': ['Base', 'Technology', 'A-Spec', 'Advance', 'Type S'],
+  'Infiniti': ['Base', 'Pure', 'Luxe', 'Essential', 'Sensory', 'Autograph'],
+  'Cadillac': ['Base', 'Luxury', 'Premium Luxury', 'Platinum', 'V'],
+  'Lincoln': ['Base', 'Premier', 'Reserve', 'Black Label'],
+  'Buick': ['Base', 'Preferred', 'Essence', 'Avenir'],
+  'GMC': ['Base', 'SLE', 'SLT', 'Denali', 'AT4'],
+  'Ram': ['Base', 'Tradesman', 'Big Horn', 'Laramie', 'Rebel', 'Limited', 'TRX'],
+  'Jeep': ['Base', 'Sport', 'Sahara', 'Rubicon', 'High Altitude', 'Trailhawk'],
+  'Dodge': ['Base', 'SXT', 'GT', 'R/T', 'Scat Pack', 'Hellcat', 'Demon'],
+  'Chrysler': ['Base', 'Touring', 'Limited', 'Pinnacle'],
+  'Tesla': ['Standard Range', 'Long Range', 'Performance', 'Plaid']
+}
 
 // Common vehicle features
 const commonFeatures = [
@@ -305,7 +330,8 @@ export default function AddVehicle() {
 
       console.log('Vehicle saved successfully:', result)
       alert('Vehicle added successfully!')
-      router.push('/admin/inventory')
+      // Force refresh the inventory page
+      router.push('/admin/inventory?refresh=' + Date.now())
     } catch (error) {
       console.error('Error adding vehicle:', error)
       alert(`Failed to add vehicle: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -390,7 +416,7 @@ export default function AddVehicle() {
                   }`}
                 >
                   <option value="">Select Year</option>
-                  {Array.from({ length: 25 }, (_, i) => {
+                  {Array.from({ length: 75 }, (_, i) => {
                     const year = 2024 - i
                     return (
                       <option key={year} value={year}>
@@ -454,7 +480,7 @@ export default function AddVehicle() {
                   } ${!formData.model ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <option value="">Select Trim</option>
-                  {commonTrims.map((trim) => (
+                  {(makeSpecificTrims[formData.make] || ['Base', 'Premium', 'Limited', 'Sport']).map((trim) => (
                     <option key={trim} value={trim}>
                       {trim}
                     </option>

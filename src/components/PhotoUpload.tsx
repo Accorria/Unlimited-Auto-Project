@@ -15,6 +15,7 @@ export default function PhotoUpload({ onPhotosChange, vehicleData }: PhotoUpload
   const [photos, setPhotos] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<Record<number, number>>({})
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const uploadFile = async (file: File, index: number): Promise<string | null> => {
@@ -99,6 +100,38 @@ export default function PhotoUpload({ onPhotosChange, vehicleData }: PhotoUpload
     onPhotosChange(newPhotos)
   }
 
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault()
+    
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null)
+      return
+    }
+
+    const newPhotos = [...photos]
+    const draggedPhoto = newPhotos[draggedIndex]
+    
+    // Remove the dragged photo
+    newPhotos.splice(draggedIndex, 1)
+    
+    // Insert it at the new position
+    newPhotos.splice(dropIndex, 0, draggedPhoto)
+    
+    setPhotos(newPhotos)
+    onPhotosChange(newPhotos)
+    setDraggedIndex(null)
+  }
+
   return (
     <div className="space-y-4">
       {/* Upload Button */}
@@ -160,10 +193,18 @@ export default function PhotoUpload({ onPhotosChange, vehicleData }: PhotoUpload
       {photos.length > 0 && (
         <div className="space-y-4">
           <h3 className="font-medium">Uploaded Photos ({photos.length})</h3>
+          <p className="text-sm text-gray-500">💡 Drag and drop photos to reorder them. The first photo will be used as the main image.</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {photos.map((photoUrl, index) => (
-              <div key={index} className="relative group">
-                <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border-2 border-gray-200">
+              <div 
+                key={index} 
+                className={`relative group cursor-move ${draggedIndex === index ? 'opacity-50' : ''}`}
+                draggable
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, index)}
+              >
+                <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border-2 border-gray-200 hover:border-blue-400 transition-colors">
                   <img
                     src={photoUrl}
                     alt={`Vehicle photo ${index + 1}`}

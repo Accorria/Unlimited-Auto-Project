@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from '@/lib/auth'
+import { Resend } from 'resend'
+
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(req: NextRequest) {
   try {
@@ -8,8 +11,8 @@ export async function POST(req: NextRequest) {
       dealerName: body?.dealerName,
       applicant: body?.applicant?.fullName,
       phone: body?.applicant?.phone,
-      vehicle: `${body?.vehicle?.year} ${body?.vehicle?.make} ${body?.vehicle?.model}`,
-      vin: body?.vehicle?.vin,
+      vehicleId: body?.financing?.vehicleId,
+      vehicle: `${body?.financing?.year} ${body?.financing?.make} ${body?.financing?.model}`,
       salesPrice: body?.financing?.salesPrice,
     })
 
@@ -50,7 +53,8 @@ export async function POST(req: NextRequest) {
         parseInt(body.financing.downPayment.replace(/[^0-9]/g, '')) : null,
       
       // Vehicle information
-      message: `Vehicle: ${body.vehicle?.year} ${body.vehicle?.make} ${body.vehicle?.model} | VIN: ${body.vehicle?.vin} | Sales Price: ${body.financing?.salesPrice}`,
+      vehicle_id: body.financing?.vehicleId || null,
+      message: `Vehicle: ${body.financing?.year} ${body.financing?.make} ${body.financing?.model} | Sales Price: ${body.financing?.salesPrice}`,
       
       // Attribution tracking
       source: 'credit_application',
@@ -85,17 +89,18 @@ export async function POST(req: NextRequest) {
         
         // Vehicle details
         vehicle: {
-          condition: body.vehicle?.condition,
-          year: body.vehicle?.year,
-          make: body.vehicle?.make,
-          model: body.vehicle?.model,
-          vin: body.vehicle?.vin,
-          mileage: body.vehicle?.mileage,
-          bookSource: body.vehicle?.bookSource,
-          bookValue: body.vehicle?.bookValue,
-          tradeYear: body.vehicle?.tradeYear,
-          tradeMake: body.vehicle?.tradeMake,
-          tradeModel: body.vehicle?.tradeModel
+          vehicleId: body.financing?.vehicleId,
+          condition: body.financing?.condition,
+          year: body.financing?.year,
+          make: body.financing?.make,
+          model: body.financing?.model,
+          vin: body.financing?.retailLeaseVin,
+          mileage: body.financing?.mileage,
+          bookSource: body.financing?.usedValueGuide,
+          bookValue: body.financing?.bookValue,
+          tradeYear: body.financing?.tradeYear,
+          tradeMake: body.financing?.tradeMake,
+          tradeModel: body.financing?.tradeModel
         },
         
         // Financing terms
@@ -154,10 +159,40 @@ export async function POST(req: NextRequest) {
 
     console.log('Credit application submitted successfully:', lead.id)
     
-    // TODO: Send email notification to dealer
-    // TODO: Send confirmation email to customer
-    // TODO: Integrate with CRM system
-    // TODO: Send to lender APIs
+    // Send email notification to dealer
+    try {
+      await resend.emails.send({
+        from: 'noreply@unlimitedauto.com',
+        to: 'unlimitedautoredford@gmail.com',
+        subject: `New Credit Application from ${lead.name} - Unlimited Auto`,
+        html: `
+          <h2>New Credit Application Received!</h2>
+          <p><strong>Name:</strong> ${lead.name}</p>
+          <p><strong>Phone:</strong> ${lead.phone}</p>
+          <p><strong>Email:</strong> ${lead.email || 'N/A'}</p>
+          <p><strong>Address:</strong> ${lead.address || 'N/A'}</p>
+          <p><strong>City:</strong> ${lead.city || 'N/A'}</p>
+          <p><strong>State:</strong> ${lead.state || 'N/A'}</p>
+          <p><strong>Zip:</strong> ${lead.zip_code || 'N/A'}</p>
+          <p><strong>Income:</strong> ${lead.income || 'N/A'}</p>
+          <p><strong>Net Monthly Income:</strong> ${lead.net_monthly_income || 'N/A'}</p>
+          <p><strong>Employer:</strong> ${lead.employer || 'N/A'}</p>
+          <p><strong>Down Payment:</strong> ${lead.down_payment || 'N/A'}</p>
+          <p><strong>Vehicle:</strong> ${body.financing?.year} ${body.financing?.make} ${body.financing?.model}</p>
+          <p><strong>Vehicle ID:</strong> ${body.financing?.vehicleId || 'N/A'}</p>
+          <p><strong>Sales Price:</strong> ${body.financing?.salesPrice || 'N/A'}</p>
+          <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
+          <p><strong>Full Application Data:</strong></p>
+          <pre style="background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto;">
+${JSON.stringify(body, null, 2)}
+          </pre>
+        `,
+      })
+      console.log('Credit application email notification sent successfully')
+    } catch (emailError) {
+      console.error('Error sending credit application email notification:', emailError)
+      // Continue even if email fails
+    }
 
     return NextResponse.json({ 
       success: true, 

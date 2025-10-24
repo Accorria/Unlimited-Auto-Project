@@ -123,6 +123,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to save vehicle' }, { status: 500 })
     }
 
+    // Save vehicle photos if provided
+    if (body.images && body.images.length > 0) {
+      const photoInserts = body.images.map((imageUrl: string, index: number) => ({
+        vehicle_id: vehicle.id,
+        file_path: imageUrl,
+        public_url: imageUrl,
+        angle: `PHOTO_${Date.now()}_${index}`, // Simple angle naming
+        created_at: new Date().toISOString()
+      }))
+
+      const { error: photosError } = await supabase
+        .from('vehicle_photos')
+        .insert(photoInserts)
+
+      if (photosError) {
+        console.error('Error inserting photos:', photosError)
+        // Don't fail the whole request, just log the error
+      }
+    }
+
     console.log('Vehicle saved successfully:', vehicle)
     return NextResponse.json({ 
       success: true, 

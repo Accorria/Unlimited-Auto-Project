@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/auth'
+import { Resend } from 'resend'
+
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(req: NextRequest) {
   try {
@@ -77,9 +80,36 @@ export async function POST(req: NextRequest) {
 
     console.log('Financing application submitted successfully:', lead)
     
-    // TODO: Send email notification to dealer
-    // TODO: Send confirmation email to customer
-    // TODO: Integrate with CRM system
+    // Send email notification to dealer
+    try {
+      await resend.emails.send({
+        from: 'noreply@unlimitedauto.com', // You'll need to verify this domain
+        to: 'unlimitedautoredford@gmail.com',
+        subject: `New Credit Application from ${lead.name} - Unlimited Auto`,
+        html: `
+          <h2>New Credit Application Received!</h2>
+          <p><strong>Name:</strong> ${lead.name}</p>
+          <p><strong>Email:</strong> ${lead.email}</p>
+          <p><strong>Phone:</strong> ${lead.phone}</p>
+          <p><strong>Address:</strong> ${lead.address || 'N/A'}</p>
+          <p><strong>City:</strong> ${lead.city || 'N/A'}</p>
+          <p><strong>State:</strong> ${lead.state || 'N/A'}</p>
+          <p><strong>Zip:</strong> ${lead.zip_code || 'N/A'}</p>
+          <p><strong>Income:</strong> ${lead.income || 'N/A'}</p>
+          <p><strong>Net Monthly Income:</strong> ${lead.net_monthly_income || 'N/A'}</p>
+          <p><strong>Employer:</strong> ${lead.employer || 'N/A'}</p>
+          <p><strong>Months on Job:</strong> ${lead.months_on_job || 'N/A'}</p>
+          <p><strong>Down Payment:</strong> ${lead.down_payment || 'N/A'}</p>
+          <p><strong>Credit Score:</strong> ${lead.credit_score || 'N/A'}</p>
+          <p><strong>Vehicle Interest:</strong> ${lead.vehicle_interest || 'N/A'}</p>
+          <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
+        `,
+      })
+      console.log('Credit application email notification sent successfully')
+    } catch (emailError) {
+      console.error('Error sending credit application email notification:', emailError)
+      // Continue even if email fails
+    }
 
     return NextResponse.json({ 
       success: true, 
