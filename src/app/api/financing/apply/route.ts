@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/auth'
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Initialize Resend only if API key is available
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
 export async function POST(req: NextRequest) {
   try {
@@ -80,9 +81,10 @@ export async function POST(req: NextRequest) {
 
     console.log('Financing application submitted successfully:', lead)
     
-    // Send email notification to dealer
-    try {
-      await resend.emails.send({
+        // Send email notification to dealer
+        if (resend) {
+          try {
+            await resend.emails.send({
         from: 'noreply@unlimitedauto.com', // You'll need to verify this domain
         to: 'unlimitedautoredford@gmail.com',
         subject: `New Credit Application from ${lead.name} - Unlimited Auto`,
@@ -105,11 +107,14 @@ export async function POST(req: NextRequest) {
           <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
         `,
       })
-      console.log('Credit application email notification sent successfully')
-    } catch (emailError) {
-      console.error('Error sending credit application email notification:', emailError)
-      // Continue even if email fails
-    }
+          console.log('Credit application email notification sent successfully')
+        } catch (emailError) {
+          console.error('Error sending credit application email notification:', emailError)
+          // Continue even if email fails
+        }
+        } else {
+          console.log('Resend API key not configured - skipping email notification')
+        }
 
     return NextResponse.json({ 
       success: true, 
