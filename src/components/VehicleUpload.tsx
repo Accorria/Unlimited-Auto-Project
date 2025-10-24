@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef } from 'react'
-import { validateFilename, parseFilename, MODEL_MAP, type AngleCode } from '@/lib/vehicleImages'
+import { validateFilename, parseFilename, MODEL_MAP } from '@/lib/vehicleImages'
 import imageCompression from 'browser-image-compression'
 
 interface UploadFile {
@@ -15,7 +15,7 @@ interface UploadFile {
   parsed?: {
     year: number
     modelCode: string
-    angle: AngleCode
+    angle: string
     make?: string
     model?: string
   }
@@ -261,7 +261,7 @@ export default function VehicleUpload({ onUploadComplete, className = '' }: Vehi
               Drag and drop your photos here, or click to browse
             </p>
             <p className="text-sm text-gray-500">
-              Files should be named: <code className="bg-gray-100 px-2 py-1 rounded">2021TB_FDS.jpg</code>
+              Any image filename is accepted - no specific naming required
             </p>
             <p className="text-xs text-gray-400 mt-2">
               Large images will be automatically compressed for faster uploads

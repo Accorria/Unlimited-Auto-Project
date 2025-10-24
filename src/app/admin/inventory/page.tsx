@@ -3,11 +3,40 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useNotifications } from '@/components/Notification'
 
-// Sample vehicle data - in production, this would come from an API
-const sampleVehicles = [
+interface Vehicle {
+  id: string
+  year: number
+  make: string
+  model: string
+  trim?: string
+  price?: number
+  miles?: number
+  coverPhoto?: string
+  photos?: Array<{
+    id: string
+    angle: string
+    file_path: string
+    public_url: string
+  }>
+  description?: string
+  status: string
+  vin?: string
+  // Legacy fields for fallback data
+  features?: string[]
+  condition?: string
+  fuelType?: string
+  transmission?: string
+  drivetrain?: string
+  color?: string
+  images?: string[] // For fallback data
+}
+
+// Sample vehicle data - fallback if API fails
+const sampleVehicles: Vehicle[] = [
   {
-    id: 1,
+    id: '1',
     year: 2020,
     make: 'Honda',
     model: 'Civic',
@@ -31,7 +60,7 @@ const sampleVehicles = [
     images: ['https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop']
   },
   {
-    id: 2,
+    id: '2',
     year: 2019,
     make: 'Toyota',
     model: 'Camry',
@@ -55,7 +84,7 @@ const sampleVehicles = [
     images: ['https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=500&h=300&fit=crop']
   },
   {
-    id: 3,
+    id: '3',
     year: 2021,
     make: 'Nissan',
     model: 'Altima',
@@ -83,30 +112,112 @@ const sampleVehicles = [
 export default function InventoryManagement() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [vehicles, setVehicles] = useState(sampleVehicles)
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [selectedVehicles, setSelectedVehicles] = useState<string[]>([])
   const router = useRouter()
+  const { addNotification, NotificationContainer } = useNotifications()
 
   useEffect(() => {
     // Check authentication
     const auth = localStorage.getItem('adminAuth')
     if (auth === 'true') {
       setIsAuthenticated(true)
+      fetchVehicles()
     } else {
       router.push('/admin/login')
     }
   }, [router])
 
-  const handleDelete = (id: number) => {
-    if (confirm('Are you sure you want to delete this vehicle?')) {
-      setVehicles(vehicles.filter(vehicle => vehicle.id !== id))
+  const fetchVehicles = async () => {
+    try {
+      const response = await fetch('/api/vehicles?dealer=unlimited-auto')
+      if (response.ok) {
+        const data = await response.json()
+        setVehicles(data.vehicles || [])
+      } else {
+        console.error('Failed to fetch vehicles')
+        setVehicles(sampleVehicles)
+      }
+    } catch (error) {
+      console.error('Error fetching vehicles:', error)
+      setVehicles(sampleVehicles)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleStatusChange = (id: number, newStatus: string) => {
+  const handleDelete = async (id: string) => {
+    if (confirm('Are you sure you want to delete this vehicle? This action cannot be undone.')) {
+      try {
+        const response = await fetch(`/api/vehicles/${id}`, {
+          method: 'DELETE',
+        })
+        
+        if (response.ok) {
+          // Remove from local state
+          setVehicles(vehicles.filter(vehicle => vehicle.id !== id))
+          addNotification('Vehicle deleted successfully!', 'success')
+        } else {
+          addNotification('Failed to delete vehicle. Please try again.', 'error')
+        }
+      } catch (error) {
+        console.error('Error deleting vehicle:', error)
+        addNotification('Error deleting vehicle. Please try again.', 'error')
+      }
+    }
+  }
+
+  const handleStatusChange = (id: string, newStatus: string) => {
     setVehicles(vehicles.map(vehicle => 
       vehicle.id === id ? { ...vehicle, status: newStatus } : vehicle
     ))
+  }
+
+  const handleSelectVehicle = (id: string) => {
+    setSelectedVehicles(prev => 
+      prev.includes(id) 
+        ? prev.filter(vehicleId => vehicleId !== id)
+        : [...prev, id]
+    )
+  }
+
+  const handleSelectAll = () => {
+    if (selectedVehicles.length === filteredVehicles.length) {
+      setSelectedVehicles([])
+    } else {
+      setSelectedVehicles(filteredVehicles.map(vehicle => vehicle.id))
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedVehicles.length === 0) {
+      addNotification('Please select vehicles to delete', 'error')
+      return
+    }
+
+    if (confirm(`Are you sure you want to delete ${selectedVehicles.length} vehicle(s)? This action cannot be undone.`)) {
+      try {
+        const deletePromises = selectedVehicles.map(id => 
+          fetch(`/api/vehicles/${id}`, { method: 'DELETE' })
+        )
+        
+        const results = await Promise.all(deletePromises)
+        const successCount = results.filter(response => response.ok).length
+        
+        if (successCount === selectedVehicles.length) {
+          setVehicles(vehicles.filter(vehicle => !selectedVehicles.includes(vehicle.id)))
+          setSelectedVehicles([])
+          addNotification(`${successCount} vehicle(s) deleted successfully!`, 'success')
+        } else {
+          addNotification(`Only ${successCount} of ${selectedVehicles.length} vehicles were deleted`, 'error')
+        }
+      } catch (error) {
+        console.error('Error deleting vehicles:', error)
+        addNotification('Error deleting vehicles. Please try again.', 'error')
+      }
+    }
   }
 
   const filteredVehicles = vehicles.filter(vehicle => {
@@ -143,12 +254,22 @@ export default function InventoryManagement() {
                 <p className="text-sm text-gray-600">Manage your vehicle inventory</p>
               </div>
             </div>
-            <Link
-              href="/admin/inventory/add"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Add New Vehicle
-            </Link>
+            <div className="flex gap-3">
+              {selectedVehicles.length > 0 && (
+                <button
+                  onClick={handleBulkDelete}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Delete Selected ({selectedVehicles.length})
+                </button>
+              )}
+              <Link
+                href="/admin/inventory/add"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Add New Vehicle
+              </Link>
+            </div>
           </div>
         </div>
       </header>
@@ -213,6 +334,14 @@ export default function InventoryManagement() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <input
+                      type="checkbox"
+                      checked={selectedVehicles.length === filteredVehicles.length && filteredVehicles.length > 0}
+                      onChange={handleSelectAll}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Vehicle
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -236,11 +365,19 @@ export default function InventoryManagement() {
                 {filteredVehicles.map((vehicle) => (
                   <tr key={vehicle.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={selectedVehicles.includes(vehicle.id)}
+                        onChange={() => handleSelectVehicle(vehicle.id)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-12 w-12">
                           <img
                             className="h-12 w-12 rounded-lg object-cover"
-                            src={vehicle.images[0]}
+                            src={vehicle.coverPhoto || vehicle.photos?.[0]?.public_url || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop'}
                             alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
                           />
                         </div>
@@ -255,14 +392,18 @@ export default function InventoryManagement() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">${vehicle.price.toLocaleString()}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {vehicle.price ? `$${vehicle.price.toLocaleString()}` : 'TBD'}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{vehicle.miles.toLocaleString()}</div>
+                      <div className="text-sm text-gray-900">
+                        {vehicle.miles ? vehicle.miles.toLocaleString() : 'TBD'}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                        {vehicle.condition}
+                        {vehicle.condition || vehicle.status || 'Available'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -338,6 +479,7 @@ export default function InventoryManagement() {
           </div>
         )}
       </div>
+      <NotificationContainer />
     </div>
   )
 }

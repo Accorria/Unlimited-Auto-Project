@@ -8,19 +8,16 @@ export default function Footer() {
           {/* Company Info */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">U</span>
-              </div>
               <div>
-                <div className="text-xl font-bold">UNLIMITED</div>
-                <div className="text-lg font-semibold text-blue-400">AUTO</div>
+                <div className="text-xl font-bold">UNLIMITED AUTO</div>
+                <div className="text-lg font-semibold text-blue-400">REPAIR & COLLISION</div>
               </div>
             </div>
             <p className="text-gray-300 mb-6 max-w-md">
               Your trusted local auto repair and collision center. We specialize in quality used vehicles, auto repair, collision services, and more with transparent pricing and exceptional customer service.
             </p>
             <div className="text-gray-300 space-y-2">
-              <p>📍 24645 Plymouth Rd, Redford, MI 48239</p>
+              <p>📍 24645 Plymouth Rd Unit A, Redford Township, MI 48239</p>
               <p>📞 (313) 766-4475</p>
               <p>📧 unlimitedautocollision@gmail.com</p>
             </div>

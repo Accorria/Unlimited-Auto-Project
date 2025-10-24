@@ -23,18 +23,52 @@ export default function ContactPage() {
     }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle form submission here
-    console.log('Form submitted:', formData)
-    alert('Thank you for your message! We\'ll get back to you soon.')
+    
+    try {
+      const response = await fetch('/api/leads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+          message: formData.message,
+          source: 'contact_form',
+          service: formData.service,
+          vehicleInterest: formData.vehicleInterest,
+          consent: true
+        }),
+      })
+
+      if (response.ok) {
+        alert('Thank you for your message! We\'ll get back to you soon.')
+        // Reset form
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          service: '',
+          message: '',
+          vehicleInterest: ''
+        })
+      } else {
+        alert('There was an error submitting your message. Please try again or call us directly.')
+      }
+    } catch (error) {
+      console.error('Error submitting contact form:', error)
+      alert('There was an error submitting your message. Please try again or call us directly.')
+    }
   }
 
   const contactInfo = [
     {
       icon: '📍',
       title: 'Address',
-      details: ['24645 Plymouth Rd', 'Redford, MI 48239'],
+      details: ['24645 Plymouth Rd Unit A', 'Redford Township, MI 48239'],
       action: 'Get Directions'
     },
     {
@@ -142,7 +176,7 @@ export default function ContactPage() {
                   name="service"
                   value={formData.service}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 >
                   <option value="">Select a service</option>
                   {services.map((service) => (
@@ -159,7 +193,7 @@ export default function ContactPage() {
                   value={formData.vehicleInterest}
                   onChange={handleInputChange}
                   placeholder="e.g., 2020 Honda Civic"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 />
               </div>
 
@@ -172,7 +206,7 @@ export default function ContactPage() {
                   required
                   rows={4}
                   placeholder="Tell us how we can help you..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
                 />
               </div>
 
@@ -209,15 +243,30 @@ export default function ContactPage() {
               ))}
             </div>
 
-            {/* Map Placeholder */}
+            {/* Interactive Map */}
             <div className="bg-white rounded-lg shadow-lg p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Find Us</h3>
-              <div className="bg-gray-200 h-64 rounded-lg flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-4xl mb-2">🗺️</div>
-                  <p className="text-gray-600">Interactive Map</p>
-                  <p className="text-sm text-gray-500">24645 Plymouth Rd, Redford, MI 48239</p>
-                </div>
+              <div className="h-64 rounded-lg overflow-hidden">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2948.123456789!2d-83.296234!3d42.376234!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x883b2c1234567890%3A0x1234567890abcdef!2s24645%20Plymouth%20Rd%20Unit%20A%2C%20Redford%20Township%2C%20MI%2048239!5e0!3m2!1sen!2sus!4v1234567890123!5m2!1sen!2sus"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Unlimited Auto Location"
+                ></iframe>
+              </div>
+              <div className="mt-4 text-center">
+                <a
+                  href="https://www.google.com/maps/dir//24645+Plymouth+Rd+Unit+A,+Redford+Township,+MI+48239"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Get Directions →
+                </a>
               </div>
             </div>
 

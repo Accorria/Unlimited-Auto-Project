@@ -31,6 +31,10 @@ export default function FinancingPage() {
     interestRate: 6.9
   })
 
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [submitMessage, setSubmitMessage] = useState('')
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({
@@ -45,6 +49,55 @@ export default function FinancingPage() {
       ...prev,
       [name]: parseFloat(value) || 0
     }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setSubmitStatus('idle')
+    setSubmitMessage('')
+
+    try {
+      const response = await fetch('/api/financing/apply', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        setSubmitStatus('success')
+        setSubmitMessage(result.message || 'Application submitted successfully!')
+        // Reset form
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          phone: '',
+          address: '',
+          city: '',
+          state: '',
+          zip: '',
+          employment: '',
+          income: '',
+          downPayment: '',
+          creditScore: '',
+          vehicleInterest: ''
+        })
+      } else {
+        setSubmitStatus('error')
+        setSubmitMessage(result.error || 'Failed to submit application. Please try again.')
+      }
+    } catch (error) {
+      console.error('Form submission error:', error)
+      setSubmitStatus('error')
+      setSubmitMessage('Network error. Please check your connection and try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const calculatePayment = () => {
@@ -72,9 +125,12 @@ export default function FinancingPage() {
       <section className="bg-gradient-to-r from-blue-800 to-blue-900 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">Easy Financing Solutions</h1>
-            <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">Fastest Financial Improvement in Redford</h1>
+            <p className="text-xl text-blue-100 mb-4 max-w-3xl mx-auto">
               Redford's easiest credit approval! We work with ALL credit types - good, bad, or no credit. Get approved in minutes, not days!
+            </p>
+            <p className="text-lg text-blue-200 mb-8 max-w-3xl mx-auto">
+              Just bring your Photo ID and we'll help you get behind the wheel today!
             </p>
             
             {/* Trust Badges */}
@@ -130,11 +186,23 @@ export default function FinancingPage() {
           {/* Application Form */}
           <div className="bg-white rounded-lg shadow-lg p-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Get Pre-Approved Today!</h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 mb-4">
               Fill out this quick form and we'll get back to you within minutes with your pre-approval status.
             </p>
             
-            <form className="space-y-4">
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800 mb-3">
+                <strong>Need a comprehensive credit application?</strong> For detailed financing with multiple lenders, use our full credit application form.
+              </p>
+              <Link
+                href="/credit-application"
+                className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+              >
+                Complete Credit Application →
+              </Link>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
@@ -312,11 +380,27 @@ export default function FinancingPage() {
                 />
               </div>
 
+              {/* Status Messages */}
+              {submitStatus === 'success' && (
+                <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg">
+                  <p className="font-semibold">Success!</p>
+                  <p>{submitMessage}</p>
+                </div>
+              )}
+              
+              {submitStatus === 'error' && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
+                  <p className="font-semibold">Error</p>
+                  <p>{submitMessage}</p>
+                </div>
+              )}
+
               <button
                 type="submit"
-                className="w-full bg-blue-600 text-white py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors"
+                disabled={isSubmitting}
+                className="w-full bg-blue-600 text-white py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
-                Submit Application
+                {isSubmitting ? 'Submitting...' : 'Submit Application'}
               </button>
             </form>
           </div>

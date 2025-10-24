@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createServerClient } from '@/lib/auth'
 
 export async function GET(req: NextRequest) {
   try {
@@ -9,6 +9,22 @@ export async function GET(req: NextRequest) {
     const year = searchParams.get('year')
     const minPrice = searchParams.get('minPrice')
     const maxPrice = searchParams.get('maxPrice')
+    const dealerSlug = searchParams.get('dealer') || 'unlimited-auto'
+
+    // Use service role client to bypass RLS
+    const supabase = createServerClient()
+
+    // First, get the dealer ID from the slug
+    const { data: dealer, error: dealerError } = await supabase
+      .from('dealers')
+      .select('id')
+      .eq('slug', dealerSlug)
+      .single()
+
+    if (dealerError || !dealer) {
+      console.error('Error fetching dealer:', dealerError)
+      return NextResponse.json({ error: 'Dealer not found' }, { status: 404 })
+    }
 
     let query = supabase
       .from('vehicles')
@@ -21,7 +37,7 @@ export async function GET(req: NextRequest) {
           file_path
         )
       `)
-      .eq('dealer_id', 'unlimited-auto')
+      .eq('dealer_id', dealer.id)
       .order('created_at', { ascending: false })
 
     // Apply filters
@@ -57,6 +73,62 @@ export async function GET(req: NextRequest) {
     }) || []
 
     return NextResponse.json({ vehicles: transformedVehicles })
+
+  } catch (error: any) {
+    console.error('API error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json()
+    console.log('Received vehicle data:', body)
+
+    // Use service role client to bypass RLS
+    const supabase = createServerClient()
+
+    // First, get the dealer ID from the slug
+    const { data: dealer, error: dealerError } = await supabase
+      .from('dealers')
+      .select('id')
+      .eq('slug', 'unlimited-auto')
+      .single()
+
+    if (dealerError || !dealer) {
+      console.error('Error fetching dealer:', dealerError)
+      return NextResponse.json({ error: 'Dealer not found' }, { status: 404 })
+    }
+
+    // Insert the vehicle (only fields that exist in database)
+    const { data: vehicle, error: vehicleError } = await supabase
+      .from('vehicles')
+      .insert({
+        dealer_id: dealer.id,
+        year: body.year,
+        make: body.make,
+        model: body.model,
+        trim: body.trim,
+        miles: body.miles,
+        price: body.price,
+        vin: body.vin,
+        description: body.description,
+        status: body.status || 'available'
+      })
+      .select()
+      .single()
+
+    if (vehicleError) {
+      console.error('Error inserting vehicle:', vehicleError)
+      return NextResponse.json({ error: 'Failed to save vehicle' }, { status: 500 })
+    }
+
+    console.log('Vehicle saved successfully:', vehicle)
+    return NextResponse.json({ 
+      success: true, 
+      vehicle: vehicle,
+      message: 'Vehicle added successfully!' 
+    })
 
   } catch (error: any) {
     console.error('API error:', error)

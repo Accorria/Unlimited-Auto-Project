@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
-import ProtectedRoute from '@/components/ProtectedRoute'
-import RoleBasedNav from '@/components/RoleBasedNav'
+import { useRouter } from 'next/navigation'
+import AdminLayout from '@/components/AdminLayout'
 import { Dealer } from '@/lib/types'
 
 // Sample dealers data - in production, this would come from Supabase
@@ -11,8 +10,8 @@ const sampleDealers: Dealer[] = [
   {
     id: 'dealer-1',
     slug: 'unlimited-auto',
-    name: 'Unlimited Auto',
-    address: '24645 Plymouth Rd, Redford, MI 48239',
+    name: 'Unlimited Auto Repair & Collision LLC',
+    address: '24645 Plymouth Rd Unit A, Redford Township, MI 48239',
     phone: '(313) 766-4475',
     email: 'info@unlimitedauto.com',
     website: 'https://unlimitedauto.com',
@@ -75,7 +74,34 @@ const sampleDealers: Dealer[] = [
 ]
 
 export default function DealersManagement() {
-  const { user, signOut } = useAuth()
+  const [user, setUser] = useState<any>(null)
+  const router = useRouter()
+
+  // Check admin authentication
+  useEffect(() => {
+    const userData = localStorage.getItem('adminUser')
+    const isLoggedIn = localStorage.getItem('adminAuth')
+    
+    if (isLoggedIn === 'true' && userData) {
+      try {
+        if (userData.startsWith('{')) {
+          setUser(JSON.parse(userData))
+        } else {
+          setUser({
+            id: 1,
+            email: 'admin@unlimitedauto.com',
+            name: 'Admin User',
+            role: 'admin'
+          })
+        }
+      } catch (error) {
+        console.error('Error parsing user data:', error)
+        router.push('/admin/login')
+      }
+    } else {
+      router.push('/admin/login')
+    }
+  }, [router])
   const [dealers, setDealers] = useState<Dealer[]>(sampleDealers)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -90,8 +116,10 @@ export default function DealersManagement() {
     is_active: true
   })
 
-  const handleLogout = async () => {
-    await signOut()
+  const handleLogout = () => {
+    localStorage.removeItem('adminAuth')
+    localStorage.removeItem('adminUser')
+    router.push('/admin/login')
   }
 
   const handleCreateDealer = async (e: React.FormEvent) => {
@@ -159,10 +187,20 @@ export default function DealersManagement() {
     setShowEditModal(true)
   }
 
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <ProtectedRoute requiredRoles={['super_admin']}>
+    <AdminLayout>
       <div className="min-h-screen bg-gray-50">
-        <RoleBasedNav user={user} />
         
         {/* Header */}
         <header className="bg-white shadow">
@@ -530,6 +568,6 @@ export default function DealersManagement() {
           </div>
         )}
       </div>
-    </ProtectedRoute>
+    </AdminLayout>
   )
 }

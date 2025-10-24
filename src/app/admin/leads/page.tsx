@@ -1,12 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
-import ProtectedRoute from '@/components/ProtectedRoute'
-import RoleBasedNav from '@/components/RoleBasedNav'
-import { Lead, LeadStatus, UserRole } from '@/lib/types'
+import { useRouter } from 'next/navigation'
+import AdminLayout from '@/components/AdminLayout'
+import { Lead, LeadStatus } from '@/lib/types'
 
-// Sample leads data - in production, this would come from Supabase
+// Sample leads data - fallback if API fails
 const sampleLeads: Lead[] = [
   {
     id: '1',
@@ -85,14 +84,68 @@ const statusLabels: Record<LeadStatus, string> = {
 }
 
 export default function LeadsManagement() {
-  const { user, signOut } = useAuth()
-  const [leads, setLeads] = useState<Lead[]>(sampleLeads)
+  const [user, setUser] = useState<any>(null)
+  const [leads, setLeads] = useState<Lead[]>([])
   const [filterStatus, setFilterStatus] = useState<LeadStatus | 'all'>('all')
   const [filterSource, setFilterSource] = useState<string>('all')
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
-  const handleLogout = async () => {
-    await signOut()
+  // Check admin authentication
+  useEffect(() => {
+    const userData = localStorage.getItem('adminUser')
+    const isLoggedIn = localStorage.getItem('adminAuth')
+    
+    if (isLoggedIn === 'true' && userData) {
+      try {
+        if (userData.startsWith('{')) {
+          setUser(JSON.parse(userData))
+        } else {
+          setUser({
+            id: 1,
+            email: 'admin@unlimitedauto.com',
+            name: 'Admin User',
+            role: 'admin'
+          })
+        }
+      } catch (error) {
+        console.error('Error parsing user data:', error)
+        router.push('/admin/login')
+      }
+    } else {
+      router.push('/admin/login')
+    }
+  }, [router])
+
+  // Fetch leads from API
+  useEffect(() => {
+    const fetchLeads = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/leads')
+        if (response.ok) {
+          const data = await response.json()
+          setLeads(data.leads || [])
+        } else {
+          console.error('Failed to fetch leads, using sample data')
+          setLeads(sampleLeads)
+        }
+      } catch (error) {
+        console.error('Error fetching leads:', error)
+        setLeads(sampleLeads)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchLeads()
+  }, [])
+
+  const handleLogout = () => {
+    localStorage.removeItem('adminAuth')
+    localStorage.removeItem('adminUser')
+    router.push('/admin/login')
   }
 
   const handleStatusChange = (leadId: string, newStatus: LeadStatus) => {
@@ -132,10 +185,37 @@ export default function LeadsManagement() {
   const canUpdateStatus = user?.role === 'super_admin' || user?.role === 'dealer_admin' || user?.role === 'sales_manager' || 
     (user?.role === 'sales_rep' && selectedLead?.assigned_to === user.id)
 
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="min-h-screen bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading leads...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </AdminLayout>
+    )
+  }
+
   return (
-    <ProtectedRoute>
+    <AdminLayout>
       <div className="min-h-screen bg-gray-50">
-        <RoleBasedNav user={user} />
         
         {/* Header */}
         <header className="bg-white shadow">
@@ -367,6 +447,6 @@ export default function LeadsManagement() {
           )}
         </div>
       </div>
-    </ProtectedRoute>
+    </AdminLayout>
   )
 }

@@ -3,18 +3,33 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import vehicleData from '@/data/vehicle-data.json'
 
 interface Vehicle {
-  id: number
+  id: string
   year: number
   make: string
   model: string
-  trim: string
-  price: number
-  miles: number
+  trim?: string
+  price?: number
+  miles?: number
   coverPhoto?: string
-  features: string[]
-  condition: string
+  photos?: Array<{
+    id: string
+    angle: string
+    file_path: string
+    public_url: string
+  }>
+  description?: string
+  status: string
+  vin?: string
+  // Legacy fields for fallback data
+  features?: string[]
+  condition?: string
+  fuelType?: string
+  transmission?: string
+  drivetrain?: string
+  color?: string
 }
 
 export default function FeaturedVehicles() {
@@ -22,115 +37,46 @@ export default function FeaturedVehicles() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchVehicles = async () => {
+    const loadFeaturedVehicles = () => {
       try {
-        const response = await fetch('/api/vehicles')
-        if (response.ok) {
-          const data = await response.json()
-          // Get the 3 most expensive vehicles for featured section
-          const featuredVehicles = data.vehicles
-            .sort((a: Vehicle, b: Vehicle) => b.price - a.price)
-            .slice(0, 3)
-          setVehicles(featuredVehicles)
-        } else {
-          // Fallback to hardcoded data if API fails
-          setVehicles([
-            {
-              id: 1,
-              year: 2020,
-              make: 'Honda',
-              model: 'Civic',
-              trim: 'LX',
-              price: 18995,
-              miles: 45000,
-              coverPhoto: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop',
-              features: ['Automatic', 'Bluetooth', 'Backup Camera'],
-              condition: 'Excellent'
-            },
-            {
-              id: 2,
-              year: 2019,
-              make: 'Toyota',
-              model: 'Camry',
-              trim: 'LE',
-              price: 21995,
-              miles: 38000,
-              coverPhoto: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=500&h=300&fit=crop',
-              features: ['Automatic', 'Lane Assist', 'Cruise Control'],
-              condition: 'Very Good'
-            },
-            {
-              id: 3,
-              year: 2021,
-              make: 'Nissan',
-              model: 'Altima',
-              trim: 'SV',
-              price: 23995,
-              miles: 25000,
-              coverPhoto: 'https://images.unsplash.com/photo-1549317336-206569e8475c?w=500&h=300&fit=crop',
-              features: ['CVT', 'Apple CarPlay', 'Heated Seats'],
-              condition: 'Like New'
-            }
-          ])
-        }
+        // Use our vehicle data and show 6 featured vehicles
+        const featuredVehicles = vehicleData
+          .filter(vehicle => vehicle.status === 'available' && vehicle.price)
+          .sort((a: Vehicle, b: Vehicle) => {
+            // Sort by price (higher prices first for featured section)
+            const aPrice = a.price || 0
+            const bPrice = b.price || 0
+            if (aPrice !== bPrice) return bPrice - aPrice
+            // Then by year (newer first)
+            return b.year - a.year
+          })
+          .slice(0, 6) // Show 6 vehicles instead of 3
+        setVehicles(featuredVehicles)
       } catch (error) {
-        console.error('Error fetching vehicles:', error)
-        // Fallback to hardcoded data
-        setVehicles([
-          {
-            id: 1,
-            year: 2020,
-            make: 'Honda',
-            model: 'Civic',
-            trim: 'LX',
-            price: 18995,
-            miles: 45000,
-            coverPhoto: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop',
-            features: ['Automatic', 'Bluetooth', 'Backup Camera'],
-            condition: 'Excellent'
-          },
-          {
-            id: 2,
-            year: 2019,
-            make: 'Toyota',
-            model: 'Camry',
-            trim: 'LE',
-            price: 21995,
-            miles: 38000,
-            coverPhoto: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=500&h=300&fit=crop',
-            features: ['Automatic', 'Lane Assist', 'Cruise Control'],
-            condition: 'Very Good'
-          },
-          {
-            id: 3,
-            year: 2021,
-            make: 'Nissan',
-            model: 'Altima',
-            trim: 'SV',
-            price: 23995,
-            miles: 25000,
-            coverPhoto: 'https://images.unsplash.com/photo-1549317336-206569e8475c?w=500&h=300&fit=crop',
-            features: ['CVT', 'Apple CarPlay', 'Heated Seats'],
-            condition: 'Like New'
-          }
-        ])
+        console.error('Error loading vehicles:', error)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchVehicles()
+    loadFeaturedVehicles()
   }, [])
   return (
     <section className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Featured Vehicles
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            Vehicles for Sale & Lease
           </h2>
           <p className="text-xl text-gray-600 mb-6">
-            Quality cars at great prices. All vehicles come with our satisfaction guarantee.
+            Quality cars at great prices. All vehicles come with our satisfaction guarantee and easy financing options.
           </p>
+          <Link
+            href="/inventory"
+            className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors"
+          >
+            View All Inventory
+          </Link>
         </div>
 
         {loading ? (
@@ -153,10 +99,10 @@ export default function FeaturedVehicles() {
                   $999 Down
                 </div>
                 <div className="absolute top-4 left-4 bg-green-500 text-white px-3 py-1 rounded-lg text-sm font-semibold">
-                  {vehicle.condition}
+                  {vehicle.condition || vehicle.status || 'Available'}
                 </div>
                 <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-1 rounded-lg text-sm">
-                  {vehicle.miles.toLocaleString()} miles
+                  {vehicle.miles ? `${vehicle.miles.toLocaleString()} miles` : 'Miles TBD'}
                 </div>
               </div>
 
@@ -166,16 +112,22 @@ export default function FeaturedVehicles() {
                     {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim}
                   </h3>
                   <span className="text-2xl font-bold text-blue-600">
-                    ${vehicle.price.toLocaleString()}
+                    {vehicle.price ? `$${vehicle.price.toLocaleString()}` : 'Call for Price'}
                   </span>
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-6">
-                  {vehicle.features.map((feature, index) => (
-                    <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                      {feature}
+                  {vehicle.features && vehicle.features.length > 0 ? (
+                    vehicle.features.map((feature, index) => (
+                      <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                        {feature}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-medium">
+                      {vehicle.description || 'No features listed'}
                     </span>
-                  ))}
+                  )}
                 </div>
 
                 <div className="flex gap-3">

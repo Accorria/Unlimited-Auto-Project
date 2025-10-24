@@ -10,8 +10,8 @@ export default function AdminSettings() {
   const router = useRouter()
 
   const [settings, setSettings] = useState({
-    businessName: 'Unlimited Auto',
-    businessAddress: '24645 Plymouth Rd, Redford, MI 48239',
+    businessName: 'Unlimited Auto Repair & Collision LLC',
+    businessAddress: '24645 Plymouth Rd Unit A, Redford Township, MI 48239',
     businessPhone: '(313) 766-4475',
     businessEmail: 'info@unlimitedauto.com',
     businessHours: {

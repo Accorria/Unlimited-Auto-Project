@@ -7,27 +7,53 @@ import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 
 interface Vehicle {
-  id: number
+  id: string
   year: number
   make: string
   model: string
-  trim: string
-  price: number
-  miles: number
+  trim?: string
+  price?: number
+  miles?: number
   coverPhoto?: string
-  features: string[]
-  condition: string
-  fuelType: string
-  transmission: string
-  drivetrain: string
-  color: string
-  vin: string
+  photos?: Array<{
+    id: string
+    angle: string
+    file_path: string
+    public_url: string
+  }>
+  description?: string
+  status: string
+  vin?: string
+  // Legacy fields for fallback data
+  features?: string[]
+  condition?: string
+  fuelType?: string
+  transmission?: string
+  drivetrain?: string
+  color?: string
+  // API response fields
+  dealer_id?: string
+  model_code?: string
+  cost?: number
+  title_status?: string
+  assigned_to?: string
+  created_at?: string
+  updated_at?: string
+  vehicle_photos?: Array<{
+    id: string
+    angle: string
+    file_path: string
+    public_url: string
+  }>
 }
 
-// Fallback vehicle data
+// Import vehicle data
+import vehicleData from '@/data/vehicle-data.json';
+
+// Fallback vehicle data (keep as backup)
 const fallbackVehicles = [
   {
-    id: 1,
+    id: '1',
     year: 2020,
     make: 'Honda',
     model: 'Civic',
@@ -41,10 +67,11 @@ const fallbackVehicles = [
     transmission: 'Automatic',
     drivetrain: 'FWD',
     color: 'Silver',
-    vin: '1HGCV1F3XLA123456'
+    vin: '1HGCV1F3XLA123456',
+    status: 'available'
   },
   {
-    id: 2,
+    id: '2',
     year: 2019,
     make: 'Toyota',
     model: 'Camry',
@@ -58,10 +85,11 @@ const fallbackVehicles = [
     transmission: 'Automatic',
     drivetrain: 'FWD',
     color: 'White',
-    vin: '4T1C11AK5KU123456'
+    vin: '4T1C11AK5KU123456',
+    status: 'available'
   },
   {
-    id: 3,
+    id: '3',
     year: 2021,
     make: 'Nissan',
     model: 'Altima',
@@ -75,10 +103,11 @@ const fallbackVehicles = [
     transmission: 'CVT',
     drivetrain: 'FWD',
     color: 'Black',
-    vin: '1N4BL4BV5MN123456'
+    vin: '1N4BL4BV5MN123456',
+    status: 'available'
   },
   {
-    id: 4,
+    id: '4',
     year: 2018,
     make: 'Ford',
     model: 'F-150',
@@ -92,10 +121,11 @@ const fallbackVehicles = [
     transmission: 'Automatic',
     drivetrain: '4WD',
     color: 'Blue',
-    vin: '1FTFW1ET5DFC12345'
+    vin: '1FTFW1ET5DFC12345',
+    status: 'available'
   },
   {
-    id: 5,
+    id: '5',
     year: 2020,
     make: 'Chevrolet',
     model: 'Equinox',
@@ -109,10 +139,11 @@ const fallbackVehicles = [
     transmission: 'Automatic',
     drivetrain: 'AWD',
     color: 'Red',
-    vin: '2GNAXUEV5L6123456'
+    vin: '2GNAXUEV5L6123456',
+    status: 'available'
   },
   {
-    id: 6,
+    id: '6',
     year: 2019,
     make: 'Hyundai',
     model: 'Elantra',
@@ -126,13 +157,15 @@ const fallbackVehicles = [
     transmission: 'Automatic',
     drivetrain: 'FWD',
     color: 'Gray',
-    vin: '5NPE34AF5KH123456'
+    vin: '5NPE34AF5KH123456',
+    status: 'available'
   }
 ]
 
 export default function InventoryPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [loading, setLoading] = useState(true)
+  
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedMake, setSelectedMake] = useState('')
   const [selectedPriceRange, setSelectedPriceRange] = useState('')
@@ -142,11 +175,21 @@ export default function InventoryPage() {
   useEffect(() => {
     const fetchVehicles = async () => {
       try {
-        const response = await fetch('/api/vehicles')
+        // First try to load from our generated vehicle data
+        if (vehicleData && vehicleData.length > 0) {
+          setVehicles(vehicleData)
+          setLoading(false)
+          return
+        }
+        
+        // Fallback to API if no local data
+        const response = await fetch('/api/vehicles?dealer=unlimited-auto')
+        
         if (response.ok) {
           const data = await response.json()
           setVehicles(data.vehicles || [])
         } else {
+          console.error('API failed with status:', response.status)
           // Fallback to hardcoded data if API fails
           setVehicles(fallbackVehicles)
         }
@@ -168,14 +211,17 @@ export default function InventoryPage() {
   // Filter and sort vehicles
   const filteredVehicles = useMemo(() => {
     let filtered = vehicles.filter(vehicle => {
-      const matchesSearch = vehicle.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           vehicle.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           vehicle.year.toString().includes(searchTerm)
+      // Search filter - be more permissive
+      const matchesSearch = !searchTerm || 
+                           vehicle.make?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           vehicle.model?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           vehicle.year?.toString().includes(searchTerm)
+      
       const matchesMake = !selectedMake || vehicle.make === selectedMake
-      const matchesYear = !selectedYear || vehicle.year.toString() === selectedYear
+      const matchesYear = !selectedYear || vehicle.year?.toString() === selectedYear
       
       let matchesPrice = true
-      if (selectedPriceRange) {
+      if (selectedPriceRange && vehicle.price) {
         const [min, max] = selectedPriceRange.split('-').map(Number)
         if (max) {
           matchesPrice = vehicle.price >= min && vehicle.price <= max
@@ -191,24 +237,24 @@ export default function InventoryPage() {
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'price-low':
-          return a.price - b.price
+          return (a.price || 0) - (b.price || 0)
         case 'price-high':
-          return b.price - a.price
+          return (b.price || 0) - (a.price || 0)
         case 'year-new':
           return b.year - a.year
         case 'year-old':
           return a.year - b.year
         case 'miles-low':
-          return a.miles - b.miles
+          return (a.miles || 0) - (b.miles || 0)
         case 'miles-high':
-          return b.miles - a.miles
+          return (b.miles || 0) - (a.miles || 0)
         default:
           return 0
       }
     })
 
     return filtered
-  }, [searchTerm, selectedMake, selectedPriceRange, selectedYear, sortBy])
+  }, [vehicles, searchTerm, selectedMake, selectedPriceRange, selectedYear, sortBy])
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -237,7 +283,7 @@ export default function InventoryPage() {
                 placeholder="Search by make, model, or year..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
               />
             </div>
 
@@ -246,7 +292,7 @@ export default function InventoryPage() {
               <select
                 value={selectedMake}
                 onChange={(e) => setSelectedMake(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
               >
                 <option value="">All Makes</option>
                 {makes.map(make => (
@@ -277,6 +323,7 @@ export default function InventoryPage() {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">All Prices</option>
+                <option value="0-5000">Under $5,000</option>
                 <option value="0-15000">Under $15,000</option>
                 <option value="15000-20000">$15,000 - $20,000</option>
                 <option value="20000-25000">$20,000 - $25,000</option>
@@ -316,7 +363,10 @@ export default function InventoryPage() {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
               <span className="ml-3 text-gray-600">Loading vehicles...</span>
             </div>
-          ) : filteredVehicles.length === 0 ? (
+          ) : (
+            <>
+              {/* Debug info removed - issue fixed! */}
+              {filteredVehicles.length === 0 ? (
             <div className="text-center py-16">
               <h3 className="text-2xl font-bold text-gray-900 mb-4">No vehicles found</h3>
               <p className="text-gray-600 mb-8">Try adjusting your search criteria</p>
@@ -347,39 +397,47 @@ export default function InventoryPage() {
                       $999 Down
                     </div>
                     <div className="absolute top-4 left-4 bg-green-500 text-white px-3 py-1 rounded-lg text-sm font-semibold">
-                      {vehicle.condition}
+                      {vehicle.condition || vehicle.status || 'Available'}
                     </div>
                     <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-1 rounded-lg text-sm">
-                      {vehicle.miles.toLocaleString()} miles
+                      {vehicle.miles ? `${vehicle.miles.toLocaleString()} miles` : 'Miles TBD'}
                     </div>
                   </div>
 
                   <div className="p-6">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="text-xl font-bold text-gray-900">
-                        {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim}
+                        {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim || ''}
                       </h3>
                       <span className="text-2xl font-bold text-blue-600">
-                        ${vehicle.price.toLocaleString()}
+                        {vehicle.price ? `$${vehicle.price.toLocaleString()}` : 'Call for Price'}
                       </span>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 mb-4">
-                      <div>Transmission: {vehicle.transmission}</div>
-                      <div>Drivetrain: {vehicle.drivetrain}</div>
-                      <div>Fuel: {vehicle.fuelType}</div>
-                      <div>Color: {vehicle.color}</div>
+                      <div>Transmission: {vehicle.transmission || 'N/A'}</div>
+                      <div>Drivetrain: {vehicle.drivetrain || 'N/A'}</div>
+                      <div>Fuel: {vehicle.fuelType || 'N/A'}</div>
+                      <div>Color: {vehicle.color || 'N/A'}</div>
                     </div>
 
                     <div className="flex flex-wrap gap-2 mb-6">
-                      {vehicle.features.slice(0, 3).map((feature, index) => (
-                        <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                          {feature}
-                        </span>
-                      ))}
-                      {vehicle.features.length > 3 && (
+                      {vehicle.features && vehicle.features.length > 0 ? (
+                        <>
+                          {vehicle.features.slice(0, 3).map((feature, index) => (
+                            <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                              {feature}
+                            </span>
+                          ))}
+                          {vehicle.features.length > 3 && (
+                            <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-medium">
+                              +{vehicle.features.length - 3} more
+                            </span>
+                          )}
+                        </>
+                      ) : (
                         <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-medium">
-                          +{vehicle.features.length - 3} more
+                          {vehicle.description || 'No features listed'}
                         </span>
                       )}
                     </div>
@@ -402,6 +460,8 @@ export default function InventoryPage() {
                 </div>
               ))}
             </div>
+          )}
+            </>
           )}
         </div>
       </section>

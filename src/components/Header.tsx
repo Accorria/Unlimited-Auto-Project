@@ -15,11 +15,7 @@ export default function Header() {
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-2">
                 <span>📍</span>
-                <span>24645 Plymouth Rd, Redford, MI 48239</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span>📞</span>
-                <span>(313) 766-4475</span>
+                <span>24645 Plymouth Rd Unit A, Redford Township, MI 48239</span>
               </div>
             </div>
             <div className="hidden md:flex items-center space-x-4">
@@ -34,12 +30,9 @@ export default function Header() {
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">U</span>
-            </div>
             <div>
-              <div className="text-2xl font-bold text-gray-900">UNLIMITED</div>
-              <div className="text-lg font-semibold text-blue-600">AUTO</div>
+              <div className="text-2xl font-bold text-gray-900">UNLIMITED AUTO</div>
+              <div className="text-lg font-semibold text-blue-600">REPAIR & COLLISION</div>
             </div>
           </Link>
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface ImageUploadProps {
   onImagesChange: (images: string[]) => void
@@ -13,28 +13,38 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
   const [dragActive, setDragActive] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<Record<number, number>>({})
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [currentFile, setCurrentFile] = useState<string>('')
 
-  const compressImage = (file: File): Promise<File> => {
-    return new Promise((resolve) => {
+  // Cleanup object URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      images.forEach(image => {
+        if (image && image.startsWith('blob:')) {
+          URL.revokeObjectURL(image)
+        }
+      })
+    }
+  }, [])
+
+  // Image compression function
+  const compressImage = (file: File, maxSizeMB: number = 1, quality: number = 0.8): Promise<File> => {
+    return new Promise((resolve, reject) => {
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')
       const img = new Image()
       
       img.onload = () => {
-        // Calculate new dimensions (max 1920px width/height)
-        const maxSize = 1920
+        // Calculate new dimensions
         let { width, height } = img
+        const maxDimension = 1200 // Max width or height
         
-        if (width > height) {
-          if (width > maxSize) {
-            height = (height * maxSize) / width
-            width = maxSize
-          }
-        } else {
-          if (height > maxSize) {
-            width = (width * maxSize) / height
-            height = maxSize
-          }
+        if (width > height && width > maxDimension) {
+          height = (height * maxDimension) / width
+          width = maxDimension
+        } else if (height > maxDimension) {
+          width = (width * maxDimension) / height
+          height = maxDimension
         }
         
         canvas.width = width
@@ -42,63 +52,64 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
         
         // Draw and compress
         ctx?.drawImage(img, 0, 0, width, height)
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const compressedFile = new File([blob], file.name, {
-              type: 'image/jpeg',
-              lastModified: Date.now()
-            })
-            resolve(compressedFile)
-          } else {
-            resolve(file)
-          }
-        }, 'image/jpeg', 0.8)
+        
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now()
+              })
+              resolve(compressedFile)
+            } else {
+              reject(new Error('Compression failed'))
+            }
+          },
+          'image/jpeg',
+          quality
+        )
       }
       
+      img.onerror = () => reject(new Error('Image load failed'))
       img.src = URL.createObjectURL(file)
     })
   }
 
-  const convertHeicToJpeg = (file: File): Promise<File> => {
-    return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
-      const img = new Image()
+  const convertHeicToJpeg = async (file: File): Promise<File> => {
+    try {
+      console.log('Starting HEIC conversion for:', file.name, 'Size:', file.size)
       
-      img.onload = () => {
-        // Set canvas dimensions to match image
-        canvas.width = img.width
-        canvas.height = img.height
-        
-        // Draw the image on canvas
-        ctx?.drawImage(img, 0, 0)
-        
-        // Convert to JPEG blob
-        canvas.toBlob((blob) => {
-          if (blob) {
-            // Create new file with JPEG extension
-            const newFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg')
-            const jpegFile = new File([blob], newFileName, {
-              type: 'image/jpeg',
-              lastModified: Date.now()
-            })
-            resolve(jpegFile)
-          } else {
-            reject(new Error('Failed to convert HEIC to JPEG'))
-          }
-        }, 'image/jpeg', 0.9) // High quality JPEG
-      }
+      // Dynamic import of heic2any to avoid SSR issues
+      const heic2any = (await import('heic2any')).default
       
-      img.onerror = () => {
-        reject(new Error('Failed to load HEIC image'))
-      }
+      // Convert HEIC to JPEG
+      const convertedBlob = await heic2any({
+        blob: file,
+        toType: 'image/jpeg',
+        quality: 0.8 // Slightly lower quality for better compatibility
+      }) as Blob
       
-      // Try to load the HEIC file
-      img.src = URL.createObjectURL(file)
-    })
+      console.log('HEIC conversion successful. New blob size:', convertedBlob.size)
+      
+      // Create new file with JPEG extension
+      const newFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg')
+      const jpegFile = new File([convertedBlob], newFileName, {
+        type: 'image/jpeg',
+        lastModified: Date.now()
+      })
+      
+      console.log('Created JPEG file:', jpegFile.name, 'Size:', jpegFile.size, 'Type:', jpegFile.type)
+      
+      return jpegFile
+    } catch (error) {
+      console.error('HEIC conversion failed:', error)
+      throw new Error('Failed to convert HEIC file. Please try converting to JPEG manually.')
+    }
   }
 
   const handleFileUpload = async (files: FileList) => {
+    console.log('🚀 Starting NEW upload process with', files.length, 'files')
+    
     // Check if adding these files would exceed the maximum
     if (images.length + files.length > maxImages) {
       alert(`You can only upload up to ${maxImages} images. You currently have ${images.length} images and are trying to add ${files.length} more.`)
@@ -108,69 +119,98 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
     setUploading(true)
     const newImages: string[] = []
     const totalFiles = files.length
+    
+    console.log('📁 Processing', totalFiles, 'files...')
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
+      const fileSizeMB = Math.round(file.size / 1024 / 1024 * 100) / 100
+      console.log(`📸 Processing file ${i + 1}/${files.length}: ${file.name} (${fileSizeMB}MB)`)
+      setCurrentFile(file.name)
       
-      // Validate file type - accept HEIC files from iPhone
+      // Update progress
+      setUploadProgress(prev => ({ ...prev, [i]: 0 }))
+      
+      // Validate file type
       const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
       const isValidImage = validTypes.includes(file.type.toLowerCase()) || 
                           file.name.toLowerCase().endsWith('.heic') || 
                           file.name.toLowerCase().endsWith('.heif')
       
       if (!isValidImage) {
+        console.error('❌ Invalid file type:', file.name, file.type)
         alert(`${file.name} is not a supported image file. Please use JPEG, PNG, WebP, or HEIC files.`)
+        setUploadProgress(prev => ({ ...prev, [i]: 0 }))
         continue
       }
 
-      // Update progress
-      setUploadProgress(prev => ({ ...prev, [i]: 0 }))
-
       try {
-        // Always convert HEIC files to JPEG
         let processedFile = file
+        
+        // Step 1: Convert HEIC if needed (25% progress)
         if (file.type.toLowerCase() === 'image/heic' || 
             file.type.toLowerCase() === 'image/heif' || 
             file.name.toLowerCase().endsWith('.heic') || 
             file.name.toLowerCase().endsWith('.heif')) {
           
-          // Convert HEIC to JPEG
+          console.log('🔄 Converting HEIC to JPEG...')
+          setUploadProgress(prev => ({ ...prev, [i]: 25 }))
+          
           processedFile = await convertHeicToJpeg(file)
-        } else if (file.size > 2 * 1024 * 1024) { // If larger than 2MB
-          // Compress other image types if too large
-          processedFile = await compressImage(file)
+          console.log('✅ HEIC conversion complete')
         }
-
-        // Update progress
-        setUploadProgress(prev => ({ ...prev, [i]: 50 }))
-
-        // Convert to base64
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const result = e.target?.result as string
-          newImages.push(result)
+        
+        // Step 2: Compress if file is large (50% progress)
+        if (processedFile.size > 1024 * 1024) { // 1MB
+          console.log(`🗜️ Compressing large file: ${processedFile.name} (${Math.round(processedFile.size / 1024 / 1024)}MB)`)
+          setUploadProgress(prev => ({ ...prev, [i]: 50 }))
           
-          // Update progress
-          setUploadProgress(prev => ({ ...prev, [i]: 100 }))
-          
-          // Check if all files are processed
-          if (newImages.length === totalFiles) {
-            const updatedImages = [...images, ...newImages]
-            setImages(updatedImages)
-            onImagesChange(updatedImages)
-            setUploading(false)
-            setUploadProgress({})
+          try {
+            const compressedFile = await compressImage(processedFile, 1, 0.7)
+            const originalSize = Math.round(processedFile.size / 1024 / 1024 * 100) / 100
+            const compressedSize = Math.round(compressedFile.size / 1024 / 1024 * 100) / 100
+            console.log(`✅ Compressed ${processedFile.name}: ${originalSize}MB → ${compressedSize}MB`)
+            processedFile = compressedFile
+          } catch (compressionError) {
+            console.warn('⚠️ Compression failed, using original file:', compressionError)
           }
         }
-        reader.readAsDataURL(processedFile)
+        
+        // Step 3: Create object URL (75% progress)
+        setUploadProgress(prev => ({ ...prev, [i]: 75 }))
+        const objectUrl = URL.createObjectURL(processedFile)
+        newImages.push(objectUrl)
+        console.log(`✅ Successfully processed image ${i + 1}: ${processedFile.name}`)
+        
+        // Step 4: Complete (100% progress)
+        setUploadProgress(prev => ({ ...prev, [i]: 100 }))
+        
       } catch (error) {
-        console.error('Error processing image:', error)
-        alert(`Failed to process ${file.name}. Please try converting it to JPEG format first.`)
+        console.error('❌ Error processing image:', error)
+        setUploadProgress(prev => ({ ...prev, [i]: 0 }))
+        
+        if (file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+          alert(`Failed to convert ${file.name} from HEIC format. Please try:\n1. Converting to JPEG on your phone first\n2. Using a different image\n3. Taking a new photo in JPEG format`)
+        } else {
+          alert(`Failed to process ${file.name}. Please try a different image file.`)
+        }
       }
     }
+    
+    // Final step: Update images state
+    if (newImages.length > 0) {
+      const updatedImages = [...images, ...newImages]
+      setImages(updatedImages)
+      onImagesChange(updatedImages)
+      console.log('🎉 All files processed successfully!')
+    }
+    
+    setUploading(false)
+    setUploadProgress({})
+    setCurrentFile('')
   }
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleFileDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setDragActive(false)
     
@@ -179,12 +219,12 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
     }
   }
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleFileDragOver = (e: React.DragEvent) => {
     e.preventDefault()
     setDragActive(true)
   }
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const handleFileDragLeave = (e: React.DragEvent) => {
     e.preventDefault()
     setDragActive(false)
   }
@@ -196,6 +236,12 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
   }
 
   const removeImage = (index: number) => {
+    // Clean up object URL if it exists
+    const imageToRemove = images[index]
+    if (imageToRemove && imageToRemove.startsWith('blob:')) {
+      URL.revokeObjectURL(imageToRemove)
+    }
+    
     const updatedImages = images.filter((_, i) => i !== index)
     setImages(updatedImages)
     onImagesChange(updatedImages)
@@ -209,6 +255,29 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
     onImagesChange(updatedImages)
   }
 
+  // Drag and drop reordering
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault()
+    if (draggedIndex !== null && draggedIndex !== dropIndex) {
+      moveImage(draggedIndex, dropIndex)
+    }
+    setDraggedIndex(null)
+  }
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null)
+  }
+
   return (
     <div className="space-y-4">
       {/* Upload Area */}
@@ -218,9 +287,9 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
             ? 'border-blue-500 bg-blue-50' 
             : 'border-gray-300 hover:border-gray-400'
         }`}
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
+        onDrop={handleFileDrop}
+        onDragOver={handleFileDragOver}
+        onDragLeave={handleFileDragLeave}
       >
         <div className="space-y-4">
           <div className="text-4xl">📸</div>
@@ -253,20 +322,37 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
             {uploading ? 'Uploading...' : images.length >= maxImages ? 'Maximum Reached' : 'Choose Files'}
           </label>
           <p className="text-sm text-gray-500">
-            Supports JPG, PNG, WebP, HEIC (iPhone photos). Large images will be automatically compressed and HEIC files will be converted to JPEG.
+            Supports JPG, PNG, WebP, HEIC (iPhone photos). Large files are automatically compressed for faster uploads.
             {images.length >= maxImages && (
               <span className="block text-red-600 font-medium mt-1">
                 Maximum of {maxImages} photos reached. Remove some photos to add more.
               </span>
             )}
           </p>
+          <p className="text-xs text-green-600 mt-2">
+            🚀 NEW: Large files (1MB+) are automatically compressed to prevent upload hangs!
+          </p>
+          {images.length > 0 && (
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-xs text-yellow-800">
+                🔍 Debug: {images.length} images uploaded. Check browser console for details.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Upload Progress */}
       {uploading && Object.keys(uploadProgress).length > 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h4 className="text-sm font-medium text-blue-900 mb-2">Upload Progress</h4>
+          <h4 className="text-sm font-medium text-blue-900 mb-2">
+            📸 Processing Images...
+            {currentFile && (
+              <span className="text-xs text-blue-600 block mt-1">
+                Currently processing: {currentFile}
+              </span>
+            )}
+          </h4>
           {Object.entries(uploadProgress).map(([index, progress]) => (
             <div key={index} className="mb-2">
               <div className="flex justify-between text-sm text-blue-700 mb-1">
@@ -279,6 +365,18 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>
+              {progress === 25 && (
+                <div className="text-xs text-blue-600 mt-1">Converting HEIC...</div>
+              )}
+              {progress === 50 && (
+                <div className="text-xs text-blue-600 mt-1">Compressing large file...</div>
+              )}
+              {progress === 75 && (
+                <div className="text-xs text-blue-600 mt-1">Creating preview...</div>
+              )}
+              {progress === 100 && (
+                <div className="text-xs text-green-600 mt-1">✅ Complete!</div>
+              )}
             </div>
           ))}
         </div>
@@ -292,16 +390,36 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
           </h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
             {images.map((image, index) => (
-              <div key={index} className="relative group">
-                <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border-2 border-gray-200">
+              <div 
+                key={index} 
+                className={`relative group cursor-move transition-all duration-200 ${
+                  draggedIndex === index ? 'opacity-50 scale-95' : 'hover:scale-105'
+                }`}
+                draggable
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, index)}
+                onDragEnd={handleDragEnd}
+              >
+                <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border-2 border-gray-200 hover:border-blue-400 transition-colors">
                   <img
                     src={image}
                     alt={`Vehicle image ${index + 1}`}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover pointer-events-none"
+                    onLoad={() => {
+                      console.log(`Image ${index + 1} loaded successfully`)
+                    }}
                     onError={(e) => {
-                      // Fallback for broken images
                       const target = e.target as HTMLImageElement
-                      target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzlmYTJhNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIEVycm9yPC90ZXh0Pjwvc3ZnPg=='
+                      console.warn(`Image ${index + 1} failed to display. This is usually a browser limitation with large images.`)
+                      
+                      // Show a placeholder that indicates the image is there but can't be displayed
+                      target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzlmYTJhNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIFVwbG9hZGVkPC90ZXh0Pjwvc3ZnPg=='
+                    }}
+                    style={{
+                      backgroundColor: '#f3f4f6',
+                      minHeight: '100%',
+                      minWidth: '100%'
                     }}
                   />
                 </div>
@@ -311,7 +429,10 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-2">
                     {index > 0 && (
                       <button
-                        onClick={() => moveImage(index, index - 1)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          moveImage(index, index - 1)
+                        }}
                         className="bg-white text-gray-800 p-2 rounded-full hover:bg-gray-100 shadow-lg"
                         title="Move left"
                       >
@@ -320,7 +441,10 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
                     )}
                     {index < images.length - 1 && (
                       <button
-                        onClick={() => moveImage(index, index + 1)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          moveImage(index, index + 1)
+                        }}
                         className="bg-white text-gray-800 p-2 rounded-full hover:bg-gray-100 shadow-lg"
                         title="Move right"
                       >
@@ -328,7 +452,10 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
                       </button>
                     )}
                     <button
-                      onClick={() => removeImage(index)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        removeImage(index)
+                      }}
                       className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 shadow-lg"
                       title="Remove image"
                     >
@@ -348,16 +475,22 @@ export default function ImageUpload({ onImagesChange, existingImages = [], maxIm
                 <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
                   {index + 1}
                 </div>
+
+                {/* Drag Handle */}
+                <div className="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                  ⋮⋮ Drag
+                </div>
               </div>
             ))}
           </div>
           
           <div className="text-sm text-gray-600 bg-gray-50 p-4 rounded-lg">
             <p className="font-medium mb-2">📋 Instructions:</p>
-            <p>• First image will be used as the main photo</p>
-            <p>• Drag and drop to reorder images</p>
-            <p>• Click the × to remove images</p>
-            <p>• Use arrow buttons to move images left/right</p>
+            <p>• <strong>First image</strong> will be used as the main photo</p>
+            <p>• <strong>Drag and drop</strong> images to reorder them</p>
+            <p>• <strong>Click ×</strong> to remove images</p>
+            <p>• <strong>Use arrow buttons</strong> for precise positioning</p>
+            <p>• <strong>Hover over images</strong> to see controls</p>
           </div>
         </div>
       )}

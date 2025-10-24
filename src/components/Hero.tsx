@@ -22,7 +22,7 @@ export default function Hero() {
       subtitle: 'Get Approved Today',
       description: 'Must have a job. No check stubs required. Just bring Photo ID and two most recent pay stubs.',
       ctaText: 'Apply Now',
-      ctaLink: '/financing',
+      ctaLink: '/credit-application',
     },
     {
       image: '/Dealership_Photos/Complete Auto Services.jpg',
@@ -48,7 +48,7 @@ export default function Hero() {
   }, [])
 
   return (
-    <section className="relative h-[600px] md:h-[700px] overflow-hidden">
+    <section className="relative h-[500px] sm:h-[600px] md:h-[700px] overflow-hidden">
       {slides.map((slide, index) => (
         <div
           key={index}
@@ -68,13 +68,13 @@ export default function Hero() {
           <div className="absolute inset-0 flex items-center">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
               <div className="max-w-3xl text-white">
-                <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight">
+                <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 leading-tight">
                   {slide.title}
                 </h1>
-                <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-blue-300">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold mb-6 text-blue-300">
                   {slide.subtitle}
                 </h2>
-                <p className="text-lg md:text-xl mb-8 text-gray-200">
+                <p className="text-base sm:text-lg md:text-xl mb-8 text-gray-200">
                   {slide.description}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">

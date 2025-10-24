@@ -1,10 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
-import ProtectedRoute from '@/components/ProtectedRoute'
-import RoleBasedNav from '@/components/RoleBasedNav'
-import { LeadAnalytics, LeadStatus, UserRole } from '@/lib/types'
+import { useRouter } from 'next/navigation'
+import AdminLayout from '@/components/AdminLayout'
+import { LeadAnalytics, LeadStatus } from '@/lib/types'
 
 // Sample analytics data - in production, this would come from Supabase
 const sampleAnalytics: LeadAnalytics = {
@@ -35,16 +34,82 @@ const sampleAnalytics: LeadAnalytics = {
 }
 
 export default function AnalyticsDashboard() {
-  const { user, signOut } = useAuth()
-  const [analytics, setAnalytics] = useState<LeadAnalytics>(sampleAnalytics)
+  const [user, setUser] = useState<any>(null)
+  const [analytics, setAnalytics] = useState<LeadAnalytics | null>(null)
+  const [loading, setLoading] = useState(true)
   const [dateRange, setDateRange] = useState('30d')
+  const router = useRouter()
 
-  const handleLogout = async () => {
-    await signOut()
+  // Check admin authentication
+  useEffect(() => {
+    const userData = localStorage.getItem('adminUser')
+    const isLoggedIn = localStorage.getItem('adminAuth')
+    
+    if (isLoggedIn === 'true' && userData) {
+      try {
+        if (userData.startsWith('{')) {
+          setUser(JSON.parse(userData))
+        } else {
+          setUser({
+            id: 1,
+            email: 'admin@unlimitedauto.com',
+            name: 'Admin User',
+            role: 'admin'
+          })
+        }
+      } catch (error) {
+        console.error('Error parsing user data:', error)
+        router.push('/admin/login')
+      }
+    } else {
+      router.push('/admin/login')
+    }
+  }, [router])
+
+  // Fetch real analytics data
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const response = await fetch('/api/analytics')
+        if (response.ok) {
+          const data = await response.json()
+          // Transform the API response to match the expected format
+          const transformedAnalytics: LeadAnalytics = {
+            total_leads: data.analytics.eligible_unique_leads,
+            set_rate: data.analytics.set_rate,
+            show_rate: data.analytics.show_rate,
+            close_rate: data.analytics.close_rate,
+            leads_by_source: data.analytics.leads_by_source,
+            leads_by_agent: data.analytics.leads_by_agent,
+            leads_by_status: data.analytics.leads_by_status,
+            recent_leads: data.analytics.recent_leads
+          }
+          setAnalytics(transformedAnalytics)
+        } else {
+          console.error('Failed to fetch analytics')
+          // Fallback to sample data
+          setAnalytics(sampleAnalytics)
+        }
+      } catch (error) {
+        console.error('Error fetching analytics:', error)
+        // Fallback to sample data
+        setAnalytics(sampleAnalytics)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAnalytics()
+  }, [])
+
+  const handleLogout = () => {
+    localStorage.removeItem('adminAuth')
+    localStorage.removeItem('adminUser')
+    router.push('/admin/login')
   }
 
   // Calculate KPI metrics
-  const kpiMetrics = [
+  const kpiMetrics = analytics ? [
     {
       name: 'Set Rate',
       value: `${(analytics.set_rate * 100).toFixed(1)}%`,
@@ -73,6 +138,35 @@ export default function AnalyticsDashboard() {
       color: 'bg-orange-500',
       change: '+12'
     }
+  ] : [
+    {
+      name: 'Set Rate',
+      value: '...',
+      description: 'Loading...',
+      color: 'bg-gray-500',
+      change: '...'
+    },
+    {
+      name: 'Show Rate',
+      value: '...',
+      description: 'Loading...',
+      color: 'bg-gray-500',
+      change: '...'
+    },
+    {
+      name: 'Close Rate',
+      value: '...',
+      description: 'Loading...',
+      color: 'bg-gray-500',
+      change: '...'
+    },
+    {
+      name: 'Total Leads',
+      value: '...',
+      description: 'Loading...',
+      color: 'bg-gray-500',
+      change: '...'
+    }
   ]
 
   // Filter analytics based on user role
@@ -91,10 +185,20 @@ export default function AnalyticsDashboard() {
 
   const filteredAnalytics = getFilteredAnalytics()
 
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <ProtectedRoute requiredRoles={['super_admin', 'dealer_admin', 'sales_manager']}>
+    <AdminLayout>
       <div className="min-h-screen bg-gray-50">
-        <RoleBasedNav user={user} />
         
         {/* Header */}
         <header className="bg-white shadow">
@@ -158,21 +262,27 @@ export default function AnalyticsDashboard() {
               </div>
               <div className="p-6">
                 <div className="space-y-4">
-                  {Object.entries(filteredAnalytics.leads_by_source).map(([source, count]) => {
-                    const percentage = (count / analytics.total_leads * 100).toFixed(1)
-                    return (
-                      <div key={source} className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
-                          <span className="text-sm font-medium text-gray-900 capitalize">{source}</span>
+                  {filteredAnalytics && filteredAnalytics.leads_by_source ? 
+                    Object.entries(filteredAnalytics.leads_by_source).map(([source, count]) => {
+                      const percentage = analytics && analytics.total_leads > 0 ? (count / analytics.total_leads * 100).toFixed(1) : '0.0'
+                      return (
+                        <div key={source} className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
+                            <span className="text-sm font-medium text-gray-900 capitalize">{source}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-sm font-bold text-gray-900">{count}</span>
+                            <span className="text-sm text-gray-500 ml-2">({percentage}%)</span>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <span className="text-sm font-bold text-gray-900">{count}</span>
-                          <span className="text-sm text-gray-500 ml-2">({percentage}%)</span>
-                        </div>
+                      )
+                    }) : (
+                      <div className="text-center text-gray-500 py-4">
+                        No lead source data available
                       </div>
                     )
-                  })}
+                  }
                 </div>
               </div>
             </div>
@@ -184,21 +294,27 @@ export default function AnalyticsDashboard() {
               </div>
               <div className="p-6">
                 <div className="space-y-4">
-                  {Object.entries(filteredAnalytics.leads_by_agent).map(([agent, count]) => {
-                    const percentage = (count / analytics.total_leads * 100).toFixed(1)
-                    return (
-                      <div key={agent} className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                          <span className="text-sm font-medium text-gray-900 capitalize">{agent}</span>
+                  {filteredAnalytics && filteredAnalytics.leads_by_agent ? 
+                    Object.entries(filteredAnalytics.leads_by_agent).map(([agent, count]) => {
+                      const percentage = analytics && analytics.total_leads > 0 ? (count / analytics.total_leads * 100).toFixed(1) : '0.0'
+                      return (
+                        <div key={agent} className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+                            <span className="text-sm font-medium text-gray-900 capitalize">{agent}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-sm font-bold text-gray-900">{count}</span>
+                            <span className="text-sm text-gray-500 ml-2">({percentage}%)</span>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <span className="text-sm font-bold text-gray-900">{count}</span>
-                          <span className="text-sm text-gray-500 ml-2">({percentage}%)</span>
-                        </div>
+                      )
+                    }) : (
+                      <div className="text-center text-gray-500 py-4">
+                        No agent data available
                       </div>
                     )
-                  })}
+                  }
                 </div>
               </div>
             </div>
@@ -210,29 +326,35 @@ export default function AnalyticsDashboard() {
               </div>
               <div className="p-6">
                 <div className="space-y-4">
-                  {Object.entries(filteredAnalytics.leads_by_status).map(([status, count], index) => {
-                    const statusLabels: Record<LeadStatus, string> = {
-                      'new': 'New Leads',
-                      'set': 'Appointments Set',
-                      'show': 'Customers Showed',
-                      'close': 'Deals Closed'
-                    }
-                    const statusColors = ['bg-blue-500', 'bg-yellow-500', 'bg-green-500', 'bg-purple-500']
-                    const percentage = (count / analytics.total_leads * 100).toFixed(1)
+                  {filteredAnalytics && filteredAnalytics.leads_by_status ? 
+                    Object.entries(filteredAnalytics.leads_by_status).map(([status, count], index) => {
+                      const statusLabels: Record<LeadStatus, string> = {
+                        'new': 'New Leads',
+                        'set': 'Appointments Set',
+                        'show': 'Customers Showed',
+                        'close': 'Deals Closed'
+                      }
+                      const statusColors = ['bg-blue-500', 'bg-yellow-500', 'bg-green-500', 'bg-purple-500']
+                      const percentage = analytics && analytics.total_leads > 0 ? (count / analytics.total_leads * 100).toFixed(1) : '0.0'
                     
-                    return (
-                      <div key={status} className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className={`w-3 h-3 ${statusColors[index]} rounded-full mr-3`}></div>
-                          <span className="text-sm font-medium text-gray-900">{statusLabels[status as LeadStatus]}</span>
+                      return (
+                        <div key={status} className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <div className={`w-3 h-3 ${statusColors[index]} rounded-full mr-3`}></div>
+                            <span className="text-sm font-medium text-gray-900">{statusLabels[status as LeadStatus]}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-sm font-bold text-gray-900">{count}</span>
+                            <span className="text-sm text-gray-500 ml-2">({percentage}%)</span>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <span className="text-sm font-bold text-gray-900">{count}</span>
-                          <span className="text-sm text-gray-500 ml-2">({percentage}%)</span>
-                        </div>
+                      )
+                    }) : (
+                      <div className="text-center text-gray-500 py-4">
+                        No status data available
                       </div>
                     )
-                  })}
+                  }
                 </div>
               </div>
             </div>
@@ -276,7 +398,9 @@ export default function AnalyticsDashboard() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-900">
-                    {filteredAnalytics.leads_by_agent[user.name.toLowerCase()] || 0}
+                    {filteredAnalytics && filteredAnalytics.leads_by_agent ? 
+                      (filteredAnalytics.leads_by_agent[user.name.toLowerCase()] || 0) : 0
+                    }
                   </div>
                   <div className="text-sm text-blue-700">Leads Assigned</div>
                 </div>
@@ -293,6 +417,6 @@ export default function AnalyticsDashboard() {
           )}
         </div>
       </div>
-    </ProtectedRoute>
+    </AdminLayout>
   )
 }

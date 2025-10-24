@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabase'
-import { parseFilename, MODEL_MAP, type AngleCode } from '@/lib/vehicleImages'
+import { parseFilename, MODEL_MAP } from '@/lib/vehicleImages'
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,6 +12,9 @@ export async function POST(req: NextRequest) {
     const angle = formData.get('angle') as string
     const make = formData.get('make') as string
     const model = formData.get('model') as string
+    
+    // Debug: Log received form data
+    console.log('Upload request for:', fileName, 'Vehicle:', year, make, model)
 
     if (!file || !fileName) {
       return NextResponse.json({ error: 'File and fileName are required' }, { status: 400 })
@@ -19,22 +22,51 @@ export async function POST(req: NextRequest) {
 
     // Parse filename if not provided
     let parsedData
-    if (year && modelCode && angle) {
+    if (year && make && model) {
+      // Use provided vehicle data - generate simple sequential angle for each photo
+      const timestamp = Date.now()
+      const simpleAngle = `PHOTO_${timestamp}` // Just use a simple string, not enum
+      
+      parsedData = {
+        year: parseInt(year),
+        modelCode: 'CUSTOM', // Use a default model code
+        angle: simpleAngle, // Simple string angle based on timestamp
+        make: make,
+        model: model
+      }
+      console.log('Using provided vehicle data with simple angle:', parsedData.angle)
+    } else if (year && modelCode && angle) {
+      // Use provided data with model code and angle
       parsedData = {
         year: parseInt(year),
         modelCode,
-        angle: angle as AngleCode,
+        angle: angle, // Use as string, not enum
         make: make || null,
         model: model || null
       }
+      console.log('Using provided vehicle data with model code:', parsedData)
     } else {
+      // Fall back to filename parsing
       parsedData = parseFilename(fileName)
       const meta = MODEL_MAP[parsedData.modelCode] ?? {}
       parsedData.make = meta.make || null
       parsedData.model = meta.model || null
+      console.log('Using parsed filename data:', parsedData)
     }
 
     const s = supabaseServer()
+
+    // First, get the dealer ID from the slug
+    const { data: dealer, error: dealerError } = await s
+      .from('dealers')
+      .select('id')
+      .eq('slug', 'unlimited-auto')
+      .single()
+
+    if (dealerError || !dealer) {
+      console.error('Error fetching dealer:', dealerError)
+      return NextResponse.json({ error: 'Dealer not found' }, { status: 404 })
+    }
 
     // 1) Ensure vehicle exists (upsert by year + model_code for now)
     const { data: vData, error: vErr } = await s
@@ -44,7 +76,7 @@ export async function POST(req: NextRequest) {
         make: parsedData.make,
         model: parsedData.model,
         model_code: parsedData.modelCode,
-        dealer_id: 'unlimited-auto'
+        dealer_id: dealer.id
       }, { 
         onConflict: 'year,model_code,dealer_id',
         ignoreDuplicates: false 

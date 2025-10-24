@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import ImageUpload from '@/components/ImageUpload'
+import PhotoUpload from '@/components/PhotoUpload'
 
 // Vehicle condition options
 const conditionOptions = [
@@ -21,45 +21,71 @@ const colorOptions = [
   'Black', 'White', 'Silver', 'Gray', 'Red', 'Blue', 'Green', 'Brown', 'Gold', 'Orange', 'Yellow', 'Purple', 'Beige', 'Tan', 'Maroon', 'Navy', 'Other'
 ]
 
-// Common vehicle makes (static list for better performance)
+// Common vehicle makes (alphabetical order)
 const commonMakes = [
-  'Acura', 'Audi', 'BMW', 'Buick', 'Cadillac', 'Chevrolet', 'Chrysler', 'Dodge', 'Ford', 'GMC', 'Honda', 'Hyundai', 'Infiniti', 'Jeep', 'Kia', 'Lexus', 'Lincoln', 'Mazda', 'Mercedes-Benz', 'Mitsubishi', 'Nissan', 'Ram', 'Subaru', 'Tesla', 'Toyota', 'Volkswagen', 'Volvo'
+  'Acura', 'Audi', 'BMW', 'Buick', 'Cadillac', 'Chevrolet', 'Chrysler', 'Dodge', 'Ford', 'GMC', 'Honda', 'Hyundai', 'Infiniti', 'Jeep', 'Kia', 'Lexus', 'Lincoln', 'Mazda', 'Mercedes-Benz', 'Mini', 'Mitsubishi', 'Nissan', 'Ram', 'Subaru', 'Tesla', 'Toyota', 'Volkswagen', 'Volvo'
 ]
 
-// Common models by make (simplified for better performance)
+// Common models by make (alphabetical order)
 const commonModels: Record<string, string[]> = {
-  'Chevrolet': ['Trailblazer', 'Equinox', 'Malibu', 'Silverado', 'Tahoe', 'Suburban', 'Camaro', 'Corvette', 'Cruze', 'Impala', 'Sonic', 'Spark', 'Traverse', 'Colorado', 'Express'],
-  'Ford': ['F-150', 'Explorer', 'Escape', 'Edge', 'Expedition', 'Mustang', 'Focus', 'Fusion', 'Transit', 'Ranger', 'Bronco', 'Maverick'],
-  'Honda': ['Civic', 'Accord', 'CR-V', 'Pilot', 'HR-V', 'Passport', 'Ridgeline', 'Insight', 'Fit'],
-  'Toyota': ['Camry', 'Corolla', 'RAV4', 'Highlander', 'Prius', 'Tacoma', 'Tundra', '4Runner', 'Sienna', 'Avalon', 'C-HR', 'Venza'],
-  'Nissan': ['Altima', 'Sentra', 'Rogue', 'Murano', 'Pathfinder', 'Armada', 'Frontier', 'Titan', 'Versa', 'Maxima', '370Z', 'GT-R'],
-  'BMW': ['3 Series', '5 Series', '7 Series', 'X1', 'X3', 'X5', 'X7', 'i3', 'i8', 'Z4'],
-  'Mercedes-Benz': ['C-Class', 'E-Class', 'S-Class', 'GLA', 'GLC', 'GLE', 'GLS', 'A-Class', 'CLA', 'G-Class'],
-  'Audi': ['A3', 'A4', 'A6', 'A8', 'Q3', 'Q5', 'Q7', 'Q8', 'TT', 'R8'],
-  'Hyundai': ['Elantra', 'Sonata', 'Tucson', 'Santa Fe', 'Palisade', 'Veloster', 'Genesis', 'Kona', 'Venue'],
-  'Kia': ['Forte', 'Optima', 'Sorento', 'Telluride', 'Sportage', 'Soul', 'Stinger', 'Niro', 'Seltos'],
-  'Mazda': ['Mazda3', 'Mazda6', 'CX-3', 'CX-5', 'CX-9', 'MX-5 Miata', 'CX-30'],
-  'Subaru': ['Impreza', 'Legacy', 'Outback', 'Forester', 'Ascent', 'WRX', 'BRZ', 'Crosstrek'],
-  'Volkswagen': ['Jetta', 'Passat', 'Tiguan', 'Atlas', 'Golf', 'Beetle', 'Arteon', 'ID.4'],
-  'Lexus': ['ES', 'IS', 'GS', 'LS', 'NX', 'RX', 'GX', 'LX', 'LC', 'RC'],
-  'Acura': ['ILX', 'TLX', 'RLX', 'RDX', 'MDX', 'NSX', 'CDX'],
-  'Infiniti': ['Q50', 'Q60', 'Q70', 'QX50', 'QX60', 'QX80', 'G37', 'FX'],
-  'Cadillac': ['ATS', 'CTS', 'XTS', 'XT4', 'XT5', 'XT6', 'Escalade', 'CT6'],
-  'Lincoln': ['MKZ', 'Continental', 'MKC', 'MKT', 'MKX', 'Navigator', 'Corsair', 'Aviator'],
-  'Jeep': ['Wrangler', 'Grand Cherokee', 'Cherokee', 'Compass', 'Renegade', 'Gladiator', 'Grand Wagoneer'],
-  'Ram': ['1500', '2500', '3500', 'ProMaster', 'ProMaster City'],
-  'GMC': ['Sierra', 'Canyon', 'Acadia', 'Terrain', 'Yukon', 'Savana'],
-  'Buick': ['Encore', 'Envision', 'Enclave', 'LaCrosse', 'Regal', 'Cascada'],
+  'Acura': ['CDX', 'ILX', 'MDX', 'NSX', 'RDX', 'RLX', 'TLX'],
+  'Audi': ['A3', 'A4', 'A6', 'A8', 'Q3', 'Q5', 'Q7', 'Q8', 'R8', 'TT'],
+  'BMW': ['3 Series', '5 Series', '7 Series', 'i3', 'i8', 'X1', 'X3', 'X5', 'X7', 'Z4'],
+  'Buick': ['Cascada', 'Enclave', 'Encore', 'Envision', 'LaCrosse', 'Regal'],
+  'Cadillac': ['ATS', 'CT6', 'CTS', 'Escalade', 'XTS', 'XT4', 'XT5', 'XT6'],
+  'Chevrolet': ['Camaro', 'Colorado', 'Corvette', 'Cruze', 'Equinox', 'Express', 'Impala', 'Malibu', 'Silverado', 'Sonic', 'Spark', 'Suburban', 'Tahoe', 'Trailblazer', 'Traverse'],
   'Chrysler': ['300', 'Pacifica', 'Voyager'],
-  'Dodge': ['Challenger', 'Charger', 'Durango', 'Journey', 'Grand Caravan'],
-  'Mitsubishi': ['Mirage', 'Lancer', 'Outlander', 'Eclipse Cross', 'Mirage G4'],
-  'Volvo': ['S60', 'S90', 'V60', 'V90', 'XC40', 'XC60', 'XC90'],
-  'Tesla': ['Model S', 'Model 3', 'Model X', 'Model Y', 'Roadster', 'Cybertruck']
+  'Dodge': ['Challenger', 'Charger', 'Durango', 'Grand Caravan', 'Journey'],
+  'Ford': ['Bronco', 'Edge', 'Escape', 'Expedition', 'Explorer', 'F-150', 'Focus', 'Fusion', 'Maverick', 'Mustang', 'Ranger', 'Transit'],
+  'GMC': ['Acadia', 'Canyon', 'Savana', 'Sierra', 'Terrain', 'Yukon'],
+  'Honda': ['Accord', 'Civic', 'CR-V', 'Fit', 'HR-V', 'Insight', 'Passport', 'Pilot', 'Ridgeline'],
+  'Hyundai': ['Elantra', 'Genesis', 'Kona', 'Palisade', 'Santa Fe', 'Sonata', 'Tucson', 'Veloster', 'Venue'],
+  'Infiniti': ['FX', 'G37', 'Q50', 'Q60', 'Q70', 'QX50', 'QX60', 'QX80'],
+  'Jeep': ['Cherokee', 'Compass', 'Gladiator', 'Grand Cherokee', 'Grand Wagoneer', 'Renegade', 'Wrangler'],
+  'Kia': ['Forte', 'Niro', 'Optima', 'Seltos', 'Sorento', 'Soul', 'Sportage', 'Stinger', 'Telluride'],
+  'Lexus': ['BRZ', 'Crosstrek', 'ES', 'GX', 'GS', 'IS', 'LC', 'LS', 'LX', 'NX', 'RC', 'RX'],
+  'Lincoln': ['Aviator', 'Continental', 'Corsair', 'MKC', 'MKT', 'MKX', 'MKZ', 'Navigator'],
+  'Mazda': ['CX-3', 'CX-30', 'CX-5', 'CX-9', 'Mazda3', 'Mazda6', 'MX-5 Miata'],
+  'Mercedes-Benz': ['A-Class', 'C-Class', 'CLA', 'E-Class', 'G-Class', 'GLA', 'GLC', 'GLE', 'GLS', 'S-Class'],
+  'Mini': ['Cooper', 'Cooper S', 'Countryman', 'Hardtop', 'Convertible', 'Clubman'],
+  'Mitsubishi': ['Eclipse Cross', 'Lancer', 'Mirage', 'Mirage G4', 'Outlander'],
+  'Nissan': ['370Z', 'Altima', 'Armada', 'Frontier', 'GT-R', 'Maxima', 'Murano', 'Pathfinder', 'Rogue', 'Sentra', 'Titan', 'Versa'],
+  'Ram': ['1500', '2500', '3500', 'ProMaster', 'ProMaster City'],
+  'Subaru': ['Ascent', 'BRZ', 'Crosstrek', 'Forester', 'Impreza', 'Legacy', 'Outback', 'WRX'],
+  'Tesla': ['Cybertruck', 'Model 3', 'Model S', 'Model X', 'Model Y', 'Roadster'],
+  'Toyota': ['4Runner', 'Avalon', 'C-HR', 'Camry', 'Corolla', 'Highlander', 'Prius', 'RAV4', 'Sienna', 'Tacoma', 'Tundra', 'Venza'],
+  'Volkswagen': ['Arteon', 'Atlas', 'Beetle', 'Golf', 'ID.4', 'Jetta', 'Passat', 'Tiguan'],
+  'Volvo': ['S60', 'S90', 'V60', 'V90', 'XC40', 'XC60', 'XC90']
 }
 
-// Common trims
+// Common trims (alphabetical order)
 const commonTrims = [
-  'Base', 'LS', 'LT', 'LTZ', 'LT1', 'LT2', 'LT3', 'LE', 'XLE', 'SE', 'SEL', 'Limited', 'Premium', 'Sport', 'Touring', 'Platinum', 'Titanium', 'Hybrid', 'Electric', 'RS', 'SS', 'Z71', 'Denali', 'SR5', 'TRD', 'Type R', 'M Sport', 'AMG', 'S-Line', 'F-Sport'
+  'AMG', 'Base', 'Denali', 'Electric', 'F-Sport', 'Hybrid', 'LE', 'Limited', 'LS', 'LT', 'LT1', 'LT2', 'LT3', 'LTZ', 'M Sport', 'Platinum', 'Premium', 'RS', 'SE', 'SEL', 'S-Line', 'Sport', 'SR5', 'SS', 'Titanium', 'Touring', 'TRD', 'Type R', 'XLE', 'Z71'
+]
+
+// Common vehicle features
+const commonFeatures = [
+  'Air Conditioning', 'Alloy Wheels', 'AM/FM Radio', 'Backup Camera', 'Bluetooth', 'CD Player', 'Cruise Control', 'Heated Seats', 'Keyless Entry', 'Leather Seats', 'Navigation System', 'Power Windows', 'Remote Start', 'Sunroof', 'USB Port', 'Xenon Headlights'
+]
+
+// Description templates
+const descriptionTemplates = [
+  {
+    name: 'Standard',
+    description: 'Excellent condition, well-maintained, low miles'
+  },
+  {
+    name: 'Premium', 
+    description: 'One owner, garage kept, recent service'
+  },
+  {
+    name: 'Value',
+    description: 'Great value, perfect for families, financing available'
+  },
+  {
+    name: 'Urgency',
+    description: 'Rare find, pristine condition, won\'t last long'
+  }
 ]
 
 export default function AddVehicle() {
@@ -67,6 +93,8 @@ export default function AddVehicle() {
   const [loading, setLoading] = useState(false)
   const [aiEnabled, setAiEnabled] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
+  const [editingTemplate, setEditingTemplate] = useState<number | null>(null)
+  const [customTemplates, setCustomTemplates] = useState(descriptionTemplates)
   const router = useRouter()
 
   const [formData, setFormData] = useState({
@@ -88,7 +116,7 @@ export default function AddVehicle() {
     bodyStyle: 'Sedan',
     doors: 4,
     passengers: 5,
-    features: '',
+    features: [] as string[],
     description: '',
     images: [] as string[]
   })
@@ -152,12 +180,21 @@ export default function AddVehicle() {
     }
   }
 
-  const handleImagesChange = (images: string[]) => {
+  const handleFeatureToggle = (feature: string) => {
+    setFormData(prev => ({
+      ...prev,
+      features: prev.features.includes(feature)
+        ? prev.features.filter(f => f !== feature)
+        : [...prev.features, feature]
+    }))
+  }
+
+  const handleImagesChange = useCallback((images: string[]) => {
     setFormData(prev => ({
       ...prev,
       images: images
     }))
-  }
+  }, [])
 
   const generateAIDescription = async () => {
     if (!formData.images || formData.images.length === 0) {
@@ -171,7 +208,7 @@ export default function AddVehicle() {
       await new Promise(resolve => setTimeout(resolve, 2000))
       
       // Mock AI-generated description
-      const aiDescription = `This ${formData.year} ${formData.make} ${formData.model} ${formData.trim} is in ${formData.condition.toLowerCase()} condition with ${formData.miles ? formatNumber(formData.miles) : 'low'} miles. Features include ${formData.features || 'modern amenities'}. This vehicle offers excellent value and reliability.`
+      const aiDescription = `This ${formData.year} ${formData.make} ${formData.model} ${formData.trim} is in ${formData.condition.toLowerCase()} condition with ${formData.miles ? formatNumber(formData.miles) : 'low'} miles. Features include ${formData.features.join(', ') || 'modern amenities'}. This vehicle offers excellent value and reliability.`
       
       setFormData(prev => ({
         ...prev,
@@ -183,6 +220,31 @@ export default function AddVehicle() {
     } finally {
       setAiLoading(false)
     }
+  }
+
+  const applyTemplate = (template: any) => {
+    const description = template.description
+      .replace('{year}', formData.year)
+      .replace('{make}', formData.make)
+      .replace('{model}', formData.model)
+      .replace('{miles}', formData.miles ? formatNumber(formData.miles) : 'low')
+      .replace('{features}', formData.features.join(', ') || 'modern amenities')
+    
+    setFormData(prev => ({
+      ...prev,
+      description: description
+    }))
+  }
+
+  const editTemplate = (index: number) => {
+    setEditingTemplate(index)
+  }
+
+  const saveTemplate = (index: number, newDescription: string) => {
+    const updatedTemplates = [...customTemplates]
+    updatedTemplates[index].description = newDescription
+    setCustomTemplates(updatedTemplates)
+    setEditingTemplate(null)
   }
 
   const validateForm = (): boolean => {
@@ -226,17 +288,27 @@ export default function AddVehicle() {
         miles: parseNumber(formData.miles)
       }
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Call the API to save the vehicle
+      const response = await fetch('/api/vehicles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(submitData)
+      })
 
-      // In production, this would save to your database
-      console.log('Vehicle data:', submitData)
-      
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to save vehicle')
+      }
+
+      console.log('Vehicle saved successfully:', result)
       alert('Vehicle added successfully!')
       router.push('/admin/inventory')
     } catch (error) {
       console.error('Error adding vehicle:', error)
-      alert('Failed to add vehicle. Please try again.')
+      alert(`Failed to add vehicle: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setLoading(false)
     }
@@ -399,7 +471,7 @@ export default function AddVehicle() {
                     value={formData.price ? formatNumber(formData.price) : ''}
                     onChange={handleInputChange}
                     required
-                    placeholder="25,000"
+                    placeholder="Enter price"
                     className={`w-full pl-8 pr-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base ${
                       errors.price ? 'border-red-500' : 'border-gray-300'
                     }`}
@@ -415,7 +487,7 @@ export default function AddVehicle() {
                   value={formData.miles ? formatNumber(formData.miles) : ''}
                   onChange={handleInputChange}
                   required
-                  placeholder="45,000"
+                  placeholder="Enter miles"
                   className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base ${
                     errors.miles ? 'border-red-500' : 'border-gray-300'
                   }`}
@@ -606,30 +678,46 @@ export default function AddVehicle() {
 
           {/* Photo Upload */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Vehicle Photos (Max 20)</h2>
-            <ImageUpload 
-              onImagesChange={handleImagesChange}
-              existingImages={formData.images}
-              maxImages={20}
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Vehicle Photos</h2>
+            <PhotoUpload 
+              onPhotosChange={handleImagesChange}
+              vehicleData={{
+                year: formData.year,
+                make: formData.make,
+                model: formData.model
+              }}
             />
           </div>
 
           {/* Features and Description */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Features and Description</h2>
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Features - Clickable Buttons */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Features</label>
-                <input
-                  type="text"
-                  name="features"
-                  value={formData.features}
-                  onChange={handleInputChange}
-                  placeholder="Enter features separated by commas (e.g., Bluetooth, Backup Camera, Cruise Control)"
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
-                />
-                <p className="text-sm text-gray-500 mt-1">Separate multiple features with commas</p>
+                <label className="block text-sm font-medium text-gray-700 mb-3">Features</label>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                  {commonFeatures.map((feature) => (
+                    <button
+                      key={feature}
+                      type="button"
+                      onClick={() => handleFeatureToggle(feature)}
+                      className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                        formData.features.includes(feature)
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      {feature}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-sm text-gray-500 mt-2">
+                  Click features to select them. Selected: {formData.features.length} features
+                </p>
               </div>
+
+              {/* Description */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-medium text-gray-700">Description *</label>
@@ -658,9 +746,71 @@ export default function AddVehicle() {
                 {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
                 {aiEnabled && (
                   <p className="text-sm text-purple-600 mt-1">
-                    💡 AI Assistant is enabled. Upload photos and click &quot;Generate with AI&quot; to auto-create descriptions.
+                    💡 AI Assistant is enabled. Upload photos and click "Generate with AI" to auto-create descriptions.
                   </p>
                 )}
+                
+                {/* Editable Description Templates */}
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">💡 Quick Description Templates</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {customTemplates.map((template, index) => (
+                      <div key={index} className="bg-white border border-gray-200 rounded-lg p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-gray-700">{template.name}</span>
+                          <div className="flex space-x-1">
+                            <button
+                              type="button"
+                              onClick={() => editTemplate(index)}
+                              className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => applyTemplate(template)}
+                              className="text-xs px-2 py-1 bg-blue-100 text-blue-600 rounded hover:bg-blue-200"
+                            >
+                              Use
+                            </button>
+                          </div>
+                        </div>
+                        {editingTemplate === index ? (
+                          <div className="space-y-2">
+                            <textarea
+                              value={template.description}
+                              onChange={(e) => {
+                                const updatedTemplates = [...customTemplates]
+                                updatedTemplates[index].description = e.target.value
+                                setCustomTemplates(updatedTemplates)
+                              }}
+                              className="w-full text-xs p-2 border border-gray-300 rounded"
+                              rows={2}
+                            />
+                            <div className="flex space-x-1">
+                              <button
+                                type="button"
+                                onClick={() => saveTemplate(index, template.description)}
+                                className="text-xs px-2 py-1 bg-green-100 text-green-600 rounded hover:bg-green-200"
+                              >
+                                Save
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingTemplate(null)}
+                                className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-600">{template.description}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

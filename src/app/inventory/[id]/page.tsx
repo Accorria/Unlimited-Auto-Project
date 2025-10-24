@@ -1,52 +1,89 @@
 'use client'
 
-import { useState, use } from 'react'
+import { useState, use, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import vehicleData from '@/data/vehicle-data.json'
 
-// Sample vehicle data - in a real app, this would come from an API
-const vehicleData = {
-  1: {
-    id: 1,
-    year: 2020,
-    make: 'Honda',
-    model: 'Civic',
-    trim: 'LX',
-    price: 18995,
-    miles: 45000,
-    images: [
-      'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1549317336-206569e8475c?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=800&h=600&fit=crop'
-    ],
-    features: ['Automatic', 'Bluetooth', 'Backup Camera', 'Cruise Control', 'Keyless Entry', 'USB Ports'],
-    condition: 'Excellent',
-    fuelType: 'Gas',
-    transmission: 'Automatic',
-    drivetrain: 'FWD',
-    color: 'Silver',
-    vin: '1HGCV1F3XLA123456',
-    engine: '1.5L 4-Cylinder',
-    mpg: '32 City / 42 Highway',
-    bodyStyle: 'Sedan',
-    doors: 4,
-    passengers: 5,
-    warranty: '30-Day Limited Warranty',
-    history: 'Clean CARFAX - No Accidents Reported',
-    description: 'This 2020 Honda Civic LX is in excellent condition with low mileage and a clean history. Perfect for daily commuting with great fuel economy and Honda reliability. All maintenance records available.'
-  }
+interface Vehicle {
+  id: string
+  year: number
+  make: string
+  model: string
+  trim?: string
+  price?: number
+  miles?: number
+  coverPhoto?: string
+  photos?: Array<{
+    id: string
+    angle: string
+    file_path: string
+    public_url: string
+  }>
+  description?: string
+  status: string
+  vin?: string
+  // Legacy fields for fallback data
+  features?: string[]
+  condition?: string
+  fuelType?: string
+  transmission?: string
+  drivetrain?: string
+  color?: string
 }
 
 export default function VehicleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [showAllFeatures, setShowAllFeatures] = useState(false)
+  const [vehicle, setVehicle] = useState<Vehicle | null>(null)
+  const [loading, setLoading] = useState(true)
   const resolvedParams = use(params)
+
+  useEffect(() => {
+    const fetchVehicle = async () => {
+      try {
+        // First try to find in our generated vehicle data
+        if (vehicleData && vehicleData.length > 0) {
+          const foundVehicle = vehicleData.find((v: Vehicle) => v.id === resolvedParams.id)
+          setVehicle(foundVehicle || null)
+          setLoading(false)
+          return
+        }
+        
+        // Fallback to API
+        const response = await fetch('/api/vehicles?dealer=unlimited-auto')
+        if (response.ok) {
+          const data = await response.json()
+          const foundVehicle = data.vehicles.find((v: Vehicle) => v.id === resolvedParams.id)
+          setVehicle(foundVehicle || null)
+        }
+      } catch (error) {
+        console.error('Error fetching vehicle:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchVehicle()
+  }, [resolvedParams.id])
   
-  const vehicle = vehicleData[resolvedParams.id as keyof typeof vehicleData]
-  
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading vehicle details...</p>
+          </div>
+        </div>
+        <Footer />
+      </main>
+    )
+  }
+
   if (!vehicle) {
     return (
       <main className="min-h-screen bg-gray-50">
@@ -68,7 +105,12 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
     )
   }
 
-  const displayedFeatures = showAllFeatures ? vehicle.features : vehicle.features.slice(0, 6)
+  // Get images from photos array or use cover photo
+  const vehicleImages = vehicle.photos?.map(photo => photo.public_url) || 
+                       (vehicle.coverPhoto ? [vehicle.coverPhoto] : [])
+  
+  const displayedFeatures = vehicle.features ? 
+    (showAllFeatures ? vehicle.features : vehicle.features.slice(0, 6)) : []
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -93,39 +135,35 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
           <div className="space-y-4">
             <div className="relative h-96 rounded-lg overflow-hidden">
               <Image
-                src={vehicle.images[selectedImageIndex]}
+                src={vehicleImages[selectedImageIndex] || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop'}
                 alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
                 fill
                 className="object-cover"
                 priority
               />
-              <div className="absolute top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-full text-lg font-bold shadow-lg">
-                ${vehicle.price.toLocaleString()}
-              </div>
-              <div className="absolute top-4 left-4 bg-green-500 text-white px-3 py-1 rounded-lg text-sm font-semibold">
-                {vehicle.condition}
-              </div>
             </div>
             
             {/* Thumbnail Gallery */}
-            <div className="grid grid-cols-4 gap-2">
-              {vehicle.images.map((image, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedImageIndex(index)}
-                  className={`relative h-20 rounded-lg overflow-hidden border-2 transition-all ${
-                    index === selectedImageIndex ? 'border-blue-600' : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <Image
-                    src={image}
-                    alt={`${vehicle.year} ${vehicle.make} ${vehicle.model} - Image ${index + 1}`}
-                    fill
-                    className="object-cover"
-                  />
-                </button>
-              ))}
-            </div>
+            {vehicleImages.length > 1 && (
+              <div className="grid grid-cols-4 gap-2">
+                {vehicleImages.map((image, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedImageIndex(index)}
+                    className={`relative h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                      index === selectedImageIndex ? 'border-blue-600' : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <Image
+                      src={image}
+                      alt={`${vehicle.year} ${vehicle.make} ${vehicle.model} - Image ${index + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Vehicle Details */}
@@ -134,12 +172,25 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim}
               </h1>
-              <div className="flex items-center space-x-4 text-gray-600">
-                <span className="text-2xl font-bold text-blue-600">${vehicle.price.toLocaleString()}</span>
-                <span>•</span>
-                <span>{vehicle.miles.toLocaleString()} miles</span>
-                <span>•</span>
-                <span>{vehicle.vin}</span>
+              <div className="flex items-center space-x-4 text-gray-600 mb-4">
+                <span className="text-2xl font-bold text-blue-600">$9.99 Down</span>
+                {vehicle.miles && (
+                  <>
+                    <span>•</span>
+                    <span>{vehicle.miles.toLocaleString()} miles</span>
+                  </>
+                )}
+                {vehicle.vin && (
+                  <>
+                    <span>•</span>
+                    <span>{vehicle.vin}</span>
+                  </>
+                )}
+              </div>
+              <div className="flex items-center space-x-4 mb-4">
+                <span className="bg-green-500 text-white px-3 py-1 rounded-lg text-sm font-semibold">
+                  {vehicle.condition || vehicle.status || 'Available'}
+                </span>
               </div>
             </div>
 
@@ -183,24 +234,26 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
             </div>
 
             {/* Features */}
-            <div className="bg-white rounded-lg p-6 shadow-sm border">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Features & Options</h3>
-              <div className="flex flex-wrap gap-2">
-                {displayedFeatures.map((feature, index) => (
-                  <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                    {feature}
-                  </span>
-                ))}
+            {displayedFeatures.length > 0 && (
+              <div className="bg-white rounded-lg p-6 shadow-sm border">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Features & Options</h3>
+                <div className="flex flex-wrap gap-2">
+                  {displayedFeatures.map((feature, index) => (
+                    <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                      {feature}
+                    </span>
+                  ))}
+                </div>
+                {vehicle.features && vehicle.features.length > 6 && (
+                  <button
+                    onClick={() => setShowAllFeatures(!showAllFeatures)}
+                    className="mt-4 text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    {showAllFeatures ? 'Show Less' : `Show All ${vehicle.features.length} Features`}
+                  </button>
+                )}
               </div>
-              {vehicle.features.length > 6 && (
-                <button
-                  onClick={() => setShowAllFeatures(!showAllFeatures)}
-                  className="mt-4 text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  {showAllFeatures ? 'Show Less' : `Show All ${vehicle.features.length} Features`}
-                </button>
-              )}
-            </div>
+            )}
 
             {/* Warranty & History */}
             <div className="bg-white rounded-lg p-6 shadow-sm border">
@@ -216,20 +269,18 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
                 </div>
                 <div className="flex items-center">
                   <span className="text-green-600 mr-2">✓</span>
-                  <span>Free CARFAX Report</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="text-green-600 mr-2">✓</span>
                   <span>No Hidden Fees</span>
                 </div>
               </div>
             </div>
 
             {/* Description */}
-            <div className="bg-white rounded-lg p-6 shadow-sm border">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Description</h3>
-              <p className="text-gray-600 leading-relaxed">{vehicle.description}</p>
-            </div>
+            {vehicle.description && (
+              <div className="bg-white rounded-lg p-6 shadow-sm border">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Description</h3>
+                <p className="text-gray-600 leading-relaxed">{vehicle.description}</p>
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="space-y-4">
@@ -271,12 +322,13 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
               <input
                 type="number"
                 placeholder="0"
+                defaultValue="0"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Loan Term (months)</label>
-              <select className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <select className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" defaultValue="48">
                 <option value="36">36 months</option>
                 <option value="48">48 months</option>
                 <option value="60">60 months</option>
@@ -290,6 +342,7 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
                 type="number"
                 placeholder="6.9"
                 step="0.1"
+                defaultValue="6.9"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -297,7 +350,7 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">
             <div className="text-center">
               <p className="text-gray-600">Estimated Monthly Payment</p>
-              <p className="text-3xl font-bold text-blue-600">$XXX</p>
+              <p className="text-3xl font-bold text-blue-600">$299/month*</p>
               <p className="text-sm text-gray-500 mt-2">*Actual payment may vary based on credit approval</p>
             </div>
           </div>

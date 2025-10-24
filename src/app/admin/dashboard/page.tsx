@@ -49,7 +49,29 @@ export default function AdminDashboard() {
   useEffect(() => {
     const userData = localStorage.getItem('adminUser')
     if (userData) {
-      setUser(JSON.parse(userData))
+      try {
+        // Check if it's already a string (like "admin") or JSON
+        if (userData.startsWith('{')) {
+          setUser(JSON.parse(userData))
+        } else {
+          // If it's just a string, create a proper user object
+          setUser({
+            id: 1,
+            email: 'admin@unlimitedauto.com',
+            name: 'Admin User',
+            role: 'admin'
+          })
+        }
+      } catch (error) {
+        console.error('Error parsing user data:', error)
+        // Fallback to default admin user
+        setUser({
+          id: 1,
+          email: 'admin@unlimitedauto.com',
+          name: 'Admin User',
+          role: 'admin'
+        })
+      }
     }
   }, [])
 
@@ -59,11 +81,61 @@ export default function AdminDashboard() {
     router.push('/admin/login')
   }
 
-  const stats = [
-    { name: 'Total Vehicles', value: '12', change: '+2 this month', changeType: 'positive' },
-    { name: 'Active Listings', value: '8', change: '+1 this week', changeType: 'positive' },
-    { name: 'Sold This Month', value: '4', change: '+100% from last month', changeType: 'positive' },
-    { name: 'Pending Sales', value: '2', change: 'No change', changeType: 'neutral' }
+  const [analytics, setAnalytics] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  // Fetch real analytics data
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const response = await fetch('/api/analytics')
+        if (response.ok) {
+          const data = await response.json()
+          setAnalytics(data.analytics)
+        } else {
+          console.error('Failed to fetch analytics')
+        }
+      } catch (error) {
+        console.error('Error fetching analytics:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchAnalytics()
+  }, [])
+
+  // Toyota SmartPath KPIs
+  const stats = analytics ? [
+    { 
+      name: 'Eligible Unique Leads', 
+      value: analytics.eligible_unique_leads.toString(), 
+      change: 'Total leads this period', 
+      changeType: 'neutral' 
+    },
+    { 
+      name: 'Set Rate', 
+      value: `${(analytics.set_rate * 100).toFixed(1)}%`, 
+      change: 'Appointments Set ÷ EUL', 
+      changeType: analytics.set_rate > 0.5 ? 'positive' : 'negative' 
+    },
+    { 
+      name: 'Show Rate', 
+      value: `${(analytics.show_rate * 100).toFixed(1)}%`, 
+      change: 'Appointments Shown ÷ Set', 
+      changeType: analytics.show_rate > 0.4 ? 'positive' : 'negative' 
+    },
+    { 
+      name: 'Close Rate', 
+      value: `${(analytics.close_rate * 100).toFixed(1)}%`, 
+      change: 'Deals Closed ÷ Shown', 
+      changeType: analytics.close_rate > 0.2 ? 'positive' : 'negative' 
+    }
+  ] : [
+    { name: 'Eligible Unique Leads', value: '...', change: 'Loading...', changeType: 'neutral' },
+    { name: 'Set Rate', value: '...', change: 'Loading...', changeType: 'neutral' },
+    { name: 'Show Rate', value: '...', change: 'Loading...', changeType: 'neutral' },
+    { name: 'Close Rate', value: '...', change: 'Loading...', changeType: 'neutral' }
   ]
 
   return (
@@ -101,25 +173,79 @@ export default function AdminDashboard() {
         </header>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {stats.map((stat) => (
-              <div key={stat.name} className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600">{stat.name}</p>
-                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                    <p className={`text-sm ${
-                      stat.changeType === 'positive' ? 'text-green-600' : 
-                      stat.changeType === 'negative' ? 'text-red-600' : 'text-gray-600'
-                    }`}>
-                      {stat.change}
-                    </p>
+          {/* Toyota SmartPath KPIs */}
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Toyota SmartPath KPIs</h2>
+              <Link
+                href="/admin/analytics"
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              >
+                View Detailed Analytics →
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {stats.map((stat) => (
+                <div key={stat.name} className="bg-white rounded-lg shadow p-6">
+                  <div className="flex items-center">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-600">{stat.name}</p>
+                      <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                      <p className={`text-sm ${
+                        stat.changeType === 'positive' ? 'text-green-600' : 
+                        stat.changeType === 'negative' ? 'text-red-600' : 'text-gray-600'
+                      }`}>
+                        {stat.change}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Additional Metrics */}
+          {analytics && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Lead Sources</h3>
+                <div className="space-y-2">
+                  {Object.entries(analytics.leads_by_source).map(([source, count]) => (
+                    <div key={source} className="flex justify-between">
+                      <span className="text-sm text-gray-600 capitalize">{source}</span>
+                      <span className="text-sm font-medium text-gray-900">{count as number}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Lead Status</h3>
+                <div className="space-y-2">
+                  {Object.entries(analytics.leads_by_status).map(([status, count]) => (
+                    <div key={status} className="flex justify-between">
+                      <span className="text-sm text-gray-600 capitalize">{status}</span>
+                      <span className="text-sm font-medium text-gray-900">{count as number}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Time to First Response</span>
+                    <span className="text-sm font-medium text-gray-900">{analytics.time_to_first_response}m</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Overall Close Rate</span>
+                    <span className="text-sm font-medium text-gray-900">{(analytics.overall_close_rate * 100).toFixed(1)}%</span>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
 
           {/* Quick Actions */}
           <div className="bg-white rounded-lg shadow mb-8">

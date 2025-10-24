@@ -21,19 +21,19 @@ export default function Services() {
       link: '/services/collision'
     },
     {
-      icon: '✨',
+      icon: '',
       title: 'Detailing',
       description: 'Premium cleaning and detailing services for your vehicle.',
       link: '/services/detailing'
     },
     {
-      icon: '🪟',
+      icon: '',
       title: 'Window Tinting',
       description: 'Professional window tinting for style and protection.',
       link: '/services/tinting'
     },
     {
-      icon: '🎨',
+      icon: '',
       title: 'Vehicle Wrapping',
       description: 'Custom vinyl wraps and graphics for your vehicle.',
       link: '/services/wrapping'
@@ -45,10 +45,10 @@ export default function Services() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Our Services
+            Additional Services
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            From car sales to complete automotive services, we're your trusted partner for all vehicle needs.
+            Beyond vehicle sales, we offer comprehensive automotive services to keep your car running perfectly.
           </p>
         </div>
 

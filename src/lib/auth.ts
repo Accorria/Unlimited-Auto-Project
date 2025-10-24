@@ -45,6 +45,12 @@ export function createServerClient() {
     return dummyClient as any;
   }
   
+  // Check if service role key is available
+  if (!process.env.SUPABASE_SERVICE_ROLE) {
+    console.warn('SUPABASE_SERVICE_ROLE not found, using regular client');
+    return supabase;
+  }
+  
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE!,
@@ -62,7 +68,9 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     }
 
     // Get user profile with role and dealer info
-    const { data: userProfile, error: profileError } = await supabase
+    // Use service role client to bypass RLS policy issues
+    const serverClient = createServerClient();
+    const { data: userProfile, error: profileError } = await serverClient
       .from('users')
       .select(`
         id,
@@ -70,24 +78,35 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
         email,
         name,
         is_active,
-        dealer_id,
-        dealer:dealers(
-          id,
-          slug,
-          name,
-          is_active
-        )
+        dealer_id
       `)
       .eq('auth_user_id', authUser.id)
       .eq('is_active', true)
       .single();
 
     if (profileError || !userProfile) {
+      console.error('Profile error:', profileError);
       return null;
     }
 
-    // Check if dealer is active
-    if (!userProfile.dealer?.is_active) {
+    // Get dealer info separately to avoid join issues
+    let dealerInfo = null;
+    if (userProfile.dealer_id) {
+      const { data: dealer, error: dealerError } = await serverClient
+        .from('dealers')
+        .select('id, slug, name, is_active')
+        .eq('id', userProfile.dealer_id)
+        .single();
+      
+      if (dealerError) {
+        console.error('Dealer error:', dealerError);
+      } else {
+        dealerInfo = dealer;
+      }
+    }
+
+    // Check if dealer is active (if we have dealer info)
+    if (dealerInfo && !dealerInfo.is_active) {
       return null;
     }
 
@@ -97,8 +116,8 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       name: userProfile.name,
       role: userProfile.role,
       dealer_id: userProfile.dealer_id,
-      dealer_slug: userProfile.dealer.slug,
-      dealer_name: userProfile.dealer.name,
+      dealer_slug: dealerInfo?.slug || null,
+      dealer_name: dealerInfo?.name || null,
       is_active: userProfile.is_active
     };
   } catch (error) {

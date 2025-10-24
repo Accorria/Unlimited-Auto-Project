@@ -109,26 +109,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">By the Numbers</h2>
-            <p className="text-xl text-gray-600">
-              Our commitment to excellence shows in our track record
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-4xl font-bold text-blue-600 mb-2">{stat.number}</div>
-                <div className="text-gray-600 font-medium">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Values */}
       <section className="py-16">
@@ -152,35 +132,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Team */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Meet Our Team</h2>
-            <p className="text-xl text-gray-600">
-              The experienced professionals who make it all possible
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {team.map((member, index) => (
-              <div key={index} className="bg-gray-50 rounded-xl p-8 text-center">
-                <div className="relative w-32 h-32 mx-auto mb-6 rounded-full overflow-hidden">
-                  <Image
-                    src={member.image}
-                    alt={member.name}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{member.name}</h3>
-                <p className="text-blue-600 font-semibold mb-2">{member.position}</p>
-                <p className="text-gray-600 text-sm">{member.experience}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Services Overview */}
       <section className="py-16">
@@ -250,65 +201,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Community */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Community Involvement</h2>
-            <p className="text-xl text-gray-600">
-              We're proud to be part of the Redford community
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-gray-50 rounded-xl p-8">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Local Partnerships</h3>
-              <p className="text-gray-600 mb-4">
-                We partner with local businesses and organizations to support our community. 
-                From sponsoring youth sports teams to participating in community events, 
-                we believe in giving back to the place we call home.
-              </p>
-              <ul className="space-y-2 text-gray-600">
-                <li className="flex items-center">
-                  <span className="text-green-600 mr-2">✓</span>
-                  Redford Youth Sports Sponsor
-                </li>
-                <li className="flex items-center">
-                  <span className="text-green-600 mr-2">✓</span>
-                  Local Chamber of Commerce Member
-                </li>
-                <li className="flex items-center">
-                  <span className="text-green-600 mr-2">✓</span>
-                  Community Event Participant
-                </li>
-              </ul>
-            </div>
-
-            <div className="bg-gray-50 rounded-xl p-8">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Environmental Responsibility</h3>
-              <p className="text-gray-600 mb-4">
-                We're committed to environmentally responsible practices in all our operations. 
-                From proper disposal of automotive fluids to energy-efficient equipment, 
-                we do our part to protect the environment.
-              </p>
-              <ul className="space-y-2 text-gray-600">
-                <li className="flex items-center">
-                  <span className="text-green-600 mr-2">✓</span>
-                  Proper Fluid Disposal
-                </li>
-                <li className="flex items-center">
-                  <span className="text-green-600 mr-2">✓</span>
-                  Energy Efficient Equipment
-                </li>
-                <li className="flex items-center">
-                  <span className="text-green-600 mr-2">✓</span>
-                  Recycling Programs
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* CTA Section */}
       <section className="py-16 bg-gradient-to-r from-blue-600 to-blue-800 text-white">

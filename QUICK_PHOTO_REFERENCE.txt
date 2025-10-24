@@ -1,0 +1,42 @@
+📸 QUICK PHOTO REFERENCE CARD
+================================
+
+EXTERIOR ANGLES (10 photos):
+FDS  = Front Driver Side (front by headlight, driver side)
+FPS  = Front Passenger Side (front by headlight, passenger side)
+SDS  = Side Driver Side (middle of car, driver side)
+SPS  = Side Passenger Side (middle of car, passenger side)
+SRDS = Side Rear Driver Side (rear door area, driver side)
+SRPS = Side Rear Passenger Side (rear door area, passenger side)
+RDS  = Rear Driver Side (rear by taillight, driver side)
+R    = Rear (straight back view)
+F    = Front (straight front view - grille)
+ENG  = Engine (under hood)
+
+INTERIOR ANGLES (5 photos):
+INT  = Interior Dashboard (driver's view)
+INTB = Interior Back (rear seat view)
+DS   = Driver Seat (close up of driver seat)
+PS   = Passenger Seat (close up of passenger seat)
+TRK  = Trunk (cargo area)
+
+DOCUMENTATION (3 photos):
+ODOM = Odometer (mileage reading)
+VIN  = VIN Plate (VIN number visible)
+TAG  = License Plate (if applicable)
+
+MINIMUM REQUIRED: FDS, FPS, SDS, SPS, R, F, INT, ODOM
+
+FOLDER STRUCTURE:
+/public/cars/[VIN]/
+├── FDS.jpg, FPS.jpg, SDS.jpg, SPS.jpg
+├── SRDS.jpg, SRPS.jpg, RDS.jpg, R.jpg, F.jpg
+├── ENG.jpg, INT.jpg, INTB.jpg, DS.jpg, PS.jpg
+├── TRK.jpg, ODOM.jpg, VIN.jpg, TAG.jpg
+
+WORKFLOW:
+1. Take photos in order
+2. Rename files: FDS.jpg, FPS.jpg, etc.
+3. Move to /public/cars/[VIN]/ folder
+4. Update VEHICLE_DATA_SHEET.csv
+5. Repeat for next car

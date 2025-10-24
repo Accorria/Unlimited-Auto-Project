@@ -11,11 +11,43 @@ export default function Contact() {
     interest: 'general'
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle form submission here
-    console.log('Form submitted:', formData)
-    alert('Thank you for your message! We\'ll get back to you soon.')
+    
+    try {
+      const response = await fetch('/api/leads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+          message: formData.message,
+          source: 'contact_section',
+          interest: formData.interest,
+          consent: true
+        }),
+      })
+
+      if (response.ok) {
+        alert('Thank you for your message! We\'ll get back to you soon.')
+        // Reset form
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          message: '',
+          interest: 'general'
+        })
+      } else {
+        alert('There was an error submitting your message. Please try again or call us directly.')
+      }
+    } catch (error) {
+      console.error('Error submitting contact form:', error)
+      alert('There was an error submitting your message. Please try again or call us directly.')
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
