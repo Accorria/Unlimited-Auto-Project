@@ -1,8 +1,24 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Fix for multiple lockfiles warning
+  outputFileTracingRoot: '/Users/prestoneaton/Unlimited Auto Project',
+  
   images: {
-    domains: ['images.unsplash.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'caieldvdbpkrhgjmylve.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
   },
   output: 'standalone',
   typescript: {

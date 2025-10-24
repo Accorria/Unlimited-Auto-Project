@@ -28,6 +28,14 @@
       "namedRegex": "^/admin/inventory/(?<nxtPid>[^/]+?)/edit(?:/)?$"
     },
     {
+      "page": "/api/vehicles/[id]",
+      "regex": "^/api/vehicles/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/vehicles/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
       "page": "/inventory/[id]",
       "regex": "^/inventory/([^/]+?)(?:/)?$",
       "routeKeys": {
@@ -128,6 +136,12 @@
       "namedRegex": "^/contact(?:/)?$"
     },
     {
+      "page": "/credit-application",
+      "regex": "^/credit\\-application(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/credit\\-application(?:/)?$"
+    },
+    {
       "page": "/favicon.ico",
       "regex": "^/favicon\\.ico(?:/)?$",
       "routeKeys": {},
@@ -144,6 +158,12 @@
       "regex": "^/inventory(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/inventory(?:/)?$"
+    },
+    {
+      "page": "/professional-credit-application",
+      "regex": "^/professional\\-credit\\-application(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/professional\\-credit\\-application(?:/)?$"
     },
     {
       "page": "/services",
