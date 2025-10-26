@@ -793,12 +793,16 @@ export default function CreditApplicationForm() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">ANNUAL AMOUNT $</label>
-                  <input
-                    type="text"
+                  <select
                     value={data.applicant.annualAmount}
                     onChange={(e) => set("applicant", { ...data.applicant, annualAmount: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
+                  >
+                    <option value="">Select Annual Amount</option>
+                    {annualIncomeOptions.map((income) => (
+                      <option key={income} value={income}>{income}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -814,20 +818,18 @@ export default function CreditApplicationForm() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">HOW LONG?</label>
-                  <div className="flex space-x-1">
-                    <input
-                      type="text"
-                      value={data.applicant.previousHowLongYears}
-                      onChange={(e) => set("applicant", { ...data.applicant, previousHowLongYears: e.target.value })}
-                      className="w-16 px-2 py-2 border border-gray-300 rounded-md text-center"
-                    />
-                    <input
-                      type="text"
-                      value={data.applicant.previousHowLongMonths}
-                      onChange={(e) => set("applicant", { ...data.applicant, previousHowLongMonths: e.target.value })}
-                      className="w-16 px-2 py-2 border border-gray-300 rounded-md text-center"
-                    />
-                  </div>
+                  <select
+                    value={data.applicant.previousHowLongDuration}
+                    onChange={(e) => set("applicant", { ...data.applicant, previousHowLongDuration: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="">Select Duration</option>
+                    {employmentDurationOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">OTHER INCOME SOURCE</label>
@@ -1171,15 +1173,19 @@ export default function CreditApplicationForm() {
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">ANNUAL AMOUNT $</label>
-                    <input
-                      type="text"
-                      value={data.jointApplicant.annualAmount}
-                      onChange={(e) => set("jointApplicant", { ...data.jointApplicant, annualAmount: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    />
-                  </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">ANNUAL AMOUNT $</label>
+                      <select
+                        value={data.jointApplicant.annualAmount}
+                        onChange={(e) => set("jointApplicant", { ...data.jointApplicant, annualAmount: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      >
+                        <option value="">Select Annual Amount</option>
+                        {annualIncomeOptions.map((income) => (
+                          <option key={income} value={income}>{income}</option>
+                        ))}
+                      </select>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -1194,20 +1200,18 @@ export default function CreditApplicationForm() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">HOW LONG?</label>
-                    <div className="flex space-x-1">
-                      <input
-                        type="text"
-                        value={data.jointApplicant.previousHowLongYears}
-                        onChange={(e) => set("jointApplicant", { ...data.jointApplicant, previousHowLongYears: e.target.value })}
-                        className="w-16 px-2 py-2 border border-gray-300 rounded-md text-center"
-                      />
-                      <input
-                        type="text"
-                        value={data.jointApplicant.previousHowLongMonths}
-                        onChange={(e) => set("jointApplicant", { ...data.jointApplicant, previousHowLongMonths: e.target.value })}
-                        className="w-16 px-2 py-2 border border-gray-300 rounded-md text-center"
-                      />
-                    </div>
+                    <select
+                      value={data.jointApplicant.previousHowLongDuration}
+                      onChange={(e) => set("jointApplicant", { ...data.jointApplicant, previousHowLongDuration: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                      <option value="">Select Duration</option>
+                      {employmentDurationOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">OTHER INCOME SOURCE</label>
@@ -1279,34 +1283,6 @@ export default function CreditApplicationForm() {
           <h2 className="text-xl font-bold text-gray-900 mb-4">SIGNATURES</h2>
           
           <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth / Age / Social Security Number</label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <input
-                  type="date"
-                  value={data.applicant.dateOfBirth}
-                  onChange={(e) => set("applicant", { ...data.applicant, dateOfBirth: e.target.value })}
-                  className="px-3 py-2 border border-gray-300 rounded-md"
-                />
-                <input
-                  type="text"
-                  value={data.applicant.age}
-                  onChange={(e) => set("applicant", { ...data.applicant, age: e.target.value })}
-                  className="px-3 py-2 border border-gray-300 rounded-md"
-                />
-                <input
-                  type="text"
-                  value={data.applicant.socialSecurityNumber}
-                  onChange={(e) => {
-                    // Only allow 4 digits
-                    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
-                    set("applicant", { ...data.applicant, socialSecurityNumber: value });
-                  }}
-                  className="px-3 py-2 border border-gray-300 rounded-md"
-                  maxLength={4}
-                />
-              </div>
-            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
