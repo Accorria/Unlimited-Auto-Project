@@ -176,7 +176,14 @@ export default function InventoryPage() {
     const fetchVehicles = async () => {
       try {
         // First try to load from API (this will include the Mini Cooper)
-        const response = await fetch('/api/vehicles?dealer=unlimited-auto')
+        const response = await fetch(`/api/vehicles?dealer=unlimited-auto&t=${Date.now()}&v=${Math.random()}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        })
         
         if (response.ok) {
           const data = await response.json()
@@ -202,6 +209,10 @@ export default function InventoryPage() {
     }
 
     fetchVehicles()
+    
+    // Refresh every 10 seconds to catch reordering
+    const interval = setInterval(fetchVehicles, 10000)
+    return () => clearInterval(interval)
   }, [])
 
   // Get unique makes and years for filters
@@ -271,7 +282,7 @@ export default function InventoryPage() {
       <Header />
       
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-800 to-blue-900 text-white py-16">
+      <section className="bg-linear-to-r from-blue-800 to-blue-900 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">Our Vehicle Inventory</h1>
@@ -495,7 +506,7 @@ export default function InventoryPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+      <section className="py-16 bg-linear-to-r from-blue-600 to-blue-800 text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-4">Can't Find What You're Looking For?</h2>
           <p className="text-xl text-blue-100 mb-8">

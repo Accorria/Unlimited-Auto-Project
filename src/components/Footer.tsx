@@ -95,11 +95,11 @@ export default function Footer() {
               © 2024 Unlimited Auto. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              <Link href="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">
-                Privacy Policy
+              <Link href="/contact" className="text-gray-400 hover:text-white text-sm transition-colors">
+                Contact Us
               </Link>
-              <Link href="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">
-                Terms of Service
+              <Link href="/about" className="text-gray-400 hover:text-white text-sm transition-colors">
+                About Us
               </Link>
             </div>
           </div>

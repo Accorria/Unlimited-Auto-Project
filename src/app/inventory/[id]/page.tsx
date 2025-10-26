@@ -32,6 +32,15 @@ interface Vehicle {
   transmission?: string
   drivetrain?: string
   color?: string
+  // New specification fields
+  engine?: string
+  mpg?: string
+  body_style?: string
+  doors?: number
+  passengers?: number
+  fuel_type?: string
+  exterior_color?: string
+  interior_color?: string
 }
 
 export default function VehicleDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -49,7 +58,7 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
     const fetchVehicle = async () => {
       try {
         // First try to fetch from API (this will include the Mini Cooper)
-        const response = await fetch('/api/vehicles?dealer=unlimited-auto')
+        const response = await fetch(`/api/vehicles?dealer=unlimited-auto&t=${Date.now()}`)
         
         if (response.ok) {
           const data = await response.json()
@@ -226,31 +235,31 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <span className="text-gray-600">Engine:</span>
-                  <span className="ml-2 font-medium">{vehicle.engine}</span>
+                  <span className="ml-2 font-medium">{vehicle.engine || 'Not Specified'}</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Transmission:</span>
-                  <span className="ml-2 font-medium">{vehicle.transmission}</span>
+                  <span className="ml-2 font-medium">{vehicle.transmission || 'Not Specified'}</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Drivetrain:</span>
-                  <span className="ml-2 font-medium">{vehicle.drivetrain}</span>
+                  <span className="ml-2 font-medium">{vehicle.drivetrain || 'Not Specified'}</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Fuel Type:</span>
-                  <span className="ml-2 font-medium">{vehicle.fuelType}</span>
+                  <span className="ml-2 font-medium">{vehicle.fuel_type || 'Not Specified'}</span>
                 </div>
                 <div>
                   <span className="text-gray-600">MPG:</span>
-                  <span className="ml-2 font-medium">{vehicle.mpg}</span>
+                  <span className="ml-2 font-medium">{vehicle.mpg || 'Not Specified'}</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Body Style:</span>
-                  <span className="ml-2 font-medium">{vehicle.bodyStyle}</span>
+                  <span className="ml-2 font-medium">{vehicle.body_style || 'Not Specified'}</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Doors:</span>
-                  <span className="ml-2 font-medium">{vehicle.doors}</span>
+                  <span className="ml-2 font-medium">{vehicle.doors || 'Not Specified'}</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Passengers:</span>

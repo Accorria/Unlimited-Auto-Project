@@ -38,6 +38,7 @@ export async function GET(req: NextRequest) {
         )
       `)
       .eq('dealer_id', dealer.id)
+      .order('display_order', { ascending: true })
       .order('created_at', { ascending: false })
 
     // Apply filters
@@ -113,7 +114,18 @@ export async function POST(req: NextRequest) {
         price: body.price,
         vin: body.vin,
         description: body.description,
-        status: body.status || 'available'
+        status: body.status || 'available',
+        // New specification fields
+        engine: body.engine,
+        transmission: body.transmission,
+        drivetrain: body.drivetrain,
+        mpg: body.mpg,
+        body_style: body.bodyStyle,
+        doors: body.doors,
+        passengers: body.passengers,
+        fuel_type: body.fuelType,
+        exterior_color: body.color,
+        interior_color: body.interiorColor
       })
       .select()
       .single()

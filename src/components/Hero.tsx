@@ -6,6 +6,7 @@ import Image from 'next/image'
 
 export default function Hero() {
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
 
   const slides = [
     {
@@ -43,12 +44,18 @@ export default function Hero() {
   }
 
   useEffect(() => {
-    const interval = setInterval(nextSlide, 6000)
-    return () => clearInterval(interval)
-  }, [])
+    if (!isPaused) {
+      const interval = setInterval(nextSlide, 10000) // 10 seconds
+      return () => clearInterval(interval)
+    }
+  }, [isPaused])
 
   return (
-    <section className="relative h-[500px] sm:h-[600px] md:h-[700px] overflow-hidden">
+    <section 
+      className="relative h-[500px] sm:h-[600px] md:h-[700px] overflow-hidden"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
       {slides.map((slide, index) => (
         <div
           key={index}
@@ -80,13 +87,15 @@ export default function Hero() {
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Link
                     href={slide.ctaLink}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-lg transition-colors duration-300 shadow-lg"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-lg transition-colors duration-300 shadow-lg cursor-pointer z-10 relative"
+                    style={{ pointerEvents: 'auto' }}
                   >
                     {slide.ctaText}
                   </Link>
                   <Link
                     href="/contact"
-                    className="border-2 border-white text-white hover:bg-white hover:text-gray-900 font-bold py-4 px-8 rounded-lg text-lg transition-colors duration-300"
+                    className="border-2 border-white text-white hover:bg-white hover:text-gray-900 font-bold py-4 px-8 rounded-lg text-lg transition-colors duration-300 cursor-pointer z-10 relative"
+                    style={{ pointerEvents: 'auto' }}
                   >
                     Contact Us
                   </Link>

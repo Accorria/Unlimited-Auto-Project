@@ -62,7 +62,7 @@ export default function AboutPage() {
       <Header />
       
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-800 to-blue-900 text-white py-16">
+      <section className="bg-linear-to-r from-blue-800 to-blue-900 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">About Unlimited Auto</h1>
@@ -203,7 +203,7 @@ export default function AboutPage() {
 
 
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+      <section className="py-16 bg-linear-to-r from-blue-600 to-blue-800 text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to Experience the Difference?</h2>
           <p className="text-xl text-blue-100 mb-8">

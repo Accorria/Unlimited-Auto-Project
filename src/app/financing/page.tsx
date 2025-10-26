@@ -122,7 +122,7 @@ export default function FinancingPage() {
       <Header />
       
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-800 to-blue-900 text-white py-16">
+      <section className="bg-linear-to-r from-blue-800 to-blue-900 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">Fastest Financial Improvement in Redford</h1>
@@ -327,27 +327,57 @@ export default function FinancingPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Income *</label>
-                  <input
-                    type="number"
+                  <select
                     name="income"
                     value={formData.income}
                     onChange={handleInputChange}
                     required
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
-                  />
+                  >
+                    <option value="">Select Monthly Income</option>
+                    <option value="1000">$1,000</option>
+                    <option value="1500">$1,500</option>
+                    <option value="2000">$2,000</option>
+                    <option value="2500">$2,500</option>
+                    <option value="3000">$3,000</option>
+                    <option value="3500">$3,500</option>
+                    <option value="4000">$4,000</option>
+                    <option value="4500">$4,500</option>
+                    <option value="5000">$5,000</option>
+                    <option value="6000">$6,000</option>
+                    <option value="7000">$7,000</option>
+                    <option value="8000">$8,000</option>
+                    <option value="9000">$9,000</option>
+                    <option value="10000">$10,000+</option>
+                  </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Down Payment</label>
-                  <input
-                    type="number"
+                  <select
                     name="downPayment"
                     value={formData.downPayment}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
-                  />
+                  >
+                    <option value="">Select Down Payment</option>
+                    <option value="1000">$1,000</option>
+                    <option value="1500">$1,500</option>
+                    <option value="2000">$2,000</option>
+                    <option value="2500">$2,500</option>
+                    <option value="3000">$3,000</option>
+                    <option value="3500">$3,500</option>
+                    <option value="4000">$4,000</option>
+                    <option value="4500">$4,500</option>
+                    <option value="5000">$5,000</option>
+                    <option value="6000">$6,000</option>
+                    <option value="7000">$7,000</option>
+                    <option value="8000">$8,000</option>
+                    <option value="9000">$9,000</option>
+                    <option value="10000">$10,000+</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Credit Score (Optional)</label>
@@ -370,14 +400,34 @@ export default function FinancingPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle of Interest</label>
-                <input
-                  type="text"
+                <select
                   name="vehicleInterest"
                   value={formData.vehicleInterest}
                   onChange={handleInputChange}
-                  placeholder="e.g., 2020 Honda Civic"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                >
+                  <option value="">Select Vehicle</option>
+                  <option value="2021 Subaru Impreza Sport">2021 Subaru Impreza Sport</option>
+                  <option value="2020 Subaru Outback Limited">2020 Subaru Outback Limited</option>
+                  <option value="2019 Lexus ES 350">2019 Lexus ES 350</option>
+                  <option value="2020 Lincoln Navigator">2020 Lincoln Navigator</option>
+                  <option value="2021 Chevrolet Silverado 1500">2021 Chevrolet Silverado 1500</option>
+                  <option value="2019 Infiniti Q50">2019 Infiniti Q50</option>
+                  <option value="2020 Chevrolet Camaro SS">2020 Chevrolet Camaro SS</option>
+                  <option value="2018 Audi A4">2018 Audi A4</option>
+                  <option value="2021 Hyundai Elantra">2021 Hyundai Elantra</option>
+                  <option value="2019 Volkswagen Jetta">2019 Volkswagen Jetta</option>
+                  <option value="2020 Mazda CX-5">2020 Mazda CX-5</option>
+                  <option value="2017 Audi A6">2017 Audi A6</option>
+                  <option value="2021 Honda Civic">2021 Honda Civic</option>
+                  <option value="2019 Kia Optima">2019 Kia Optima</option>
+                  <option value="2018 Infiniti QX60">2018 Infiniti QX60</option>
+                  <option value="2020 Jeep Grand Cherokee">2020 Jeep Grand Cherokee</option>
+                  <option value="2019 Ram 1500">2019 Ram 1500</option>
+                  <option value="2021 Chevrolet Equinox">2021 Chevrolet Equinox</option>
+                  <option value="2020 Chevrolet Malibu">2020 Chevrolet Malibu</option>
+                  <option value="Other">Other (Specify in Comments)</option>
+                </select>
               </div>
 
               {/* Status Messages */}
@@ -568,7 +618,7 @@ export default function FinancingPage() {
       </div>
 
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+      <section className="py-16 bg-linear-to-r from-blue-600 to-blue-800 text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to Drive Home Today?</h2>
           <p className="text-xl text-blue-100 mb-8">

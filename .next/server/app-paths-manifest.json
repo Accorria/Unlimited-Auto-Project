@@ -1,1 +1,7 @@
-{}
+{
+  "/credit-application/page": "app/credit-application/page.js",
+  "/admin/inventory/page": "app/admin/inventory/page.js",
+  "/inventory/page": "app/inventory/page.js",
+  "/page": "app/page.js",
+  "/financing/page": "app/financing/page.js"
+}

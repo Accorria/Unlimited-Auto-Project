@@ -46,16 +46,12 @@ export async function POST(req: NextRequest) {
       zip_code: body.applicant?.zip || '',
       
       // Financial information
-      income: body.applicant?.grossAnnualIncome || '',
-      net_monthly_income: body.applicant?.grossAnnualIncome ? 
-        parseFloat(body.applicant.grossAnnualIncome.replace(/[^0-9.]/g, '')) / 12 : null,
-      employer: body.applicant?.employer || '',
-      down_payment: body.financing?.downPayment ? 
-        parseInt(body.financing.downPayment.replace(/[^0-9]/g, '')) : null,
-      
-      // Vehicle information
-      vehicle_id: body.financing?.vehicleId || null,
-      message: `Vehicle: ${body.financing?.year} ${body.financing?.make} ${body.financing?.model} | Sales Price: ${body.financing?.salesPrice}`,
+      income: body.applicant?.grossAnnualSalary || '',
+      net_monthly_income: body.applicant?.grossAnnualSalary ? 
+        parseFloat(body.applicant.grossAnnualSalary.replace(/[^0-9.]/g, '')) / 12 : null,
+      employer: body.applicant?.employerName || '',
+      // Message
+      message: `Credit application submitted`,
       
       // Attribution tracking
       source: 'credit_application',
@@ -164,30 +160,79 @@ export async function POST(req: NextRequest) {
     if (resend) {
       try {
         await resend.emails.send({
-        from: 'noreply@unlimitedauto.com',
+        from: 'noreply@unlimitedautorepaircollision.com',
         to: 'unlimitedautoredford@gmail.com',
         subject: `New Credit Application from ${lead.name} - Unlimited Auto`,
         html: `
           <h2>New Credit Application Received!</h2>
-          <p><strong>Name:</strong> ${lead.name}</p>
-          <p><strong>Phone:</strong> ${lead.phone}</p>
-          <p><strong>Email:</strong> ${lead.email || 'N/A'}</p>
-          <p><strong>Address:</strong> ${lead.address || 'N/A'}</p>
-          <p><strong>City:</strong> ${lead.city || 'N/A'}</p>
-          <p><strong>State:</strong> ${lead.state || 'N/A'}</p>
-          <p><strong>Zip:</strong> ${lead.zip_code || 'N/A'}</p>
-          <p><strong>Income:</strong> ${lead.income || 'N/A'}</p>
-          <p><strong>Net Monthly Income:</strong> ${lead.net_monthly_income || 'N/A'}</p>
-          <p><strong>Employer:</strong> ${lead.employer || 'N/A'}</p>
-          <p><strong>Down Payment:</strong> ${lead.down_payment || 'N/A'}</p>
-          <p><strong>Vehicle:</strong> ${body.financing?.year} ${body.financing?.make} ${body.financing?.model}</p>
-          <p><strong>Vehicle ID:</strong> ${body.financing?.vehicleId || 'N/A'}</p>
-          <p><strong>Sales Price:</strong> ${body.financing?.salesPrice || 'N/A'}</p>
+          
+          <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #2c3e50; margin-top: 0;">Applicant Information</h3>
+            <p><strong>Name:</strong> ${body.applicant?.firstName} ${body.applicant?.middleInitial} ${body.applicant?.lastName} ${body.applicant?.srJr ? `(${body.applicant.srJr})` : ''}</p>
+            <p><strong>Phone:</strong> ${body.applicant?.homePhone || 'N/A'}</p>
+            <p><strong>Address:</strong> ${body.applicant?.streetAddress || 'N/A'} ${body.applicant?.aptNumber ? `Apt ${body.applicant.aptNumber}` : ''}</p>
+            <p><strong>City, State, ZIP:</strong> ${body.applicant?.city || 'N/A'}, ${body.applicant?.state || 'N/A'} ${body.applicant?.zip || 'N/A'}</p>
+            <p><strong>Date of Birth:</strong> ${body.applicant?.dateOfBirthMonth || ''}/${body.applicant?.dateOfBirthDay || ''}/${body.applicant?.dateOfBirthYear || ''}</p>
+            <p><strong>Age:</strong> ${body.applicant?.age || 'N/A'}</p>
+            <p><strong>SSN (Last 4):</strong> ${body.applicant?.socialSecurityNumber ? `****-****-${body.applicant.socialSecurityNumber}` : 'N/A'}</p>
+            <p><strong>Housing Status:</strong> ${body.applicant?.housingStatus || 'N/A'}</p>
+            <p><strong>Monthly Payment:</strong> ${body.applicant?.monthlyPayment || 'N/A'}</p>
+            <p><strong>How Long at Address:</strong> ${body.applicant?.howLongYears || '0'} years, ${body.applicant?.howLongMonths || '0'} months</p>
+          </div>
+          
+          <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #2c3e50; margin-top: 0;">Employment Information</h3>
+            <p><strong>Employer:</strong> ${body.applicant?.employerName || 'N/A'}</p>
+            <p><strong>Position:</strong> ${body.applicant?.positionTitle || 'N/A'}</p>
+            <p><strong>Work Phone:</strong> ${body.applicant?.workPhone || 'N/A'}</p>
+            <p><strong>Employer Address:</strong> ${body.applicant?.employerAddress || 'N/A'}</p>
+            <p><strong>How Long Employed:</strong> ${body.applicant?.employerHowLongYears || '0'} years, ${body.applicant?.employerHowLongMonths || '0'} months</p>
+            <p><strong>Gross Annual Salary:</strong> ${body.applicant?.grossAnnualSalary || 'N/A'}</p>
+            <p><strong>Annual Amount:</strong> ${body.applicant?.annualAmount || 'N/A'}</p>
+            <p><strong>Other Income Source:</strong> ${body.applicant?.otherIncomeSource || 'N/A'}</p>
+            <p><strong>Previous Employer/School:</strong> ${body.applicant?.previousEmployerOrSchool || 'N/A'}</p>
+          </div>
+          
+          ${body.jointApplicantEnabled ? `
+          <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #2c3e50; margin-top: 0;">Joint Applicant Information</h3>
+            <p><strong>Relationship:</strong> ${body.jointApplicantRelationship || 'N/A'}</p>
+            <p><strong>Name:</strong> ${body.jointApplicant?.firstName} ${body.jointApplicant?.middleInitial} ${body.jointApplicant?.lastName} ${body.jointApplicant?.srJr ? `(${body.jointApplicant.srJr})` : ''}</p>
+            <p><strong>Phone:</strong> ${body.jointApplicant?.homePhone || 'N/A'}</p>
+            <p><strong>Address:</strong> ${body.jointApplicant?.streetAddress || 'N/A'} ${body.jointApplicant?.aptNumber ? `Apt ${body.jointApplicant.aptNumber}` : ''}</p>
+            <p><strong>City, State, ZIP:</strong> ${body.jointApplicant?.city || 'N/A'}, ${body.jointApplicant?.state || 'N/A'} ${body.jointApplicant?.zip || 'N/A'}</p>
+            <p><strong>Date of Birth:</strong> ${body.jointApplicant?.dateOfBirthMonth || ''}/${body.jointApplicant?.dateOfBirthDay || ''}/${body.jointApplicant?.dateOfBirthYear || ''}</p>
+            <p><strong>Age:</strong> ${body.jointApplicant?.age || 'N/A'}</p>
+            <p><strong>SSN:</strong> ${body.jointApplicant?.socialSecurityNumber || 'N/A'}</p>
+            <p><strong>Housing Status:</strong> ${body.jointApplicant?.housingStatus || 'N/A'}</p>
+            <p><strong>Monthly Payment:</strong> ${body.jointApplicant?.monthlyPayment || 'N/A'}</p>
+            <p><strong>Employer:</strong> ${body.jointApplicant?.employerName || 'N/A'}</p>
+            <p><strong>Position:</strong> ${body.jointApplicant?.positionTitle || 'N/A'}</p>
+            <p><strong>Gross Annual Salary:</strong> ${body.jointApplicant?.grossAnnualSalary || 'N/A'}</p>
+          </div>
+          ` : ''}
+          
+          
+          <div style="background: #f0f8ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #2c3e50; margin-top: 0;">Signatures</h3>
+            <p><strong>Applicant Signature:</strong> ${body.applicantSignatureName || 'N/A'}</p>
+            <p><strong>Applicant Signature Date:</strong> ${body.applicantSignatureDate || 'N/A'}</p>
+            ${body.jointApplicantEnabled ? `
+            <p><strong>Joint Applicant Signature:</strong> ${body.jointApplicantSignatureName || 'N/A'}</p>
+            <p><strong>Joint Applicant Signature Date:</strong> ${body.jointApplicantSignatureDate || 'N/A'}</p>
+            ` : ''}
+          </div>
+          
           <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
-          <p><strong>Full Application Data:</strong></p>
-          <pre style="background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto;">
+          <p><strong>Dealer:</strong> ${body.dealerName}</p>
+          <p><strong>Program Type:</strong> ${body.programType || 'N/A'}</p>
+          
+          <details style="margin-top: 20px;">
+            <summary style="cursor: pointer; font-weight: bold;">View Complete Application Data</summary>
+            <pre style="background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; margin-top: 10px;">
 ${JSON.stringify(body, null, 2)}
-          </pre>
+            </pre>
+          </details>
         `,
       })
         console.log('Credit application email notification sent successfully')

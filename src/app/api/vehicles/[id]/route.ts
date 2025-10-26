@@ -79,7 +79,18 @@ export async function PUT(
         price: body.price,
         vin: body.vin,
         description: body.description,
-        status: body.status || 'active'
+        status: body.status || 'active',
+        // Specification fields
+        engine: body.engine,
+        transmission: body.transmission,
+        drivetrain: body.drivetrain,
+        mpg: body.mpg,
+        body_style: body.bodyStyle,
+        doors: body.doors,
+        passengers: body.passengers,
+        fuel_type: body.fuelType,
+        exterior_color: body.color,
+        interior_color: body.interiorColor
       })
       .eq('id', vehicleId)
       .select()

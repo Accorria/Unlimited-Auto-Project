@@ -190,7 +190,7 @@ export async function POST(req: NextRequest) {
         if (resend) {
           try {
             await resend.emails.send({
-        from: 'noreply@unlimitedauto.com', // You'll need to verify this domain
+        from: 'noreply@unlimitedautorepaircollision.com',
         to: 'unlimitedautoredford@gmail.com',
         subject: `New Lead from ${lead.name} - Unlimited Auto`,
         html: `

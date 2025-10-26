@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import VehicleSelector from "./VehicleSelector";
+import DocumentUpload, { DocumentFile } from "./DocumentUpload";
 
 type Applicant = {
   fullName: string;
@@ -10,6 +11,7 @@ type Applicant = {
   lastName: string;
   state: string;
   streetAddress: string;
+  aptNumber: string;
   howLongAtAddress: string;
   city: string;
   zip: string;
@@ -33,6 +35,10 @@ type Applicant = {
   dateOfBirth: string;
   age: string;
   socialSecurityNumber: string;
+  // New fields for better UX
+  employerHowLongDuration: string; // Dropdown for employment duration
+  previousHowLongDuration: string; // Dropdown for previous employment duration
+  howLongAtAddressDuration: string; // Dropdown for address duration
 };
 
 type Financing = {
@@ -101,6 +107,7 @@ const emptyApplicant: Applicant = {
   lastName: "",
   state: "",
   streetAddress: "",
+  aptNumber: "",
   howLongAtAddress: "",
   city: "",
   zip: "",
@@ -124,6 +131,10 @@ const emptyApplicant: Applicant = {
   dateOfBirth: "",
   age: "",
   socialSecurityNumber: "",
+  // New fields
+  employerHowLongDuration: "",
+  previousHowLongDuration: "",
+  howLongAtAddressDuration: "",
 };
 
 const emptyReference: Reference = {
@@ -140,6 +151,7 @@ export default function CreditApplicationForm() {
   const [loading, setLoading] = useState(false);
   const [ok, setOk] = useState<string | null>(null);
   const [vehicles, setVehicles] = useState<any[]>([]);
+  const [documents, setDocuments] = useState<DocumentFile[]>([]);
 
   // Fetch vehicles for the dropdown
   useEffect(() => {
@@ -204,6 +216,115 @@ export default function CreditApplicationForm() {
     '$140,000', '$150,000', '$160,000', '$170,000', '$180,000', '$190,000', '$200,000+'
   ]
 
+  // Employment duration options
+  const employmentDurationOptions = [
+    { value: "30-days", label: "30 days" },
+    { value: "60-days", label: "60 days" },
+    { value: "90-days", label: "90 days" },
+    { value: "6-months", label: "6 months" },
+    { value: "1-year", label: "1 year" },
+    { value: "2-years", label: "2 years" },
+    { value: "3-years", label: "3 years" },
+    { value: "4-years", label: "4 years" },
+    { value: "5-years", label: "5 years" },
+    { value: "6-years", label: "6 years" },
+    { value: "7-years", label: "7 years" },
+    { value: "8-years", label: "8 years" },
+    { value: "9-years", label: "9 years" },
+    { value: "10-years", label: "10+ years" }
+  ]
+
+  // Address duration options
+  const addressDurationOptions = [
+    { value: "6-months", label: "6 months" },
+    { value: "1-year", label: "1 year" },
+    { value: "2-years", label: "2 years" },
+    { value: "3-years", label: "3 years" },
+    { value: "4-years", label: "4 years" },
+    { value: "5-years", label: "5 years" },
+    { value: "6-years", label: "6 years" },
+    { value: "7-years", label: "7 years" },
+    { value: "8-years", label: "8 years" },
+    { value: "9-years", label: "9 years" },
+    { value: "10-years", label: "10+ years" }
+  ]
+
+  // Position titles organized by industry
+  const positionTitles = {
+    automotive: [
+      "Manager", "Supervisor", "Team Lead", "Senior", "Specialist", "Coordinator",
+      "Analyst", "Assistant", "Clerk", "Technician", "Operator", "Driver",
+      "Sales Representative", "Customer Service", "Administrative Assistant",
+      "Accountant", "Engineer", "Other"
+    ],
+    energy: [
+      "Manager", "Supervisor", "Team Lead", "Senior", "Specialist", "Coordinator",
+      "Analyst", "Assistant", "Clerk", "Technician", "Operator", "Driver",
+      "Sales Representative", "Customer Service", "Administrative Assistant",
+      "Accountant", "Engineer", "Other"
+    ],
+    healthcare: [
+      "Manager", "Supervisor", "Team Lead", "Senior", "Specialist", "Coordinator",
+      "Analyst", "Assistant", "Clerk", "Technician", "Sales Representative", 
+      "Customer Service", "Administrative Assistant", "Accountant", "Doctor", 
+      "Nurse", "Other"
+    ],
+    legal: [
+      "Manager", "Supervisor", "Team Lead", "Senior", "Specialist", "Coordinator",
+      "Analyst", "Assistant", "Clerk", "Sales Representative", "Customer Service", 
+      "Administrative Assistant", "Accountant", "Lawyer", "Other"
+    ],
+    general: [
+      "Manager", "Supervisor", "Team Lead", "Senior", "Specialist", "Coordinator",
+      "Analyst", "Assistant", "Clerk", "Technician", "Operator", "Driver",
+      "Sales Representative", "Customer Service", "Administrative Assistant",
+      "Accountant", "Engineer", "Teacher", "Nurse", "Doctor", "Lawyer",
+      "Construction Worker", "Mechanic", "Electrician", "Plumber", "Other"
+    ]
+  }
+
+  // Function to get position titles based on employer
+  const getPositionTitlesForEmployer = (employer: string) => {
+    if (!employer) return positionTitles.general
+    
+    if (employer === 'Ford Motor Company' || employer === 'General Motors' || employer === 'Chrysler/Stellantis') {
+      return positionTitles.automotive
+    } else if (employer === 'DTE Energy' || employer === 'Consumers Energy' || employer === 'Michigan Public Service Commission') {
+      return positionTitles.energy
+    } else if (employer === 'Henry Ford Health System' || employer === 'Beaumont Health' || employer === 'Ascension Health') {
+      return positionTitles.healthcare
+    } else if (employer === 'Other') {
+      return positionTitles.general
+    } else {
+      return positionTitles.general
+    }
+  }
+
+  // Common employers in Michigan area
+  const commonEmployers = [
+    "Ford Motor Company", "General Motors", "Chrysler/Stellantis", "Amazon",
+    "Walmart", "Target", "Kroger", "Meijer", "Home Depot", "Lowes",
+    "McDonald's", "Subway", "Starbucks", "FedEx", "UPS", "USPS",
+    "Detroit Public Schools", "Wayne State University", "University of Michigan",
+    "Henry Ford Health System", "Beaumont Health", "Ascension Health",
+    "DTE Energy", "Consumers Energy", "Comcast", "AT&T", "Verizon",
+    "Bank of America", "Chase", "Wells Fargo", "PNC Bank", "Other"
+  ]
+
+  // State to cities mapping (major cities for each state)
+  const stateCities: { [key: string]: string[] } = {
+    "MI": ["Detroit", "Grand Rapids", "Warren", "Sterling Heights", "Lansing", "Ann Arbor", "Livonia", "Dearborn", "Westland", "Troy", "Farmington Hills", "Kalamazoo", "Wyoming", "Southfield", "Rochester Hills", "Taylor", "Pontiac", "St. Clair Shores", "Royal Oak", "Novi", "Dearborn Heights", "Battle Creek", "Saginaw", "Kentwood", "East Lansing", "Roseville", "Portage", "Midland", "Lincoln Park", "Bay City", "Other"],
+    "CA": ["Los Angeles", "San Diego", "San Jose", "San Francisco", "Fresno", "Sacramento", "Long Beach", "Oakland", "Bakersfield", "Anaheim", "Santa Ana", "Riverside", "Stockton", "Irvine", "Chula Vista", "Fremont", "San Bernardino", "Modesto", "Fontana", "Oxnard", "Moreno Valley", "Huntington Beach", "Glendale", "Santa Clarita", "Garden Grove", "Oceanside", "Rancho Cucamonga", "Santa Rosa", "Ontario", "Lancaster", "Other"],
+    "TX": ["Houston", "San Antonio", "Dallas", "Austin", "Fort Worth", "El Paso", "Arlington", "Corpus Christi", "Plano", "Laredo", "Lubbock", "Garland", "Irving", "Amarillo", "Grand Prairie", "Brownsville", "Pasadena", "Mesquite", "McKinney", "McAllen", "Killeen", "Frisco", "Waco", "Carrollton", "Pearland", "Denton", "Midland", "Abilene", "Round Rock", "Richardson", "Other"],
+    "FL": ["Jacksonville", "Miami", "Tampa", "Orlando", "St. Petersburg", "Hialeah", "Tallahassee", "Fort Lauderdale", "Port St. Lucie", "Cape Coral", "Pembroke Pines", "Hollywood", "Miramar", "Gainesville", "Coral Springs", "Miami Gardens", "Clearwater", "Palm Bay", "West Palm Beach", "Pompano Beach", "Lakeland", "Davie", "Miami Beach", "Sunrise", "Plantation", "Boca Raton", "Deltona", "Largo", "Deerfield Beach", "Boynton Beach", "Other"],
+    "NY": ["New York City", "Buffalo", "Rochester", "Yonkers", "Syracuse", "Albany", "New Rochelle", "Mount Vernon", "Schenectady", "Utica", "White Plains", "Hempstead", "Troy", "Niagara Falls", "Binghamton", "Freeport", "Valley Stream", "Long Beach", "Rome", "Ithaca", "Poughkeepsie", "Watertown", "Elmira", "Middletown", "Auburn", "Oswego", "Kingston", "Batavia", "Glens Falls", "Plattsburgh", "Other"]
+  }
+
+  // Helper function to get cities for a state
+  const getCitiesForState = (state: string): string[] => {
+    return stateCities[state] || []
+  }
+
   const [data, setData] = useState<FormData>({
     dealerName: "Unlimited Auto Repair & Collision LLC",
     dealerNumber: "",
@@ -262,9 +383,6 @@ export default function CreditApplicationForm() {
     if (!data.applicant.streetAddress) e.push("Applicant address is required.");
     if (!data.applicant.city || !data.applicant.state || !data.applicant.zip)
       e.push("Applicant city/state/zip required.");
-    if (!data.financing.vehicleId)
-      e.push("Please select a vehicle from our inventory.");
-    if (!data.financing.salesPrice) e.push("Sales price required.");
     if (!data.applicantSignature || !data.applicantSignatureName)
       e.push("Applicant must sign and print name.");
     if (data.jointApplicantEnabled && (!data.jointApplicantSignature || !data.jointApplicantSignatureName))
@@ -297,35 +415,6 @@ export default function CreditApplicationForm() {
         applicant: { ...emptyApplicant },
         jointApplicant: { ...emptyApplicant },
         jointApplicantRelationship: "",
-        financing: {
-          ...d.financing,
-          salesPrice: "",
-          downPayment: "",
-          netTrade: "",
-          amountFinanced: "",
-          program: "",
-          term: "",
-          grossCapReduction: "",
-          adjustedCap: "",
-          msrp: "",
-          program2: "",
-          paymentTerm: "",
-          condition: "",
-          year: "",
-          make: "",
-          model: "",
-          retailLeaseVin: "",
-          usedValueGuide: "",
-          bookValue: "",
-          mileage: "",
-          tradeYear: "",
-          tradeMake: "",
-          tradeModel: "",
-        },
-        autoCreditReference: { ...emptyReference },
-        otherCreditReference: { ...emptyReference },
-        nearestRelative: { ...emptyReference },
-        friendRelative: { ...emptyReference },
         applicantSignature: false,
         jointApplicantSignature: false,
         applicantSignatureName: "",
@@ -392,32 +481,6 @@ export default function CreditApplicationForm() {
       )}
 
       <form onSubmit={onSubmit} className="space-y-8">
-        {/* DEALER INFORMATION */}
-        <div className="bg-gray-50 p-6 rounded-lg">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">DEALER INFORMATION</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">DEALER NAME</label>
-              <input
-                type="text"
-                value={data.dealerName}
-                readOnly
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">DEALER NUMBER</label>
-              <input
-                type="text"
-                value={data.dealerNumber}
-                onChange={(e) => set("dealerNumber", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                placeholder="(optional)"
-              />
-            </div>
-          </div>
-        </div>
-
         {/* APPLICANT INFORMATION */}
         <div className="bg-gray-50 p-6 rounded-lg">
           <h2 className="text-xl font-bold text-gray-900 mb-4">APPLICANT INFORMATION (MARRIED MAY APPLY AS AN INDIVIDUAL)</h2>
@@ -428,37 +491,42 @@ export default function CreditApplicationForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">FULL NAME</label>
-                <div className="flex space-x-2">
-                  <select
-                    value={data.applicant.srJr}
-                    onChange={(e) => set("applicant", { ...data.applicant, srJr: e.target.value })}
-                    className="px-3 py-2 border border-gray-300 rounded-md"
-                  >
-                    <option value="">SR/JR</option>
-                    <option value="SR">SR</option>
-                    <option value="JR">JR</option>
-                  </select>
-                  <input
-                    type="text"
-                    value={data.applicant.firstName}
-                    onChange={(e) => set("applicant", { ...data.applicant, firstName: e.target.value })}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="FIRST"
-                    required
-                  />
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                  <div className="hidden sm:flex">
+                    <select
+                      value={data.applicant.srJr}
+                      onChange={(e) => set("applicant", { ...data.applicant, srJr: e.target.value })}
+                      className="px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                      <option value="">SR/JR</option>
+                      <option value="SR">SR</option>
+                      <option value="JR">JR</option>
+                    </select>
+                  </div>
+                    <input
+                      type="text"
+                      value={data.applicant.firstName}
+                      onChange={(e) => set("applicant", { ...data.applicant, firstName: e.target.value })}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
+                      placeholder="First Name"
+                      autoComplete="given-name"
+                      required
+                    />
                   <input
                     type="text"
                     value={data.applicant.middleInitial}
                     onChange={(e) => set("applicant", { ...data.applicant, middleInitial: e.target.value })}
                     className="w-16 px-3 py-2 border border-gray-300 rounded-md"
                     placeholder="MI"
+                    autoComplete="additional-name"
                   />
                   <input
                     type="text"
                     value={data.applicant.lastName}
                     onChange={(e) => set("applicant", { ...data.applicant, lastName: e.target.value })}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="LAST"
+                    placeholder="Last Name"
+                    autoComplete="family-name"
                     required
                   />
                 </div>
@@ -487,20 +555,31 @@ export default function CreditApplicationForm() {
                   value={data.applicant.streetAddress}
                   onChange={(e) => set("applicant", { ...data.applicant, streetAddress: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  placeholder="STREET ADDRESS"
                   required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">APT #</label>
+                <input
+                  type="text"
+                  value={data.applicant.aptNumber}
+                  onChange={(e) => set("applicant", { ...data.applicant, aptNumber: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">HOW LONG?</label>
                 <select
-                  value={data.applicant.howLongAtAddress}
-                  onChange={(e) => set("applicant", { ...data.applicant, howLongAtAddress: e.target.value })}
+                  value={data.applicant.howLongAtAddressDuration}
+                  onChange={(e) => set("applicant", { ...data.applicant, howLongAtAddressDuration: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  required
                 >
-                  <option value="">Select Years</option>
-                  {yearsAtAddress.map((year) => (
-                    <option key={year} value={year}>{year} {year === 1 ? 'year' : 'years'}</option>
+                  <option value="">Select Duration</option>
+                  {addressDurationOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -509,14 +588,27 @@ export default function CreditApplicationForm() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">CITY</label>
-                <input
-                  type="text"
+                <select
                   value={data.applicant.city}
                   onChange={(e) => set("applicant", { ...data.applicant, city: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  placeholder="CITY"
                   required
-                />
+                >
+                  <option value="">Select City</option>
+                  {getCitiesForState(data.applicant.state).map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
+                {data.applicant.city === "Other" && (
+                  <input
+                    type="text"
+                    placeholder="Enter city name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md mt-2"
+                    onChange={(e) => set("applicant", { ...data.applicant, city: e.target.value })}
+                  />
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">ZIP</label>
@@ -525,7 +617,6 @@ export default function CreditApplicationForm() {
                   value={data.applicant.zip}
                   onChange={(e) => set("applicant", { ...data.applicant, zip: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  placeholder="ZIP"
                   required
                 />
               </div>
@@ -536,7 +627,6 @@ export default function CreditApplicationForm() {
                   value={data.applicant.homePhone}
                   onChange={(e) => set("applicant", { ...data.applicant, homePhone: formatPhoneNumber(e.target.value) })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  placeholder="( )"
                   required
                 />
               </div>
@@ -578,14 +668,12 @@ export default function CreditApplicationForm() {
                     value={data.applicant.howLongYears}
                     onChange={(e) => set("applicant", { ...data.applicant, howLongYears: e.target.value })}
                     className="w-16 px-2 py-2 border border-gray-300 rounded-md text-center"
-                    placeholder="YRS"
                   />
                   <input
                     type="text"
                     value={data.applicant.howLongMonths}
                     onChange={(e) => set("applicant", { ...data.applicant, howLongMonths: e.target.value })}
                     className="w-16 px-2 py-2 border border-gray-300 rounded-md text-center"
-                    placeholder="MOS"
                   />
                 </div>
               </div>
@@ -597,32 +685,50 @@ export default function CreditApplicationForm() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">EMPLOYER NAME</label>
-                  <input
-                    type="text"
+                  <select
                     value={data.applicant.employerName}
-                    onChange={(e) => set("applicant", { ...data.applicant, employerName: e.target.value })}
+                    onChange={(e) => {
+                      const newEmployer = e.target.value;
+                      set("applicant", { 
+                        ...data.applicant, 
+                        employerName: newEmployer,
+                        positionTitle: "" // Reset position when employer changes
+                      });
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="EMPLOYER NAME"
-                  />
+                    required
+                  >
+                    <option value="">Select Employer</option>
+                    {commonEmployers.map((employer) => (
+                      <option key={employer} value={employer}>
+                        {employer}
+                      </option>
+                    ))}
+                  </select>
+                  {data.applicant.employerName === "Other" && (
+                    <input
+                      type="text"
+                      placeholder="Enter employer name"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md mt-2"
+                      onChange={(e) => set("applicant", { ...data.applicant, employerName: e.target.value })}
+                    />
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">HOW LONG?</label>
-                  <div className="flex space-x-1">
-                    <input
-                      type="text"
-                      value={data.applicant.employerHowLongYears}
-                      onChange={(e) => set("applicant", { ...data.applicant, employerHowLongYears: e.target.value })}
-                      className="w-16 px-2 py-2 border border-gray-300 rounded-md text-center"
-                      placeholder="YRS"
-                    />
-                    <input
-                      type="text"
-                      value={data.applicant.employerHowLongMonths}
-                      onChange={(e) => set("applicant", { ...data.applicant, employerHowLongMonths: e.target.value })}
-                      className="w-16 px-2 py-2 border border-gray-300 rounded-md text-center"
-                      placeholder="MOS"
-                    />
-                  </div>
+                  <select
+                    value={data.applicant.employerHowLongDuration}
+                    onChange={(e) => set("applicant", { ...data.applicant, employerHowLongDuration: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    required
+                  >
+                    <option value="">Select Duration</option>
+                    {employmentDurationOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -634,18 +740,31 @@ export default function CreditApplicationForm() {
                     value={data.applicant.employerAddress}
                     onChange={(e) => set("applicant", { ...data.applicant, employerAddress: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="EMPLOYER ADDRESS"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">POSITION/TITLE</label>
-                  <input
-                    type="text"
+                  <select
                     value={data.applicant.positionTitle}
                     onChange={(e) => set("applicant", { ...data.applicant, positionTitle: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="POSITION/TITLE"
-                  />
+                    required
+                  >
+                    <option value="">Select Position</option>
+                    {getPositionTitlesForEmployer(data.applicant.employerName).map((title) => (
+                      <option key={title} value={title}>
+                        {title}
+                      </option>
+                    ))}
+                  </select>
+                  {data.applicant.positionTitle === "Other" && (
+                    <input
+                      type="text"
+                      placeholder="Enter position title"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md mt-2"
+                      onChange={(e) => set("applicant", { ...data.applicant, positionTitle: e.target.value })}
+                    />
+                  )}
                 </div>
               </div>
 
@@ -657,7 +776,6 @@ export default function CreditApplicationForm() {
                     value={data.applicant.workPhone}
                     onChange={(e) => set("applicant", { ...data.applicant, workPhone: formatPhoneNumber(e.target.value) })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="( )"
                   />
                 </div>
                 <div>
@@ -680,7 +798,6 @@ export default function CreditApplicationForm() {
                     value={data.applicant.annualAmount}
                     onChange={(e) => set("applicant", { ...data.applicant, annualAmount: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="ANNUAL AMOUNT $"
                   />
                 </div>
               </div>
@@ -693,7 +810,6 @@ export default function CreditApplicationForm() {
                     value={data.applicant.previousEmployerOrSchool}
                     onChange={(e) => set("applicant", { ...data.applicant, previousEmployerOrSchool: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="PREVIOUS EMPLOYER OR SCHOOL"
                   />
                 </div>
                 <div>
@@ -704,14 +820,12 @@ export default function CreditApplicationForm() {
                       value={data.applicant.previousHowLongYears}
                       onChange={(e) => set("applicant", { ...data.applicant, previousHowLongYears: e.target.value })}
                       className="w-16 px-2 py-2 border border-gray-300 rounded-md text-center"
-                      placeholder="YRS"
                     />
                     <input
                       type="text"
                       value={data.applicant.previousHowLongMonths}
                       onChange={(e) => set("applicant", { ...data.applicant, previousHowLongMonths: e.target.value })}
                       className="w-16 px-2 py-2 border border-gray-300 rounded-md text-center"
-                      placeholder="MOS"
                     />
                   </div>
                 </div>
@@ -722,7 +836,6 @@ export default function CreditApplicationForm() {
                     value={data.applicant.otherIncomeSource}
                     onChange={(e) => set("applicant", { ...data.applicant, otherIncomeSource: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="OTHER INCOME SOURCE"
                   />
                 </div>
               </div>
@@ -760,29 +873,31 @@ export default function CreditApplicationForm() {
                   value={data.jointApplicantRelationship}
                   onChange={(e) => set("jointApplicantRelationship", e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  placeholder="RELATIONSHIP"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">FULL NAME</label>
-                  <div className="flex space-x-2">
-                    <select
-                      value={data.jointApplicant.srJr}
-                      onChange={(e) => set("jointApplicant", { ...data.jointApplicant, srJr: e.target.value })}
-                      className="px-3 py-2 border border-gray-300 rounded-md"
-                    >
-                      <option value="">SR/JR</option>
-                      <option value="SR">SR</option>
-                      <option value="JR">JR</option>
-                    </select>
+                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                    <div className="hidden sm:flex">
+                      <select
+                        value={data.jointApplicant.srJr}
+                        onChange={(e) => set("jointApplicant", { ...data.jointApplicant, srJr: e.target.value })}
+                        className="px-3 py-2 border border-gray-300 rounded-md"
+                      >
+                        <option value="">SR/JR</option>
+                        <option value="SR">SR</option>
+                        <option value="JR">JR</option>
+                      </select>
+                    </div>
                     <input
                       type="text"
                       value={data.jointApplicant.firstName}
                       onChange={(e) => set("jointApplicant", { ...data.jointApplicant, firstName: e.target.value })}
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
-                      placeholder="FIRST"
+                      placeholder="First Name"
+                      autoComplete="given-name"
                     />
                     <input
                       type="text"
@@ -790,13 +905,15 @@ export default function CreditApplicationForm() {
                       onChange={(e) => set("jointApplicant", { ...data.jointApplicant, middleInitial: e.target.value })}
                       className="w-16 px-3 py-2 border border-gray-300 rounded-md"
                       placeholder="MI"
+                      autoComplete="additional-name"
                     />
                     <input
                       type="text"
                       value={data.jointApplicant.lastName}
                       onChange={(e) => set("jointApplicant", { ...data.jointApplicant, lastName: e.target.value })}
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
-                      placeholder="LAST"
+                      placeholder="Last Name"
+                      autoComplete="family-name"
                     />
                   </div>
                 </div>
@@ -824,19 +941,29 @@ export default function CreditApplicationForm() {
                     value={data.jointApplicant.streetAddress}
                     onChange={(e) => set("jointApplicant", { ...data.jointApplicant, streetAddress: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="STREET ADDRESS"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">APT #</label>
+                  <input
+                    type="text"
+                    value={data.jointApplicant.aptNumber}
+                    onChange={(e) => set("jointApplicant", { ...data.jointApplicant, aptNumber: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">HOW LONG?</label>
                   <select
-                    value={data.jointApplicant.howLongAtAddress}
-                    onChange={(e) => set("jointApplicant", { ...data.jointApplicant, howLongAtAddress: e.target.value })}
+                    value={data.jointApplicant.howLongAtAddressDuration}
+                    onChange={(e) => set("jointApplicant", { ...data.jointApplicant, howLongAtAddressDuration: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   >
-                    <option value="">Select Years</option>
-                    {yearsAtAddress.map((year) => (
-                      <option key={year} value={year}>{year} {year === 1 ? 'year' : 'years'}</option>
+                    <option value="">Select Duration</option>
+                    {addressDurationOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -845,13 +972,26 @@ export default function CreditApplicationForm() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">CITY</label>
-                  <input
-                    type="text"
+                  <select
                     value={data.jointApplicant.city}
                     onChange={(e) => set("jointApplicant", { ...data.jointApplicant, city: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="CITY"
-                  />
+                  >
+                    <option value="">Select City</option>
+                    {getCitiesForState(data.jointApplicant.state).map((city) => (
+                      <option key={city} value={city}>
+                        {city}
+                      </option>
+                    ))}
+                  </select>
+                  {data.jointApplicant.city === "Other" && (
+                    <input
+                      type="text"
+                      placeholder="Enter city name"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md mt-2"
+                      onChange={(e) => set("jointApplicant", { ...data.jointApplicant, city: e.target.value })}
+                    />
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">ZIP</label>
@@ -860,7 +1000,6 @@ export default function CreditApplicationForm() {
                     value={data.jointApplicant.zip}
                     onChange={(e) => set("jointApplicant", { ...data.jointApplicant, zip: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="ZIP"
                   />
                 </div>
                 <div>
@@ -870,7 +1009,6 @@ export default function CreditApplicationForm() {
                     value={data.jointApplicant.homePhone}
                     onChange={(e) => set("jointApplicant", { ...data.jointApplicant, homePhone: formatPhoneNumber(e.target.value) })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="( )"
                   />
                 </div>
               </div>
@@ -911,14 +1049,12 @@ export default function CreditApplicationForm() {
                     value={data.jointApplicant.howLongYears}
                     onChange={(e) => set("jointApplicant", { ...data.jointApplicant, howLongYears: e.target.value })}
                     className="w-16 px-2 py-2 border border-gray-300 rounded-md text-center"
-                    placeholder="YRS"
                   />
                   <input
                     type="text"
                     value={data.jointApplicant.howLongMonths}
                     onChange={(e) => set("jointApplicant", { ...data.jointApplicant, howLongMonths: e.target.value })}
                     className="w-16 px-2 py-2 border border-gray-300 rounded-md text-center"
-                    placeholder="MOS"
                   />
                 </div>
               </div>
@@ -931,32 +1067,49 @@ export default function CreditApplicationForm() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">EMPLOYER NAME</label>
-                    <input
-                      type="text"
+                    <select
                       value={data.jointApplicant.employerName}
-                      onChange={(e) => set("jointApplicant", { ...data.jointApplicant, employerName: e.target.value })}
+                      onChange={(e) => {
+                        const newEmployer = e.target.value;
+                        set("jointApplicant", { 
+                          ...data.jointApplicant, 
+                          employerName: newEmployer,
+                          positionTitle: "" // Reset position when employer changes
+                        });
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      placeholder="EMPLOYER NAME"
-                    />
+                    >
+                      <option value="">Select Employer</option>
+                      {commonEmployers.map((employer) => (
+                        <option key={employer} value={employer}>
+                          {employer}
+                        </option>
+                      ))}
+                    </select>
+                    {data.jointApplicant.employerName === "Other" && (
+                      <input
+                        type="text"
+                        placeholder="Enter employer name"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md mt-2"
+                        onChange={(e) => set("jointApplicant", { ...data.jointApplicant, employerName: e.target.value })}
+                      />
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">HOW LONG?</label>
-                    <div className="flex space-x-1">
-                      <input
-                        type="text"
-                        value={data.jointApplicant.employerHowLongYears}
-                        onChange={(e) => set("jointApplicant", { ...data.jointApplicant, employerHowLongYears: e.target.value })}
-                        className="w-16 px-2 py-2 border border-gray-300 rounded-md text-center"
-                        placeholder="YRS"
-                      />
-                      <input
-                        type="text"
-                        value={data.jointApplicant.employerHowLongMonths}
-                        onChange={(e) => set("jointApplicant", { ...data.jointApplicant, employerHowLongMonths: e.target.value })}
-                        className="w-16 px-2 py-2 border border-gray-300 rounded-md text-center"
-                        placeholder="MOS"
-                      />
-                    </div>
+                    <select
+                      value={data.jointApplicant.employerHowLongDuration}
+                      onChange={(e) => set("jointApplicant", { ...data.jointApplicant, employerHowLongDuration: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      required
+                    >
+                      <option value="">Select Duration</option>
+                      {employmentDurationOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
@@ -968,18 +1121,30 @@ export default function CreditApplicationForm() {
                       value={data.jointApplicant.employerAddress}
                       onChange={(e) => set("jointApplicant", { ...data.jointApplicant, employerAddress: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      placeholder="EMPLOYER ADDRESS"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">POSITION/TITLE</label>
-                    <input
-                      type="text"
+                    <select
                       value={data.jointApplicant.positionTitle}
                       onChange={(e) => set("jointApplicant", { ...data.jointApplicant, positionTitle: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      placeholder="POSITION/TITLE"
-                    />
+                    >
+                      <option value="">Select Position</option>
+                      {getPositionTitlesForEmployer(data.jointApplicant.employerName).map((title) => (
+                        <option key={title} value={title}>
+                          {title}
+                        </option>
+                      ))}
+                    </select>
+                    {data.jointApplicant.positionTitle === "Other" && (
+                      <input
+                        type="text"
+                        placeholder="Enter position title"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md mt-2"
+                        onChange={(e) => set("jointApplicant", { ...data.jointApplicant, positionTitle: e.target.value })}
+                      />
+                    )}
                   </div>
                 </div>
 
@@ -991,7 +1156,6 @@ export default function CreditApplicationForm() {
                       value={data.jointApplicant.workPhone}
                       onChange={(e) => set("jointApplicant", { ...data.jointApplicant, workPhone: formatPhoneNumber(e.target.value) })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      placeholder="( )"
                     />
                   </div>
                   <div>
@@ -1014,7 +1178,6 @@ export default function CreditApplicationForm() {
                       value={data.jointApplicant.annualAmount}
                       onChange={(e) => set("jointApplicant", { ...data.jointApplicant, annualAmount: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      placeholder="ANNUAL AMOUNT $"
                     />
                   </div>
                 </div>
@@ -1027,7 +1190,6 @@ export default function CreditApplicationForm() {
                       value={data.jointApplicant.previousEmployerOrSchool}
                       onChange={(e) => set("jointApplicant", { ...data.jointApplicant, previousEmployerOrSchool: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      placeholder="PREVIOUS EMPLOYER OR SCHOOL"
                     />
                   </div>
                   <div>
@@ -1038,14 +1200,12 @@ export default function CreditApplicationForm() {
                         value={data.jointApplicant.previousHowLongYears}
                         onChange={(e) => set("jointApplicant", { ...data.jointApplicant, previousHowLongYears: e.target.value })}
                         className="w-16 px-2 py-2 border border-gray-300 rounded-md text-center"
-                        placeholder="YRS"
                       />
                       <input
                         type="text"
                         value={data.jointApplicant.previousHowLongMonths}
                         onChange={(e) => set("jointApplicant", { ...data.jointApplicant, previousHowLongMonths: e.target.value })}
                         className="w-16 px-2 py-2 border border-gray-300 rounded-md text-center"
-                        placeholder="MOS"
                       />
                     </div>
                   </div>
@@ -1056,7 +1216,6 @@ export default function CreditApplicationForm() {
                       value={data.jointApplicant.otherIncomeSource}
                       onChange={(e) => set("jointApplicant", { ...data.jointApplicant, otherIncomeSource: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      placeholder="OTHER INCOME SOURCE"
                     />
                   </div>
                 </div>
@@ -1071,475 +1230,6 @@ export default function CreditApplicationForm() {
           )}
         </div>
 
-        {/* PROPOSED FINANCING TERMS / VEHICLE DESCRIPTION */}
-        <div className="bg-gray-50 p-6 rounded-lg">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">PROPOSED FINANCING TERMS / VEHICLE DESCRIPTION</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Financing Terms</h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Sales Price</label>
-                  <input
-                    type="text"
-                    value={data.financing.salesPrice}
-                    onChange={(e) => set("financing", { ...data.financing, salesPrice: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="$"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Down Payment</label>
-                  <select
-                    value={data.financing.downPayment}
-                    onChange={(e) => set("financing", { ...data.financing, downPayment: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  >
-                    <option value="">Select Down Payment</option>
-                    {downPaymentOptions.map((amount) => (
-                      <option key={amount} value={amount.replace(/[$,]/g, '')}>{amount}</option>
-                    ))}
-                    <option value="other">Other Amount</option>
-                  </select>
-                  {data.financing.downPayment === "other" && (
-                    <input
-                      type="text"
-                      value={data.customDownPayment}
-                      onChange={(e) => set("customDownPayment", e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md mt-2"
-                      placeholder="Enter custom amount"
-                    />
-                  )}
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Net Trade</label>
-                  <input
-                    type="text"
-                    value={data.financing.netTrade}
-                    onChange={(e) => set("financing", { ...data.financing, netTrade: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="$"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Amount Financed</label>
-                  <input
-                    type="text"
-                    value={data.financing.amountFinanced}
-                    onChange={(e) => set("financing", { ...data.financing, amountFinanced: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="$"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Program</label>
-                  <input
-                    type="text"
-                    value={data.financing.program}
-                    onChange={(e) => set("financing", { ...data.financing, program: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="Program"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Term</label>
-                  <select
-                    value={data.financing.term}
-                    onChange={(e) => set("financing", { ...data.financing, term: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  >
-                    <option value="">Select Term</option>
-                    {paymentTerms.map((term) => (
-                      <option key={term} value={term}>{term} months</option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Gross Cap Reduction</label>
-                  <input
-                    type="text"
-                    value={data.financing.grossCapReduction}
-                    onChange={(e) => set("financing", { ...data.financing, grossCapReduction: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="$"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Adjusted Cap</label>
-                  <input
-                    type="text"
-                    value={data.financing.adjustedCap}
-                    onChange={(e) => set("financing", { ...data.financing, adjustedCap: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="$"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">MSRP</label>
-                  <input
-                    type="text"
-                    value={data.financing.msrp}
-                    onChange={(e) => set("financing", { ...data.financing, msrp: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="$"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Program</label>
-                  <input
-                    type="text"
-                    value={data.financing.program2}
-                    onChange={(e) => set("financing", { ...data.financing, program2: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="Program"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Term</label>
-                  <input
-                    type="text"
-                    value={data.financing.paymentTerm}
-                    onChange={(e) => set("financing", { ...data.financing, paymentTerm: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="Payment Term"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Vehicle Description</h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">New / Used / Demo</label>
-                  <select
-                    value={data.financing.condition}
-                    onChange={(e) => set("financing", { ...data.financing, condition: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  >
-                    <option value="">Select...</option>
-                    <option value="new">New</option>
-                    <option value="used">Used</option>
-                    <option value="demo">Demo</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Select Vehicle from Our Inventory</label>
-                  <VehicleSelector
-                    selectedVehicle={data.financing.vehicleId}
-                    onVehicleChange={(vehicleId) => {
-                      // Find the selected vehicle data
-                      const selectedVehicle = vehicles.find(v => v.id === vehicleId)
-                      set("financing", { 
-                        ...data.financing, 
-                        vehicleId,
-                        year: selectedVehicle?.year?.toString() || "",
-                        make: selectedVehicle?.make || "",
-                        model: selectedVehicle?.model || "",
-                        salesPrice: selectedVehicle?.price?.toString() || ""
-                      })
-                    }}
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Retail Lease VIN</label>
-                  <input
-                    type="text"
-                    value={data.financing.retailLeaseVin}
-                    onChange={(e) => set("financing", { ...data.financing, retailLeaseVin: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="Retail Lease VIN"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Used Value Guide: Trade-In</label>
-                  <select
-                    value={data.financing.usedValueGuide}
-                    onChange={(e) => set("financing", { ...data.financing, usedValueGuide: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  >
-                    <option value="">Select...</option>
-                    <option value="NADA">NADA</option>
-                    <option value="Kelley">Kelley</option>
-                    <option value="Black Book">Black Book</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Book Value $</label>
-                  <input
-                    type="text"
-                    value={data.financing.bookValue}
-                    onChange={(e) => set("financing", { ...data.financing, bookValue: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="$"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Mileage</label>
-                  <input
-                    type="text"
-                    value={data.financing.mileage}
-                    onChange={(e) => set("financing", { ...data.financing, mileage: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="Mileage"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Year / Make / Model (Trade-In)</label>
-                  <div className="flex space-x-1">
-                    <input
-                      type="text"
-                      value={data.financing.tradeYear}
-                      onChange={(e) => set("financing", { ...data.financing, tradeYear: e.target.value })}
-                      className="w-20 px-2 py-2 border border-gray-300 rounded-md text-center"
-                      placeholder="Year"
-                    />
-                    <input
-                      type="text"
-                      value={data.financing.tradeMake}
-                      onChange={(e) => set("financing", { ...data.financing, tradeMake: e.target.value })}
-                      className="flex-1 px-2 py-2 border border-gray-300 rounded-md"
-                      placeholder="Make"
-                    />
-                    <input
-                      type="text"
-                      value={data.financing.tradeModel}
-                      onChange={(e) => set("financing", { ...data.financing, tradeModel: e.target.value })}
-                      className="flex-1 px-2 py-2 border border-gray-300 rounded-md"
-                      placeholder="Model"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* REFERENCES */}
-        <div className="bg-gray-50 p-6 rounded-lg">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">REFERENCES</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Auto Credit Reference (A/C #)</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name & Relationship</label>
-                  <input
-                    type="text"
-                    value={data.autoCreditReference.name}
-                    onChange={(e) => set("autoCreditReference", { ...data.autoCreditReference, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="Name & Relationship"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                  <input
-                    type="tel"
-                    value={data.autoCreditReference.phone}
-                    onChange={(e) => set("autoCreditReference", { ...data.autoCreditReference, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="( )"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Trading?</label>
-                  <div className="flex space-x-4">
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="autoTrading"
-                        value="yes"
-                        checked={data.autoCreditReference.trading === "yes"}
-                        onChange={(e) => set("autoCreditReference", { ...data.autoCreditReference, trading: e.target.value as any })}
-                        className="mr-2"
-                      />
-                      <span>Yes</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="autoTrading"
-                        value="no"
-                        checked={data.autoCreditReference.trading === "no"}
-                        onChange={(e) => set("autoCreditReference", { ...data.autoCreditReference, trading: e.target.value as any })}
-                        className="mr-2"
-                      />
-                      <span>No</span>
-                    </label>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Balance $</label>
-                  <input
-                    type="text"
-                    value={data.autoCreditReference.balance}
-                    onChange={(e) => set("autoCreditReference", { ...data.autoCreditReference, balance: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="$"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Other Credit Reference</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name & Relationship</label>
-                  <input
-                    type="text"
-                    value={data.otherCreditReference.name}
-                    onChange={(e) => set("otherCreditReference", { ...data.otherCreditReference, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="Name & Relationship"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                  <input
-                    type="tel"
-                    value={data.otherCreditReference.phone}
-                    onChange={(e) => set("otherCreditReference", { ...data.otherCreditReference, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="( )"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Balance $</label>
-                  <input
-                    type="text"
-                    value={data.otherCreditReference.balance}
-                    onChange={(e) => set("otherCreditReference", { ...data.otherCreditReference, balance: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="$"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Nearest Relative (Not Living With You)</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Relationship</label>
-                  <input
-                    type="text"
-                    value={data.nearestRelative.relationship}
-                    onChange={(e) => set("nearestRelative", { ...data.nearestRelative, relationship: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="Relationship"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                  <input
-                    type="tel"
-                    value={data.nearestRelative.phone}
-                    onChange={(e) => set("nearestRelative", { ...data.nearestRelative, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="( )"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                  <input
-                    type="text"
-                    value={data.nearestRelative.address}
-                    onChange={(e) => set("nearestRelative", { ...data.nearestRelative, address: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="Address"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Friend or Relative</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name & Relationship</label>
-                  <input
-                    type="text"
-                    value={data.friendRelative.name}
-                    onChange={(e) => set("friendRelative", { ...data.friendRelative, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="Name & Relationship"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                  <input
-                    type="tel"
-                    value={data.friendRelative.phone}
-                    onChange={(e) => set("friendRelative", { ...data.friendRelative, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="( )"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Yes / No</label>
-                  <div className="flex space-x-4">
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="friendRelative"
-                        value="yes"
-                        checked={data.friendRelative.trading === "yes"}
-                        onChange={(e) => set("friendRelative", { ...data.friendRelative, trading: e.target.value as any })}
-                        className="mr-2"
-                      />
-                      <span>Yes</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        name="friendRelative"
-                        value="no"
-                        checked={data.friendRelative.trading === "no"}
-                        onChange={(e) => set("friendRelative", { ...data.friendRelative, trading: e.target.value as any })}
-                        className="mr-2"
-                      />
-                      <span>No</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {data.jointApplicantEnabled && (
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>Note:</strong> Duplicate section for co-applicant references would be included here.
-              </p>
-            </div>
-          )}
-        </div>
 
         {/* NOTICE & AUTHORIZATION */}
         <div className="bg-gray-50 p-6 rounded-lg">
@@ -1603,28 +1293,31 @@ export default function CreditApplicationForm() {
                   value={data.applicant.age}
                   onChange={(e) => set("applicant", { ...data.applicant, age: e.target.value })}
                   className="px-3 py-2 border border-gray-300 rounded-md"
-                  placeholder="Age"
                 />
                 <input
                   type="text"
                   value={data.applicant.socialSecurityNumber}
-                  onChange={(e) => set("applicant", { ...data.applicant, socialSecurityNumber: e.target.value })}
+                  onChange={(e) => {
+                    // Only allow 4 digits
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                    set("applicant", { ...data.applicant, socialSecurityNumber: value });
+                  }}
                   className="px-3 py-2 border border-gray-300 rounded-md"
-                  placeholder="SSN"
+                  maxLength={4}
                 />
               </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Applicant Signature / Date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Applicant Signature / Date / SSN (Last 4)</label>
                 <div className="space-y-2">
                   <input
                     type="text"
                     value={data.applicantSignatureName}
                     onChange={(e) => set("applicantSignatureName", e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="Print Name"
+                    placeholder="Print Full Name"
                     required
                   />
                   <input
@@ -1632,6 +1325,19 @@ export default function CreditApplicationForm() {
                     value={data.applicantSignatureDate}
                     onChange={(e) => set("applicantSignatureDate", e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    required
+                  />
+                  <input
+                    type="text"
+                    value={data.applicant.socialSecurityNumber}
+                    onChange={(e) => {
+                      // Only allow 4 digits
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                      set("applicant", { ...data.applicant, socialSecurityNumber: value });
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    placeholder="Last 4 digits of SSN"
+                    maxLength={4}
                     required
                   />
                   <label className="flex items-center">
@@ -1649,14 +1355,14 @@ export default function CreditApplicationForm() {
               
               {data.jointApplicantEnabled && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Joint Applicant Signature / Date</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Joint Applicant Signature / Date / SSN (Last 4)</label>
                   <div className="space-y-2">
                     <input
                       type="text"
                       value={data.jointApplicantSignatureName}
                       onChange={(e) => set("jointApplicantSignatureName", e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      placeholder="Print Name"
+                      placeholder="Print Full Name"
                       required
                     />
                     <input
@@ -1664,6 +1370,19 @@ export default function CreditApplicationForm() {
                       value={data.jointApplicantSignatureDate}
                       onChange={(e) => set("jointApplicantSignatureDate", e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      required
+                    />
+                    <input
+                      type="text"
+                      value={data.jointApplicant.socialSecurityNumber}
+                      onChange={(e) => {
+                        // Only allow 4 digits
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                        set("jointApplicant", { ...data.jointApplicant, socialSecurityNumber: value });
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      placeholder="Last 4 digits of SSN"
+                      maxLength={4}
                       required
                     />
                     <label className="flex items-center">
@@ -1694,10 +1413,16 @@ export default function CreditApplicationForm() {
                 value={data.programType}
                 onChange={(e) => set("programType", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                placeholder="Program Type"
               />
             </div>
           </div>
+        </div>
+
+        {/* Document Upload Section */}
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <DocumentUpload 
+            onDocumentsChange={setDocuments}
+          />
         </div>
 
         {/* Submit Button */}

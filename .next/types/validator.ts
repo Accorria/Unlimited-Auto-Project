@@ -344,6 +344,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../src/app/api/upload/document/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/upload/document">> = Specific
+  const handler = {} as typeof import("../../src/app/api/upload/document/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../src/app/api/upload/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/upload">> = Specific
@@ -357,6 +366,24 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/vehicles/[id]">> = Specific
   const handler = {} as typeof import("../../src/app/api/vehicles/[id]/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/api/vehicles/refresh-cache/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/vehicles/refresh-cache">> = Specific
+  const handler = {} as typeof import("../../src/app/api/vehicles/refresh-cache/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/api/vehicles/reorder/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/vehicles/reorder">> = Specific
+  const handler = {} as typeof import("../../src/app/api/vehicles/reorder/route.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check

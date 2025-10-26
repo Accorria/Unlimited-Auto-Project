@@ -41,6 +41,7 @@ export default function InventoryManagement() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedVehicles, setSelectedVehicles] = useState<string[]>([])
+  const [draggedVehicle, setDraggedVehicle] = useState<string | null>(null)
   const router = useRouter()
   const { addNotification, NotificationContainer } = useNotifications()
 
@@ -152,6 +153,67 @@ export default function InventoryManagement() {
         console.error('Error deleting vehicles:', error)
         addNotification('Error deleting vehicles. Please try again.', 'error')
       }
+    }
+  }
+
+  // Drag and drop handlers for reordering
+  const handleDragStart = (e: React.DragEvent, vehicleId: string) => {
+    setDraggedVehicle(vehicleId)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = async (e: React.DragEvent, targetVehicleId: string) => {
+    e.preventDefault()
+    
+    if (!draggedVehicle || draggedVehicle === targetVehicleId) {
+      setDraggedVehicle(null)
+      return
+    }
+
+    try {
+      // Find the indices of the dragged and target vehicles
+      const draggedIndex = vehicles.findIndex(v => v.id === draggedVehicle)
+      const targetIndex = vehicles.findIndex(v => v.id === targetVehicleId)
+      
+      if (draggedIndex === -1 || targetIndex === -1) return
+
+      // Create new array with reordered vehicles
+      const newVehicles = [...vehicles]
+      const [draggedItem] = newVehicles.splice(draggedIndex, 1)
+      newVehicles.splice(targetIndex, 0, draggedItem)
+      
+      // Update local state immediately for better UX
+      setVehicles(newVehicles)
+      
+      // Update the display order in the database
+      await fetch('/api/vehicles/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vehicleIds: newVehicles.map(v => v.id)
+        })
+      })
+      
+      addNotification('Vehicle order updated successfully', 'success')
+      
+      // Trigger a refresh of public pages by invalidating their cache
+      try {
+        await fetch('/api/vehicles/refresh-cache', { method: 'POST' })
+      } catch (error) {
+        console.log('Cache refresh failed, but reordering succeeded')
+      }
+    } catch (error) {
+      console.error('Error reordering vehicles:', error)
+      addNotification('Failed to reorder vehicles', 'error')
+      // Refresh to get correct order
+      fetchVehicles()
+    } finally {
+      setDraggedVehicle(null)
     }
   }
 
@@ -303,7 +365,14 @@ export default function InventoryManagement() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredVehicles.map((vehicle) => (
-                  <tr key={vehicle.id} className="hover:bg-gray-50">
+                  <tr 
+                    key={vehicle.id} 
+                    className={`hover:bg-gray-50 cursor-move ${draggedVehicle === vehicle.id ? 'opacity-50' : ''}`}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, vehicle.id)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, vehicle.id)}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <input
                         type="checkbox"
@@ -314,7 +383,7 @@ export default function InventoryManagement() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-12 w-12">
+                        <div className="shrink-0 h-12 w-12">
                           <img
                             className="h-12 w-12 rounded-lg object-cover"
                             src={vehicle.coverPhoto || vehicle.vehicle_photos?.[0]?.public_url || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop'}

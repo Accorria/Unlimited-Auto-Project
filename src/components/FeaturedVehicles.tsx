@@ -40,7 +40,14 @@ export default function FeaturedVehicles() {
     const loadFeaturedVehicles = async () => {
       try {
         // Fetch vehicles from API (this will include the Mini Cooper)
-        const response = await fetch('/api/vehicles?dealer=unlimited-auto')
+        const response = await fetch(`/api/vehicles?dealer=unlimited-auto&t=${Date.now()}&v=${Math.random()}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        })
         
         if (response.ok) {
           const data = await response.json()
@@ -51,7 +58,11 @@ export default function FeaturedVehicles() {
             const featuredVehicles = apiVehicles
               .filter(vehicle => vehicle.status === 'active' && vehicle.price && vehicle.price > 0)
               .sort((a: Vehicle, b: Vehicle) => {
-                // Sort by price (higher prices first for featured section)
+                // Sort by display_order first (admin-controlled order)
+                const aOrder = (a as any).display_order || 999
+                const bOrder = (b as any).display_order || 999
+                if (aOrder !== bOrder) return aOrder - bOrder
+                // Then by price (higher prices first for featured section)
                 const aPrice = a.price || 0
                 const bPrice = b.price || 0
                 if (aPrice !== bPrice) return bPrice - aPrice
@@ -78,6 +89,10 @@ export default function FeaturedVehicles() {
     }
 
     loadFeaturedVehicles()
+    
+    // Refresh every 10 seconds to catch reordering
+    const interval = setInterval(loadFeaturedVehicles, 10000)
+    return () => clearInterval(interval)
   }, [])
   return (
     <section className="py-20 bg-white">
@@ -177,7 +192,7 @@ export default function FeaturedVehicles() {
         )}
 
         <div className="text-center mt-16">
-          <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-8 rounded-xl shadow-lg">
+          <div className="bg-linear-to-r from-blue-600 to-blue-800 p-8 rounded-xl shadow-lg">
             <h3 className="text-3xl font-bold text-white mb-4">Ready to find your next car?</h3>
             <p className="text-xl text-blue-100 mb-8">Explore our full inventory and drive away happy!</p>
             <Link
