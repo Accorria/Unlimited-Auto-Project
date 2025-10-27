@@ -58,7 +58,7 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
     const fetchVehicle = async () => {
       try {
         // First try to fetch from API (this will include the Mini Cooper)
-        const response = await fetch(`/api/vehicles?dealer=unlimited-auto&t=${Date.now()}`)
+        const response = await fetch(`/api/vehicles?dealer=unlimited-auto`)
         
         if (response.ok) {
           const data = await response.json()
@@ -235,35 +235,51 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <span className="text-gray-600">Engine:</span>
-                  <span className="ml-2 font-medium">{vehicle.engine || 'Not Specified'}</span>
+                  <span className="ml-2 font-medium text-gray-900">
+                    {vehicle.engine || 'Not Specified'}
+                  </span>
                 </div>
                 <div>
                   <span className="text-gray-600">Transmission:</span>
-                  <span className="ml-2 font-medium">{vehicle.transmission || 'Not Specified'}</span>
+                  <span className="ml-2 font-medium text-gray-900">
+                    {vehicle.transmission || 'Not Specified'}
+                  </span>
                 </div>
                 <div>
                   <span className="text-gray-600">Drivetrain:</span>
-                  <span className="ml-2 font-medium">{vehicle.drivetrain || 'Not Specified'}</span>
+                  <span className="ml-2 font-medium text-gray-900">
+                    {vehicle.drivetrain || 'Not Specified'}
+                  </span>
                 </div>
                 <div>
                   <span className="text-gray-600">Fuel Type:</span>
-                  <span className="ml-2 font-medium">{vehicle.fuel_type || 'Not Specified'}</span>
+                  <span className="ml-2 font-medium text-gray-900">
+                    {vehicle.fuel_type || 'Not Specified'}
+                  </span>
                 </div>
                 <div>
                   <span className="text-gray-600">MPG:</span>
-                  <span className="ml-2 font-medium">{vehicle.mpg || 'Not Specified'}</span>
+                  <span className="ml-2 font-medium text-gray-900">
+                    {vehicle.mpg || 'Not Specified'}
+                  </span>
                 </div>
                 <div>
                   <span className="text-gray-600">Body Style:</span>
-                  <span className="ml-2 font-medium">{vehicle.body_style || 'Not Specified'}</span>
+                  <span className="ml-2 font-medium text-gray-900">
+                    {vehicle.body_style || 'Not Specified'}
+                  </span>
                 </div>
                 <div>
                   <span className="text-gray-600">Doors:</span>
-                  <span className="ml-2 font-medium">{vehicle.doors || 'Not Specified'}</span>
+                  <span className="ml-2 font-medium text-gray-900">
+                    {vehicle.doors || 'Not Specified'}
+                  </span>
                 </div>
                 <div>
                   <span className="text-gray-600">Passengers:</span>
-                  <span className="ml-2 font-medium">{vehicle.passengers}</span>
+                  <span className="ml-2 font-medium text-gray-900">
+                    {vehicle.passengers || 'Not Specified'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -290,21 +306,21 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
               </div>
             )}
 
-            {/* Benefits & Guarantees */}
+            {/* Guarantees */}
             <div className="bg-white rounded-lg p-6 shadow-sm border">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Benefits & Guarantees</h3>
-              <div className="space-y-2">
+              <h3 className="text-xl font-bold text-black mb-4">Guarantees</h3>
+              <div className="space-y-3">
                 <div className="flex items-center">
-                  <span className="text-green-600 mr-2">✓</span>
-                  <span>No Hidden Fees</span>
+                  <span className="text-2xl text-green-600 mr-3 font-bold">✓</span>
+                  <span className="text-lg font-semibold text-black">No Hidden Fees</span>
                 </div>
                 <div className="flex items-center">
-                  <span className="text-green-600 mr-2">✓</span>
-                  <span>Fast Approval</span>
+                  <span className="text-2xl text-green-600 mr-3 font-bold">✓</span>
+                  <span className="text-lg font-semibold text-black">Fast Approval</span>
                 </div>
                 <div className="flex items-center">
-                  <span className="text-green-600 mr-2">✓</span>
-                  <span>Quality Guaranteed</span>
+                  <span className="text-2xl text-green-600 mr-3 font-bold">✓</span>
+                  <span className="text-lg font-semibold text-black">Quality Guarantee</span>
                 </div>
               </div>
             </div>
@@ -340,7 +356,10 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
                 >
                   Contact Us
                 </Link>
-                <button className="border-2 border-gray-600 text-gray-600 text-center py-3 rounded-lg hover:bg-gray-600 hover:text-white transition-colors font-semibold">
+                <button 
+                  onClick={() => window.print()}
+                  className="border-2 border-gray-600 text-gray-600 text-center py-3 rounded-lg hover:bg-gray-600 hover:text-white transition-colors font-semibold"
+                >
                   Print Details
                 </button>
               </div>
@@ -354,13 +373,45 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Down Payment</label>
-              <input
-                type="number"
-                placeholder="0"
-                value={downPayment}
-                onChange={(e) => setDownPayment(Number(e.target.value))}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <div className="space-y-2">
+                <input
+                  type="number"
+                  placeholder="Enter amount"
+                  value={downPayment || ''}
+                  onChange={(e) => setDownPayment(Number(e.target.value) || 0)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDownPayment(1000)}
+                    className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded hover:bg-blue-200"
+                  >
+                    $1,000
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDownPayment(2000)}
+                    className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded hover:bg-blue-200"
+                  >
+                    $2,000
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDownPayment(3000)}
+                    className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded hover:bg-blue-200"
+                  >
+                    $3,000
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDownPayment(5000)}
+                    className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded hover:bg-blue-200"
+                  >
+                    $5,000
+                  </button>
+                </div>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Loan Term (months)</label>

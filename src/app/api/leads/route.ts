@@ -166,6 +166,8 @@ export async function POST(req: NextRequest) {
       notes: JSON.stringify({
         service: body.service,
         vehicleInterest: body.vehicleInterest,
+        vehicleId: body.vehicleId,
+        source: body.source,
         submittedAt: new Date().toISOString()
       }),
       created_at: new Date().toISOString(),
@@ -190,7 +192,7 @@ export async function POST(req: NextRequest) {
         if (resend) {
           try {
             await resend.emails.send({
-        from: 'noreply@unlimitedautorepaircollision.com',
+        from: 'Unlimited Auto <onboarding@resend.dev>',
         to: 'unlimitedautoredford@gmail.com',
         subject: `New Lead from ${lead.name} - Unlimited Auto`,
         html: `
@@ -199,13 +201,13 @@ export async function POST(req: NextRequest) {
           <p><strong>Email:</strong> ${lead.email}</p>
           <p><strong>Phone:</strong> ${lead.phone}</p>
           <p><strong>Message:</strong> ${lead.message || 'N/A'}</p>
-          <p><strong>Vehicle Interest:</strong> ${lead.vehicle_interest || 'N/A'}</p>
-          <p><strong>Service:</strong> ${lead.service || 'N/A'}</p>
-          <p><strong>Income:</strong> ${lead.income || 'N/A'}</p>
-          <p><strong>Down Payment:</strong> ${lead.down_payment || 'N/A'}</p>
-          <p><strong>Credit Score:</strong> ${lead.credit_score || 'N/A'}</p>
-          <p><strong>Source:</strong> ${lead.source || 'Website'}</p>
+          <p><strong>Service:</strong> ${body.service || 'N/A'}</p>
+          <p><strong>Vehicle Interest:</strong> ${body.vehicleInterest || 'N/A'}</p>
+          <p><strong>Vehicle ID:</strong> ${body.vehicleId || 'N/A'}</p>
+          <p><strong>Source:</strong> ${body.source === 'vehicle_page' ? '🚗 Vehicle Page (Website)' : body.source === 'contact_form' ? '📝 Contact Form (Website)' : '🌐 Website'}</p>
           <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
+          <hr>
+          <p><em>This lead came from the website, not Google search.</em></p>
         `,
       })
           console.log('Email notification sent successfully')

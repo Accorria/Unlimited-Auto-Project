@@ -40,7 +40,7 @@ export default function FeaturedVehicles() {
     const loadFeaturedVehicles = async () => {
       try {
         // Fetch vehicles from API (this will include the Mini Cooper)
-        const response = await fetch(`/api/vehicles?dealer=unlimited-auto&t=${Date.now()}&v=${Math.random()}`, {
+        const response = await fetch(`/api/vehicles?dealer=unlimited-auto`, {
           cache: 'no-store',
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -99,7 +99,7 @@ export default function FeaturedVehicles() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Vehicles for Sale & Lease
+            Vehicles for Sale & Financing
           </h2>
           <p className="text-xl text-gray-600 mb-6">
             Quality cars at great prices. All vehicles come with our satisfaction guarantee and easy financing options.

@@ -29,7 +29,7 @@ export default function DocumentUpload({ onDocumentsChange, leadId }: DocumentUp
   const [uploading, setUploading] = useState(false)
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({})
 
-  const handleFileSelect = (type: string, event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (type: string, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
 
@@ -47,7 +47,7 @@ export default function DocumentUpload({ onDocumentsChange, leadId }: DocumentUp
     }
 
     const newDocument: DocumentFile = {
-      id: `${type}_${Date.now()}`,
+      id: `${type}_${Math.random().toString(36).substr(2, 9)}`,
       type: type as DocumentFile['type'],
       file,
       preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
@@ -56,6 +56,33 @@ export default function DocumentUpload({ onDocumentsChange, leadId }: DocumentUp
     const updatedDocuments = [...documents.filter(doc => doc.type !== type), newDocument]
     setDocuments(updatedDocuments)
     onDocumentsChange(updatedDocuments)
+
+    // Auto-upload the document
+    try {
+      setUploading(true)
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', type)
+      if (leadId) formData.append('leadId', leadId)
+
+      const response = await fetch('/api/upload/document', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) throw new Error('Upload failed')
+
+      const result = await response.json()
+      const uploadedDoc = { ...newDocument, uploaded: true, url: result.url }
+      const finalDocuments = updatedDocuments.map(doc => doc.id === newDocument.id ? uploadedDoc : doc)
+      setDocuments(finalDocuments)
+      onDocumentsChange(finalDocuments)
+    } catch (error) {
+      console.error('Upload error:', error)
+      alert('Failed to upload document. Please try again.')
+    } finally {
+      setUploading(false)
+    }
   }
 
   const removeDocument = (id: string) => {
@@ -188,17 +215,6 @@ export default function DocumentUpload({ onDocumentsChange, leadId }: DocumentUp
         })}
       </div>
 
-      {documents.length > 0 && (
-        <div className="flex justify-end space-x-3">
-          <button
-            onClick={uploadDocuments}
-            disabled={uploading || documents.every(doc => doc.uploaded)}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {uploading ? 'Uploading...' : 'Upload Documents'}
-          </button>
-        </div>
-      )}
 
       <div className="text-xs text-gray-500">
         <p>• All documents are securely stored and encrypted</p>

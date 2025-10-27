@@ -1,9 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+
+interface Vehicle {
+  id: string
+  year: number
+  make: string
+  model: string
+  trim?: string
+  price?: number
+}
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -14,17 +23,74 @@ export default function ContactPage() {
     message: '',
     vehicleInterest: ''
   })
+  const [source, setSource] = useState('contact_form')
+  const [vehicleId, setVehicleId] = useState('')
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
+
+  useEffect(() => {
+    // Check if user came from a vehicle page
+    const urlParams = new URLSearchParams(window.location.search)
+    const vehicle = urlParams.get('vehicle')
+    if (vehicle) {
+      setSource('vehicle_page')
+      setVehicleId(vehicle)
+      setFormData(prev => ({
+        ...prev,
+        service: 'test_drive',
+        vehicleInterest: vehicle
+      }))
+    }
+
+    // Fetch vehicles for dropdown
+    const fetchVehicles = async () => {
+      try {
+        const response = await fetch('/api/vehicles?dealer=unlimited-auto')
+        if (response.ok) {
+          const data = await response.json()
+          setVehicles(data.vehicles || [])
+        }
+      } catch (error) {
+        console.error('Error fetching vehicles:', error)
+      }
+    }
+
+    fetchVehicles()
+  }, [])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
+    let formattedValue = value
+    
+    // Format phone number
+    if (name === 'phone') {
+      const phoneNumber = value.replace(/\D/g, '')
+      if (phoneNumber.length <= 3) {
+        formattedValue = phoneNumber
+      } else if (phoneNumber.length <= 6) {
+        formattedValue = `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`
+      } else {
+        formattedValue = `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: formattedValue
     }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Convert vehicle ID to vehicle name if it's a UUID
+    let vehicleInterestName = formData.vehicleInterest
+    if (formData.vehicleInterest && formData.vehicleInterest.includes('-')) {
+      // This looks like a UUID, find the vehicle name
+      const selectedVehicle = vehicles.find(v => v.id === formData.vehicleInterest)
+      if (selectedVehicle) {
+        vehicleInterestName = `${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}`
+      }
+    }
     
     try {
       const response = await fetch('/api/leads', {
@@ -37,15 +103,16 @@ export default function ContactPage() {
           phone: formData.phone,
           email: formData.email,
           message: formData.message,
-          source: 'contact_form',
+          source: source,
           service: formData.service,
-          vehicleInterest: formData.vehicleInterest,
+          vehicleInterest: vehicleInterestName,
+          vehicleId: vehicleId,
           consent: true
         }),
       })
 
       if (response.ok) {
-        alert('Thank you for your message! We\'ll get back to you soon.')
+        alert('Thank you for contacting Unlimited Auto! We\'ll get back to you within 24 hours.')
         // Reset form
         setFormData({
           name: '',
@@ -56,7 +123,7 @@ export default function ContactPage() {
           vehicleInterest: ''
         })
       } else {
-        alert('There was an error submitting your message. Please try again or call us directly.')
+        alert('There was an error submitting your message. Please try again or call us directly at (313) 766-4475.')
       }
     } catch (error) {
       console.error('Error submitting contact form:', error)
@@ -88,8 +155,7 @@ export default function ContactPage() {
       title: 'Hours',
       details: [
         'Mon-Fri: 9AM-7PM',
-        'Saturday: 9AM-6PM',
-        'Sunday: 12PM-5PM'
+        'Saturday: 9AM-6PM'
       ],
       action: 'View Hours'
     }
@@ -187,23 +253,27 @@ export default function ContactPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle of Interest (if applicable)</label>
-                <input
-                  type="text"
+                <select
                   name="vehicleInterest"
                   value={formData.vehicleInterest}
                   onChange={handleInputChange}
-                  placeholder="e.g., 2020 Honda Civic"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
-                />
+                >
+                  <option value="">Select a vehicle from our inventory</option>
+                  {vehicles.map((vehicle) => (
+                    <option key={vehicle.id} value={vehicle.id}>
+                      {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim || ''} - ${vehicle.price?.toLocaleString() || 'Call for Price'}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Message *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">How can we help you?</label>
                 <textarea
                   name="message"
                   value={formData.message}
                   onChange={handleInputChange}
-                  required
                   rows={4}
                   placeholder="Tell us how we can help you..."
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
@@ -316,7 +386,7 @@ export default function ContactPage() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-gray-900 mb-2">What are your business hours?</h3>
-                <p className="text-gray-600">We're open Monday-Friday 9AM-7PM, Saturday 9AM-6PM, and Sunday 12PM-5PM.</p>
+                <p className="text-gray-600">We're open Monday-Friday 9AM-7PM and Saturday 9AM-6PM.</p>
               </div>
               <div>
                 <h3 className="text-lg font-bold text-gray-900 mb-2">Do you offer warranties?</h3>

@@ -65,13 +65,6 @@ export default function Testimonials() {
         <div className="relative max-w-4xl mx-auto bg-white rounded-xl shadow-2xl p-8 md:p-12">
           {/* Testimonial Content */}
           <div className="transition-opacity duration-500 ease-in-out">
-            <Image
-              src={testimonials[currentTestimonial].image}
-              alt={testimonials[currentTestimonial].name}
-              width={96}
-              height={96}
-              className="rounded-full mx-auto mb-6 border-4 border-blue-200 shadow-md"
-            />
             {renderStars(testimonials[currentTestimonial].rating)}
             <p className="text-lg md:text-xl text-gray-700 italic mb-6">
               "{testimonials[currentTestimonial].review}"
@@ -116,21 +109,6 @@ export default function Testimonials() {
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="text-center bg-white rounded-xl p-6 shadow-lg">
-            <div className="text-4xl font-bold text-blue-600 mb-2">4.9/5</div>
-            <div className="text-gray-600">Average Rating</div>
-          </div>
-          <div className="text-center bg-white rounded-xl p-6 shadow-lg">
-            <div className="text-4xl font-bold text-blue-600 mb-2">500+</div>
-            <div className="text-gray-600">Happy Customers</div>
-          </div>
-          <div className="text-center bg-white rounded-xl p-6 shadow-lg">
-            <div className="text-4xl font-bold text-blue-600 mb-2">98%</div>
-            <div className="text-gray-600">Satisfaction Rate</div>
-          </div>
-        </div>
       </div>
     </section>
   )

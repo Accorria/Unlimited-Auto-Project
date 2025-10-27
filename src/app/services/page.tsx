@@ -7,6 +7,29 @@ import Footer from '@/components/Footer'
 
 const services = [
   {
+    id: 'sales',
+    title: 'Car Sales',
+    description: 'Quality used cars with comprehensive inspections and warranties',
+    icon: '🚗',
+    image: '/Dealership_Photos/Unlimited Auto Front.png',
+    features: [
+      'Quality Used Vehicles',
+      'Comprehensive Inspections',
+      'Vehicle History Reports',
+      'Financing Available',
+      'Warranty Coverage',
+      'Test Drive Available',
+      'Trade-in Appraisals',
+      'All Credit Types Welcome'
+    ],
+    benefits: [
+      'No Hidden Fees',
+      'Transparent Pricing',
+      'Easy Financing',
+      'Customer Satisfaction Guarantee'
+    ]
+  },
+  {
     id: 'repair',
     title: 'Auto Repair',
     description: 'Professional mechanical services for all makes and models',
@@ -170,7 +193,7 @@ export default function ServicesPage() {
             {services.map((service) => (
               <Link
                 key={service.id}
-                href={`/services/${service.id}`}
+                href={service.id === 'sales' ? '/inventory' : `/services/${service.id}`}
                 className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 group"
               >
                 <div className="relative h-48">

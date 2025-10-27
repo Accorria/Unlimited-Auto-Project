@@ -317,6 +317,33 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../src/app/api/leads/[id]/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/leads/[id]">> = Specific
+  const handler = {} as typeof import("../../src/app/api/leads/[id]/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/api/leads/bulk-delete/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/leads/bulk-delete">> = Specific
+  const handler = {} as typeof import("../../src/app/api/leads/bulk-delete/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/api/leads/clear/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/leads/clear">> = Specific
+  const handler = {} as typeof import("../../src/app/api/leads/clear/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../src/app/api/leads/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/leads">> = Specific

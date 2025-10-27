@@ -32,7 +32,7 @@ export default function Contact() {
       })
 
       if (response.ok) {
-        alert('Thank you for your message! We\'ll get back to you soon.')
+        alert('Thank you for contacting Unlimited Auto! We\'ll get back to you within 24 hours.')
         // Reset form
         setFormData({
           name: '',
@@ -42,7 +42,7 @@ export default function Contact() {
           interest: 'general'
         })
       } else {
-        alert('There was an error submitting your message. Please try again or call us directly.')
+        alert('There was an error submitting your message. Please try again or call us directly at (313) 766-4475.')
       }
     } catch (error) {
       console.error('Error submitting contact form:', error)
@@ -51,9 +51,24 @@ export default function Contact() {
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+    let formattedValue = value
+    
+    // Format phone number
+    if (name === 'phone') {
+      const phoneNumber = value.replace(/\D/g, '')
+      if (phoneNumber.length <= 3) {
+        formattedValue = phoneNumber
+      } else if (phoneNumber.length <= 6) {
+        formattedValue = `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`
+      } else {
+        formattedValue = `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`
+      }
+    }
+    
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: formattedValue
     })
   }
 
@@ -144,12 +159,11 @@ export default function Contact() {
 
               <div>
                 <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                  Message *
+                  How can we help you?
                 </label>
                 <textarea
                   id="message"
                   name="message"
-                  required
                   rows={4}
                   value={formData.message}
                   onChange={handleChange}
@@ -200,8 +214,8 @@ export default function Contact() {
                   <div>
                     <h4 className="font-semibold text-lg">Email</h4>
                     <p className="text-gray-300">
-                      <a href="mailto:unlimitedautocollision@gmail.com" className="hover:text-white transition-colors">
-                        unlimitedautocollision@gmail.com
+                      <a href="mailto:unlimitedautoredford@gmail.com" className="hover:text-white transition-colors">
+                        unlimitedautoredford@gmail.com
                       </a>
                     </p>
                   </div>

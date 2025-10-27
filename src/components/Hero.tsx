@@ -19,11 +19,11 @@ export default function Hero() {
     },
     {
       image: '/Dealership_Photos/Unlimited Auto Side View.webp',
-      title: 'Easy Financing',
-      subtitle: 'Get Approved Today',
-      description: 'Must have a job. No check stubs required. Just bring Photo ID and two most recent pay stubs.',
-      ctaText: 'Apply Now',
-      ctaLink: '/credit-application',
+      title: 'View Inventory',
+      subtitle: 'Drive Off Today',
+      description: 'Browse our quality used cars and drive home today. All credit types welcome with our easy financing options.',
+      ctaText: 'View Inventory',
+      ctaLink: '/inventory',
     },
     {
       image: '/Dealership_Photos/Complete Auto Services.jpg',

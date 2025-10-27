@@ -19,7 +19,7 @@ export default function Footer() {
             <div className="text-gray-300 space-y-2">
               <p>📍 24645 Plymouth Rd Unit A, Redford Township, MI 48239</p>
               <p>📞 (313) 766-4475</p>
-              <p>📧 unlimitedautocollision@gmail.com</p>
+              <p>📧 unlimitedautoredford@gmail.com</p>
             </div>
           </div>
 

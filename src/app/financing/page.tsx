@@ -1,9 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+
+interface Vehicle {
+  id: string
+  year: number
+  make: string
+  model: string
+  trim?: string
+  price?: number
+}
 
 export default function FinancingPage() {
   const [formData, setFormData] = useState({
@@ -34,12 +43,44 @@ export default function FinancingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [submitMessage, setSubmitMessage] = useState('')
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
+
+  useEffect(() => {
+    // Fetch vehicles for dropdown
+    const fetchVehicles = async () => {
+      try {
+        const response = await fetch('/api/vehicles?dealer=unlimited-auto')
+        if (response.ok) {
+          const data = await response.json()
+          setVehicles(data.vehicles || [])
+        }
+      } catch (error) {
+        console.error('Error fetching vehicles:', error)
+      }
+    }
+
+    fetchVehicles()
+  }, [])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
+    let formattedValue = value
+    
+    // Format phone number
+    if (name === 'phone') {
+      const phoneNumber = value.replace(/\D/g, '')
+      if (phoneNumber.length <= 3) {
+        formattedValue = phoneNumber
+      } else if (phoneNumber.length <= 6) {
+        formattedValue = `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`
+      } else {
+        formattedValue = `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: formattedValue
     }))
   }
 
@@ -57,13 +98,20 @@ export default function FinancingPage() {
     setSubmitStatus('idle')
     setSubmitMessage('')
 
+    // Find the selected vehicle name
+    const selectedVehicle = vehicles.find(v => v.id === formData.vehicleInterest)
+    const vehicleName = selectedVehicle ? `${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}` : formData.vehicleInterest
+
     try {
       const response = await fetch('/api/financing/apply', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          vehicleInterest: vehicleName
+        }),
       })
 
       const result = await response.json()
@@ -287,11 +335,56 @@ export default function FinancingPage() {
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                   >
                     <option value="">Select State</option>
-                    <option value="MI">Michigan</option>
-                    <option value="OH">Ohio</option>
-                    <option value="IN">Indiana</option>
+                    <option value="AL">Alabama</option>
+                    <option value="AK">Alaska</option>
+                    <option value="AZ">Arizona</option>
+                    <option value="AR">Arkansas</option>
+                    <option value="CA">California</option>
+                    <option value="CO">Colorado</option>
+                    <option value="CT">Connecticut</option>
+                    <option value="DE">Delaware</option>
+                    <option value="FL">Florida</option>
+                    <option value="GA">Georgia</option>
+                    <option value="HI">Hawaii</option>
+                    <option value="ID">Idaho</option>
                     <option value="IL">Illinois</option>
+                    <option value="IN">Indiana</option>
+                    <option value="IA">Iowa</option>
+                    <option value="KS">Kansas</option>
+                    <option value="KY">Kentucky</option>
+                    <option value="LA">Louisiana</option>
+                    <option value="ME">Maine</option>
+                    <option value="MD">Maryland</option>
+                    <option value="MA">Massachusetts</option>
+                    <option value="MI">Michigan</option>
+                    <option value="MN">Minnesota</option>
+                    <option value="MS">Mississippi</option>
+                    <option value="MO">Missouri</option>
+                    <option value="MT">Montana</option>
+                    <option value="NE">Nebraska</option>
+                    <option value="NV">Nevada</option>
+                    <option value="NH">New Hampshire</option>
+                    <option value="NJ">New Jersey</option>
+                    <option value="NM">New Mexico</option>
+                    <option value="NY">New York</option>
+                    <option value="NC">North Carolina</option>
+                    <option value="ND">North Dakota</option>
+                    <option value="OH">Ohio</option>
+                    <option value="OK">Oklahoma</option>
+                    <option value="OR">Oregon</option>
+                    <option value="PA">Pennsylvania</option>
+                    <option value="RI">Rhode Island</option>
+                    <option value="SC">South Carolina</option>
+                    <option value="SD">South Dakota</option>
+                    <option value="TN">Tennessee</option>
+                    <option value="TX">Texas</option>
+                    <option value="UT">Utah</option>
+                    <option value="VT">Vermont</option>
+                    <option value="VA">Virginia</option>
+                    <option value="WA">Washington</option>
+                    <option value="WV">West Virginia</option>
                     <option value="WI">Wisconsin</option>
+                    <option value="WY">Wyoming</option>
                   </select>
                 </div>
                 <div>
@@ -379,23 +472,6 @@ export default function FinancingPage() {
                     <option value="10000">$10,000+</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Credit Score (Optional)</label>
-                  <select
-                    name="creditScore"
-                    value={formData.creditScore}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
-                  >
-                    <option value="">Select Range</option>
-                    <option value="excellent">750+ (Excellent)</option>
-                    <option value="good">700-749 (Good)</option>
-                    <option value="fair">650-699 (Fair)</option>
-                    <option value="poor">600-649 (Poor)</option>
-                    <option value="very-poor">Below 600 (Very Poor)</option>
-                    <option value="no-credit">No Credit History</option>
-                  </select>
-                </div>
               </div>
 
               <div>
@@ -406,27 +482,12 @@ export default function FinancingPage() {
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 >
-                  <option value="">Select Vehicle</option>
-                  <option value="2021 Subaru Impreza Sport">2021 Subaru Impreza Sport</option>
-                  <option value="2020 Subaru Outback Limited">2020 Subaru Outback Limited</option>
-                  <option value="2019 Lexus ES 350">2019 Lexus ES 350</option>
-                  <option value="2020 Lincoln Navigator">2020 Lincoln Navigator</option>
-                  <option value="2021 Chevrolet Silverado 1500">2021 Chevrolet Silverado 1500</option>
-                  <option value="2019 Infiniti Q50">2019 Infiniti Q50</option>
-                  <option value="2020 Chevrolet Camaro SS">2020 Chevrolet Camaro SS</option>
-                  <option value="2018 Audi A4">2018 Audi A4</option>
-                  <option value="2021 Hyundai Elantra">2021 Hyundai Elantra</option>
-                  <option value="2019 Volkswagen Jetta">2019 Volkswagen Jetta</option>
-                  <option value="2020 Mazda CX-5">2020 Mazda CX-5</option>
-                  <option value="2017 Audi A6">2017 Audi A6</option>
-                  <option value="2021 Honda Civic">2021 Honda Civic</option>
-                  <option value="2019 Kia Optima">2019 Kia Optima</option>
-                  <option value="2018 Infiniti QX60">2018 Infiniti QX60</option>
-                  <option value="2020 Jeep Grand Cherokee">2020 Jeep Grand Cherokee</option>
-                  <option value="2019 Ram 1500">2019 Ram 1500</option>
-                  <option value="2021 Chevrolet Equinox">2021 Chevrolet Equinox</option>
-                  <option value="2020 Chevrolet Malibu">2020 Chevrolet Malibu</option>
-                  <option value="Other">Other (Specify in Comments)</option>
+                  <option value="">Select Vehicle from Our Inventory</option>
+                  {vehicles.map((vehicle) => (
+                    <option key={vehicle.id} value={vehicle.id}>
+                      {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim || ''} - ${vehicle.price?.toLocaleString() || 'Call for Price'}
+                    </option>
+                  ))}
                 </select>
               </div>
 

@@ -176,7 +176,7 @@ export default function InventoryPage() {
     const fetchVehicles = async () => {
       try {
         // First try to load from API (this will include the Mini Cooper)
-        const response = await fetch(`/api/vehicles?dealer=unlimited-auto&t=${Date.now()}&v=${Math.random()}`, {
+        const response = await fetch(`/api/vehicles?dealer=unlimited-auto`, {
           cache: 'no-store',
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -469,14 +469,14 @@ export default function InventoryPage() {
                             </span>
                           ))}
                           {vehicle.features.length > 3 && (
-                            <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-medium">
+                            <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
                               +{vehicle.features.length - 3} more
                             </span>
                           )}
                         </>
                       ) : (
-                        <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-medium">
-                          {vehicle.description || 'No features listed'}
+                        <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                          {vehicle.description || 'Features available'}
                         </span>
                       )}
                     </div>

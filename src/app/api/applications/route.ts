@@ -10,8 +10,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     console.log('Received credit application:', {
       dealerName: body?.dealerName,
-      applicant: body?.applicant?.fullName,
-      phone: body?.applicant?.phone,
+      applicant: `${body?.applicant?.firstName || ''} ${body?.applicant?.lastName || ''}`.trim(),
+      phone: body?.applicant?.homePhone,
       vehicleId: body?.financing?.vehicleId,
       vehicle: `${body?.financing?.year} ${body?.financing?.make} ${body?.financing?.model}`,
       salesPrice: body?.financing?.salesPrice,
@@ -37,10 +37,10 @@ export async function POST(req: NextRequest) {
       dealer_id: dealer.id,
       
       // Contact information
-      name: body.applicant?.fullName || '',
-      phone: body.applicant?.phone || '',
+      name: `${body.applicant?.firstName || ''} ${body.applicant?.lastName || ''}`.trim(),
+      phone: body.applicant?.homePhone || '',
       email: body.applicant?.email || '',
-      address: body.applicant?.address || '',
+      address: `${body.applicant?.streetAddress || ''} ${body.applicant?.aptNumber || ''}`.trim(),
       city: body.applicant?.city || '',
       state: body.applicant?.state || '',
       zip_code: body.applicant?.zip || '',
@@ -50,8 +50,10 @@ export async function POST(req: NextRequest) {
       net_monthly_income: body.applicant?.grossAnnualSalary ? 
         parseFloat(body.applicant.grossAnnualSalary.replace(/[^0-9.]/g, '')) / 12 : null,
       employer: body.applicant?.employerName || '',
-      // Message
-      message: `Credit application submitted`,
+      // Message - include vehicle information
+      message: body.financing?.vehicleId ? 
+        `Credit application for vehicle: ${body.financing?.year || ''} ${body.financing?.make || ''} ${body.financing?.model || ''}`.trim() :
+        'Credit application submitted',
       
       // Attribution tracking
       source: 'credit_application',
@@ -160,7 +162,7 @@ export async function POST(req: NextRequest) {
     if (resend) {
       try {
         await resend.emails.send({
-        from: 'noreply@unlimitedautorepaircollision.com',
+        from: 'Unlimited Auto <onboarding@resend.dev>',
         to: 'unlimitedautoredford@gmail.com',
         subject: `New Credit Application from ${lead.name} - Unlimited Auto`,
         html: `
