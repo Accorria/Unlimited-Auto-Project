@@ -1,0 +1,16 @@
+# Exclude large static files from Vercel build
+public/uploads/
+public/Photos/
+public/Dealership_Photos/
+public/uploads-backup/
+
+# Exclude other large directories
+Priate OPS/
+backup_docs/
+
+# Exclude large individual files (but allow small ones for UI)
+*.jpg
+*.jpeg
+*.png
+*.webp
+*.pdf
