@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { createServerClient } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
+    
+    // Use service role client to bypass RLS
+    const supabase = createServerClient()
     
     // Get dealer info
     const { data: dealer, error: dealerError } = await supabase
