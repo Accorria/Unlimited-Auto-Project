@@ -90,7 +90,8 @@ export async function PUT(
         passengers: body.passengers,
         fuel_type: body.fuelType,
         exterior_color: body.color,
-        interior_color: body.interiorColor
+        interior_color: body.interiorColor,
+        down_payment: body.downPayment || 999
       })
       .eq('id', vehicleId)
       .select()

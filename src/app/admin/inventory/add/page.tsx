@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import PhotoUpload from '@/components/PhotoUpload'
+import SmartSelect from '@/components/SmartSelect'
 
 // Vehicle condition options
 const conditionOptions = [
@@ -33,7 +34,7 @@ const commonModels: Record<string, string[]> = {
   'BMW': ['3 Series', '5 Series', '7 Series', 'i3', 'i8', 'X1', 'X3', 'X5', 'X7', 'Z4'],
   'Buick': ['Cascada', 'Enclave', 'Encore', 'Envision', 'LaCrosse', 'Regal'],
   'Cadillac': ['ATS', 'CT6', 'CTS', 'Escalade', 'XTS', 'XT4', 'XT5', 'XT6'],
-  'Chevrolet': ['Camaro', 'Colorado', 'Corvette', 'Cruze', 'Equinox', 'Express', 'Impala', 'Malibu', 'Silverado', 'Sonic', 'Spark', 'Suburban', 'Tahoe', 'Trailblazer', 'Traverse'],
+  'Chevrolet': ['Camaro', 'Colorado', 'Corvette', 'Cruze', 'Equinox', 'Express', 'Impala', 'Malibu', 'Silverado 1500', 'Silverado 2500 HD', 'Silverado 3500 HD', 'Sonic', 'Spark', 'Suburban', 'Tahoe', 'Trailblazer', 'Traverse', 'Bolt EV', 'Bolt EUV', 'Blazer', 'Trax'],
   'Chrysler': ['300', 'Pacifica', 'Voyager'],
   'Dodge': ['Challenger', 'Charger', 'Durango', 'Grand Caravan', 'Journey'],
   'Ford': ['Bronco', 'Edge', 'Escape', 'Expedition', 'Explorer', 'F-150', 'Focus', 'Fusion', 'Maverick', 'Mustang', 'Ranger', 'Transit'],
@@ -67,7 +68,10 @@ const makeSpecificTrims: Record<string, string[]> = {
   'Toyota': ['Base', 'LE', 'XLE', 'Limited', 'Platinum', 'TRD', 'Hybrid', 'Prime'],
   'Honda': ['Base', 'LX', 'EX', 'EX-L', 'Touring', 'Sport', 'Type R', 'Hybrid'],
   'Ford': ['Base', 'S', 'SE', 'SEL', 'Titanium', 'ST', 'RS', 'Platinum', 'King Ranch'],
-  'Chevrolet': ['Base', 'LS', 'LT', 'LTZ', 'SS', 'RS', 'Z71', 'Premier'],
+  'Chevrolet': ['Base', 'LS', 'LT', 'LTZ', 'SS', 'RS', 'Z71', 'Premier', 'Work Truck (WT)', 'Custom', 'Custom Trail Boss', 'RST', 'LT Trail Boss', 'ZR2', 'High Country'],
+  'Silverado 1500': ['Work Truck (WT)', 'Custom', 'Custom Trail Boss', 'LT', 'RST', 'LT Trail Boss', 'LTZ', 'ZR2', 'High Country'],
+  'Silverado 2500 HD': ['Work Truck (WT)', 'Custom', 'LT', 'LTZ', 'High Country'],
+  'Silverado 3500 HD': ['Work Truck (WT)', 'Custom', 'LT', 'LTZ', 'High Country'],
   'Nissan': ['Base', 'S', 'SV', 'SL', 'Platinum', 'NISMO', 'SR'],
   'Hyundai': ['Base', 'SE', 'SEL', 'Limited', 'N Line', 'N'],
   'Kia': ['Base', 'LX', 'EX', 'SX', 'GT-Line', 'GT'],
@@ -84,14 +88,40 @@ const makeSpecificTrims: Record<string, string[]> = {
   'Ram': ['Base', 'Tradesman', 'Big Horn', 'Laramie', 'Rebel', 'Limited', 'TRX'],
   'Jeep': ['Base', 'Sport', 'Sahara', 'Rubicon', 'High Altitude', 'Trailhawk'],
   'Dodge': ['Base', 'SXT', 'GT', 'R/T', 'Scat Pack', 'Hellcat', 'Demon'],
-  'Chrysler': ['Base', 'Touring', 'Limited', 'Pinnacle'],
+  'Chrysler': ['Base', 'Touring', 'Limited', 'Pinnacle', 'L', 'LX', 'LXI'],
   'Tesla': ['Standard Range', 'Long Range', 'Performance', 'Plaid']
 }
 
-// Common vehicle features
-const commonFeatures = [
-  'Air Conditioning', 'Alloy Wheels', 'AM/FM Radio', 'Backup Camera', 'Bluetooth', 'CD Player', 'Cruise Control', 'Heated Seats', 'Keyless Entry', 'Leather Seats', 'Navigation System', 'Power Windows', 'Remote Start', 'Sunroof', 'USB Port', 'Xenon Headlights'
-]
+// Organized vehicle features by category
+const vehicleFeatures = {
+  'Exterior': [
+    'Alloy Wheels', 'Chrome Wheels', 'Steel Wheels', 'Fog Lights', 'LED Headlights', 'Xenon Headlights', 'Halogen Headlights', 'Daytime Running Lights', 'Power Mirrors', 'Heated Mirrors', 'Auto-Dimming Mirrors', 'Tinted Windows', 'Privacy Glass', 'Spoiler', 'Running Boards', 'Roof Rails', 'Tow Package', 'Trailer Hitch'
+  ],
+  'Interior': [
+    'Leather Seats', 'Cloth Seats', 'Vinyl Seats', 'Heated Seats', 'Cooled Seats', 'Power Seats', 'Memory Seats', 'Lumbar Support', 'Split Folding Rear Seats', 'Stow \'n Go Seating', 'Third Row Seating', 'Captain\'s Chairs', 'Bench Seating', 'Leather Steering Wheel', 'Wood Trim', 'Carbon Fiber Trim', 'Ambient Lighting', 'Cargo Cover', 'Cargo Net'
+  ],
+  'Climate Control': [
+    'Air Conditioning', 'Automatic Climate Control', 'Dual Zone Climate Control', 'Tri-Zone Climate Control', 'Rear Climate Control', 'Heated Steering Wheel', 'Heated Seats', 'Cooled Seats', 'Remote Start', 'Defrost System'
+  ],
+  'Technology & Audio': [
+    'AM/FM Radio', 'CD Player', 'MP3 Player', 'USB Port', 'Auxiliary Input', 'Bluetooth', 'Apple CarPlay', 'Android Auto', 'Uconnect Touchscreen', 'Navigation System', 'GPS', 'Satellite Radio', 'HD Radio', 'Premium Audio', 'Bose Audio', 'Harman Kardon', 'JBL Audio', 'Infotainment System', 'WiFi Hotspot', 'Wireless Charging'
+  ],
+  'Safety & Security': [
+    'Backup Camera', 'Rearview Camera', '360° Camera', 'Parking Sensors', 'Blind Spot Monitoring', 'Lane Departure Warning', 'Forward Collision Warning', 'Automatic Emergency Braking', 'Adaptive Cruise Control', 'Lane Keep Assist', 'Traffic Sign Recognition', 'Driver Attention Monitor', 'Tire Pressure Monitoring', 'Stability Control', 'Traction Control', 'Anti-lock Brakes', 'Airbags', 'Security System', 'Immobilizer', 'Theft Deterrent'
+  ],
+  'Convenience': [
+    'Power Windows', 'Power Locks', 'Keyless Entry', 'Push Button Start', 'Remote Start', 'Cruise Control', 'Adaptive Cruise Control', 'Tilt Steering Wheel', 'Telescoping Steering Wheel', 'Power Steering', 'Steering Wheel Controls', 'Cup Holders', 'Storage Compartments', 'Cargo Area', 'Cargo Management', 'Roof Rack', 'Tonneau Cover', 'Bed Liner'
+  ],
+  'Doors & Access': [
+    'Power Sliding Doors', 'Power Liftgate', 'Power Tailgate', 'Keyless Entry', 'Remote Keyless Entry', 'Smart Key', 'Proximity Key', 'Key Fob', 'Manual Doors', 'Manual Liftgate'
+  ],
+  'Transmission & Performance': [
+    'Manual Transmission', 'Automatic Transmission', 'CVT Transmission', 'Semi-Automatic Transmission', 'Paddle Shifters', 'Sport Mode', 'Eco Mode', 'Tow Mode', '4WD', 'AWD', 'FWD', 'RWD', 'Limited Slip Differential', 'Locking Differential'
+  ],
+  'Special Features': [
+    'Sunroof', 'Moonroof', 'Panoramic Sunroof', 'Convertible Top', 'Hardtop', 'Soft Top', 'T-Top', 'Targa Top', 'Hatchback', 'Liftback', 'Wagon', 'Crossover', 'Hybrid', 'Electric', 'Plug-in Hybrid', 'Turbocharged', 'Supercharged', 'V6 Engine', 'V8 Engine', '4-Cylinder Engine', '6-Cylinder Engine', '8-Cylinder Engine'
+  ]
+}
 
 // Description templates
 const descriptionTemplates = [
@@ -135,6 +165,7 @@ export default function AddVehicle() {
     transmission: 'Automatic',
     drivetrain: 'FWD',
     color: '',
+    interiorColor: '',
     vin: '',
     engine: '',
     mpg: '',
@@ -143,7 +174,8 @@ export default function AddVehicle() {
     passengers: 5,
     features: [] as string[],
     description: '',
-    images: [] as string[]
+    images: [] as string[],
+    downPayment: 999
   })
   
   // Form validation state
@@ -313,6 +345,8 @@ export default function AddVehicle() {
         miles: parseNumber(formData.miles)
       }
 
+      console.log('Submitting vehicle data:', submitData)
+
       // Call the API to save the vehicle
       const response = await fetch('/api/vehicles', {
         method: 'POST',
@@ -323,8 +357,10 @@ export default function AddVehicle() {
       })
 
       const result = await response.json()
+      console.log('API response:', result)
 
       if (!response.ok) {
+        console.error('API error details:', result)
         throw new Error(result.error || 'Failed to save vehicle')
       }
 
@@ -470,22 +506,17 @@ export default function AddVehicle() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Trim</label>
-                <select
+                <SmartSelect
                   name="trim"
                   value={formData.trim}
                   onChange={handleInputChange}
-                  disabled={!formData.model}
-                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base ${
-                    'border-gray-300'
-                  } ${!formData.model ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <option value="">Select Trim</option>
-                  {(makeSpecificTrims[formData.make] || ['Base', 'Premium', 'Limited', 'Sport']).map((trim) => (
-                    <option key={trim} value={trim}>
-                      {trim}
-                    </option>
-                  ))}
-                </select>
+                  options={makeSpecificTrims[formData.make] || ['Base', 'Premium', 'Limited', 'Sport']}
+                  placeholder="Select or type trim..."
+                  learnType="trims"
+                  make={formData.make}
+                  model={formData.model}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Price *</label>
@@ -519,6 +550,25 @@ export default function AddVehicle() {
                   }`}
                 />
                 {errors.miles && <p className="text-red-500 text-sm mt-1">{errors.miles}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Down Payment</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500 sm:text-sm">$</span>
+                  </div>
+                  <input
+                    type="number"
+                    name="downPayment"
+                    value={formData.downPayment || ''}
+                    onChange={handleInputChange}
+                    placeholder="Enter down payment amount"
+                    min="0"
+                    className="w-full pl-8 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                  />
+                </div>
+                <p className="text-sm text-gray-500 mt-1">This will appear as a badge on the vehicle listing</p>
               </div>
             </div>
           </div>
@@ -599,6 +649,7 @@ export default function AddVehicle() {
                   <option value="RWD">RWD</option>
                   <option value="AWD">AWD</option>
                   <option value="4WD">4WD</option>
+                  <option value="4x4">4x4</option>
                 </select>
               </div>
               <div>
@@ -610,6 +661,22 @@ export default function AddVehicle() {
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 >
                   <option value="">Select Color</option>
+                  {colorOptions.map((color) => (
+                    <option key={color} value={color}>
+                      {color}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Interior Color</label>
+                <select
+                  name="interiorColor"
+                  value={formData.interiorColor}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                >
+                  <option value="">Select Interior Color</option>
                   {colorOptions.map((color) => (
                     <option key={color} value={color}>
                       {color}
@@ -638,12 +705,26 @@ export default function AddVehicle() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Engine</label>
-                <input
-                  type="text"
+                <SmartSelect
                   name="engine"
                   value={formData.engine}
                   onChange={handleInputChange}
+                  options={[
+                    '2.0L 4-Cylinder',
+                    '2.4L 4-Cylinder', 
+                    '3.0L V6',
+                    '3.6L V6',
+                    '4.3L V6',
+                    '5.3L V8',
+                    '6.2L V8',
+                    '6.6L V8',
+                    '2.7L Turbo 4-Cylinder',
+                    '3.0L Turbo V6'
+                  ]}
                   placeholder="e.g., 2.0L 4-Cylinder"
+                  learnType="engines"
+                  make={formData.make}
+                  model={formData.model}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 />
               </div>
@@ -673,6 +754,7 @@ export default function AddVehicle() {
                   <option value="Convertible">Convertible</option>
                   <option value="Hatchback">Hatchback</option>
                   <option value="Wagon">Wagon</option>
+                  <option value="Minivan">Minivan</option>
                 </select>
               </div>
               <div>
@@ -722,20 +804,29 @@ export default function AddVehicle() {
               {/* Features - Clickable Buttons */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-3">Features</label>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                  {commonFeatures.map((feature) => (
-                    <button
-                      key={feature}
-                      type="button"
-                      onClick={() => handleFeatureToggle(feature)}
-                      className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
-                        formData.features.includes(feature)
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      {feature}
-                    </button>
+                <div className="max-h-96 overflow-y-auto border border-gray-300 rounded-lg p-4 bg-gray-50">
+                  {Object.entries(vehicleFeatures).map(([category, features]) => (
+                    <div key={category} className="mb-6 last:mb-0">
+                      <h4 className="text-sm font-semibold text-gray-800 mb-3 border-b border-gray-300 pb-1">
+                        {category}
+                      </h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                        {features.map((feature) => (
+                          <button
+                            key={feature}
+                            type="button"
+                            onClick={() => handleFeatureToggle(feature)}
+                            className={`px-3 py-2 text-xs rounded-lg border transition-colors ${
+                              formData.features.includes(feature)
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {feature}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
                 <p className="text-sm text-gray-500 mt-2">

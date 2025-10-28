@@ -36,6 +36,7 @@ interface Vehicle {
   model_code?: string
   cost?: number
   title_status?: string
+  downPayment?: number
   assigned_to?: string
   created_at?: string
   updated_at?: string
@@ -429,7 +430,11 @@ export default function InventoryPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredVehicles.map((vehicle) => (
-                <div key={vehicle.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100">
+                <div key={vehicle.id} className={`bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 border border-gray-100 ${
+                  vehicle.status === 'sold' 
+                    ? 'opacity-75 grayscale' 
+                    : 'hover:shadow-2xl hover:-translate-y-2'
+                }`}>
                   <div className="relative h-64">
                     <Image
                       src={vehicle.vehicle_photos?.[0]?.public_url || vehicle.coverPhoto || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop'}
@@ -437,10 +442,19 @@ export default function InventoryPage() {
                       fill
                       className="object-cover"
                     />
-                    {/* Only show $999 Down badge, positioned to not touch the car */}
-                    <div className="absolute top-2 left-2 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-bold shadow-lg">
-                      $999 Down
-                    </div>
+                    {/* Dynamic down payment badge - only show if not sold */}
+                    {vehicle.status !== 'sold' && (
+                      <div className="absolute top-2 left-2 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-bold shadow-lg">
+                        ${vehicle.downPayment || 999} Down
+                      </div>
+                    )}
+                    
+                    {/* SOLD banner - only show if sold */}
+                    {vehicle.status === 'sold' && (
+                      <div className="absolute top-0 left-0 right-0 bg-red-600 text-white text-center py-2 text-lg font-bold shadow-lg transform -rotate-2">
+                        SOLD
+                      </div>
+                    )}
                   </div>
 
                   <div className="p-6">
@@ -481,18 +495,26 @@ export default function InventoryPage() {
                       )}
                     </div>
 
-                    <div className="flex gap-3">
+                    <div className="space-y-3">
+                      <div className="flex gap-3">
+                        <Link
+                          href={`/inventory/${vehicle.id}`}
+                          className="flex-1 bg-blue-600 text-white text-center py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                        >
+                          View Details
+                        </Link>
+                        <Link
+                          href={`/contact?vehicle=${vehicle.id}`}
+                          className="flex-1 border-2 border-blue-600 text-blue-600 text-center py-3 rounded-lg hover:bg-blue-600 hover:text-white transition-colors font-semibold"
+                        >
+                          Schedule Drive
+                        </Link>
+                      </div>
                       <Link
-                        href={`/inventory/${vehicle.id}`}
-                        className="flex-1 bg-blue-600 text-white text-center py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                        href={`/finance?vehicle=${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                        className="w-full bg-green-600 text-white text-center py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold block"
                       >
-                        View Details
-                      </Link>
-                      <Link
-                        href={`/contact?vehicle=${vehicle.id}`}
-                        className="flex-1 border-2 border-blue-600 text-blue-600 text-center py-3 rounded-lg hover:bg-blue-600 hover:text-white transition-colors font-semibold"
-                      >
-                        Schedule Drive
+                        💳 Get Pre-Approved
                       </Link>
                     </div>
                   </div>

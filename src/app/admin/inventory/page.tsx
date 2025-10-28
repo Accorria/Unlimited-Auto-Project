@@ -71,6 +71,7 @@ export default function InventoryManagement() {
       const response = await fetch('/api/vehicles?dealer=unlimited-auto')
       if (response.ok) {
         const data = await response.json()
+        console.log('Fetched vehicles:', data.vehicles)
         setVehicles(data.vehicles || [])
       } else {
         console.error('Failed to fetch vehicles')
@@ -384,15 +385,33 @@ export default function InventoryManagement() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="shrink-0 h-12 w-12">
-                          <img
-                            className="h-12 w-12 rounded-lg object-cover"
-                            src={vehicle.coverPhoto || vehicle.vehicle_photos?.[0]?.public_url || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop'}
-                            alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
-                          />
+                          {(() => {
+                            const imageUrl = vehicle.coverPhoto || vehicle.vehicle_photos?.[0]?.public_url || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop'
+                            console.log(`Vehicle ${vehicle.year} ${vehicle.make} ${vehicle.model} image URL:`, imageUrl)
+                            return (
+                              <img
+                                className="h-12 w-12 rounded-lg object-cover"
+                                src={imageUrl}
+                                alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                                onLoad={() => {
+                                  console.log(`Successfully loaded image for ${vehicle.year} ${vehicle.make} ${vehicle.model}`)
+                                }}
+                                onError={(e) => {
+                                  console.error(`Failed to load image for ${vehicle.year} ${vehicle.make} ${vehicle.model}:`, imageUrl)
+                                  e.currentTarget.src = 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop'
+                                }}
+                              />
+                            )
+                          })()}
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className={`text-sm font-medium ${vehicle.status === 'sold' ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
                             {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim}
+                            {vehicle.status === 'sold' && (
+                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                SOLD
+                              </span>
+                            )}
                           </div>
                           <div className="text-sm text-gray-500">
                             VIN: {vehicle.vin}

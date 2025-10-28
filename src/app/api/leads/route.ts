@@ -10,6 +10,10 @@ export async function GET(req: NextRequest) {
     // Use service role client to bypass RLS
     const supabase = createServerClient()
 
+    // Get query parameters
+    const { searchParams } = new URL(req.url)
+    const status = searchParams.get('status')
+
     // First, get the dealer ID from the slug
     const { data: dealer, error: dealerError } = await supabase
       .from('dealers')
@@ -22,8 +26,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Dealer not found' }, { status: 404 })
     }
 
-    // Fetch leads for this dealer
-    const { data: leads, error: leadsError } = await supabase
+    // Build query with optional status filter
+    let query = supabase
       .from('leads')
       .select(`
         id,
@@ -66,7 +70,16 @@ export async function GET(req: NextRequest) {
         status_updated_at
       `)
       .eq('dealer_id', dealer.id)
-      .order('created_at', { ascending: false })
+
+    // Add status filter if provided
+    if (status) {
+      query = query.eq('status', status)
+    }
+
+    // Order by creation date
+    query = query.order('created_at', { ascending: false })
+
+    const { data: leads, error: leadsError } = await query
 
     if (leadsError) {
       console.error('Error fetching leads:', leadsError)

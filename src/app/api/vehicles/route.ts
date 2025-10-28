@@ -69,7 +69,20 @@ export async function GET(req: NextRequest) {
         photos: photos.sort((a, b) => {
           const angleOrder = ['FDS','FPS','SDS','SPS','SRDS','SRPS','RDS','R','F','INT','INTB','ENG','TRK','ODOM','VIN']
           return angleOrder.indexOf(a.angle) - angleOrder.indexOf(b.angle)
-        })
+        }),
+        // Map database fields to expected API response format
+        transmission: vehicle.transmission,
+        drivetrain: vehicle.drivetrain,
+        engine: vehicle.engine,
+        mpg: vehicle.mpg,
+        bodyStyle: vehicle.body_style,
+        doors: vehicle.doors,
+        passengers: vehicle.passengers,
+        fuelType: vehicle.fuel_type,
+        color: vehicle.exterior_color,
+        interiorColor: vehicle.interior_color,
+        condition: vehicle.condition || 'Good',
+        downPayment: vehicle.down_payment || 999
       }
     }) || []
 
@@ -101,49 +114,80 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Dealer not found' }, { status: 404 })
     }
 
+    // Keep description short and clean - don't add specifications to description
+    const cleanDescription = body.description || 'Great value, perfect for families, financing available'
+
     // Insert the vehicle (only fields that exist in database)
+    const vehicleData: any = {
+      dealer_id: dealer.id,
+      year: body.year,
+      make: body.make,
+      model: body.model,
+      trim: body.trim,
+      miles: body.miles,
+      price: body.price,
+      description: cleanDescription,
+      status: body.status || 'available',
+      // Add specification fields if they exist in database
+      engine: body.engine || null,
+      transmission: body.transmission || null,
+      drivetrain: body.drivetrain || null,
+      mpg: body.mpg || null,
+      body_style: body.bodyStyle || null,
+      doors: body.doors || null,
+      passengers: body.passengers || null,
+      fuel_type: body.fuelType || null,
+      exterior_color: body.color || null,
+      interior_color: body.interiorColor || null,
+      down_payment: body.downPayment || 999
+    }
+
+    // Only include VIN if it's provided and not empty
+    if (body.vin && body.vin.trim() !== '') {
+      vehicleData.vin = body.vin
+    }
+
     const { data: vehicle, error: vehicleError } = await supabase
       .from('vehicles')
-      .insert({
-        dealer_id: dealer.id,
-        year: body.year,
-        make: body.make,
-        model: body.model,
-        trim: body.trim,
-        miles: body.miles,
-        price: body.price,
-        vin: body.vin,
-        description: body.description,
-        status: body.status || 'available',
-        // New specification fields
-        engine: body.engine,
-        transmission: body.transmission,
-        drivetrain: body.drivetrain,
-        mpg: body.mpg,
-        body_style: body.bodyStyle,
-        doors: body.doors,
-        passengers: body.passengers,
-        fuel_type: body.fuelType,
-        exterior_color: body.color,
-        interior_color: body.interiorColor
-      })
+      .insert(vehicleData)
       .select()
       .single()
 
     if (vehicleError) {
       console.error('Error inserting vehicle:', vehicleError)
-      return NextResponse.json({ error: 'Failed to save vehicle' }, { status: 500 })
+      console.error('Vehicle data being inserted:', vehicleData)
+      
+      // Handle specific error cases
+      if (vehicleError.code === '23505' && vehicleError.message.includes('vehicles_vin_key')) {
+        return NextResponse.json({ 
+          error: 'A vehicle with this VIN already exists. Please use a different VIN or leave it blank.', 
+          details: vehicleError.message,
+          code: vehicleError.code 
+        }, { status: 400 })
+      }
+      
+      return NextResponse.json({ 
+        error: 'Failed to save vehicle', 
+        details: vehicleError.message,
+        code: vehicleError.code 
+      }, { status: 500 })
     }
 
     // Save vehicle photos if provided
     if (body.images && body.images.length > 0) {
+      console.log('Saving photos for vehicle:', vehicle.id, 'Images:', body.images)
+      
+      const angleOrder = ['FDS','FPS','SDS','SPS','SRDS','SRPS','RDS','R','F','INT','INTB','ENG','TRK','ODOM','VIN']
+      
       const photoInserts = body.images.map((imageUrl: string, index: number) => ({
         vehicle_id: vehicle.id,
         file_path: imageUrl,
         public_url: imageUrl,
-        angle: `PHOTO_${Date.now()}_${index}`, // Simple angle naming
+        angle: angleOrder[index] || 'F', // Use proper angle codes, default to 'F' if more than 15 photos
         created_at: new Date().toISOString()
       }))
+
+      console.log('Photo inserts:', photoInserts)
 
       const { error: photosError } = await supabase
         .from('vehicle_photos')
@@ -152,7 +196,11 @@ export async function POST(req: NextRequest) {
       if (photosError) {
         console.error('Error inserting photos:', photosError)
         // Don't fail the whole request, just log the error
+      } else {
+        console.log('Photos saved successfully for vehicle:', vehicle.id)
       }
+    } else {
+      console.log('No images provided for vehicle:', vehicle.id)
     }
 
     console.log('Vehicle saved successfully:', vehicle)

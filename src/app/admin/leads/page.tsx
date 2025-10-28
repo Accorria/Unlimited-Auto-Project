@@ -216,6 +216,7 @@ export default function LeadsManagement() {
       if (response.ok) {
         setLeads(leads.filter(lead => !selectedLeads.has(lead.id)))
         setSelectedLeads(new Set())
+        alert(`Successfully deleted ${selectedLeads.size} leads`)
       } else {
         alert('Failed to delete leads')
       }
@@ -225,6 +226,49 @@ export default function LeadsManagement() {
     } finally {
       setDeleting(false)
     }
+  }
+
+  const handleClearAllTestLeads = async () => {
+    if (!confirm('Are you sure you want to delete ALL leads? This will clear all test data and cannot be undone.')) {
+      return
+    }
+
+    setDeleting(true)
+    try {
+      const response = await fetch('/api/leads/clear', {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        setLeads([])
+        setSelectedLeads(new Set())
+        alert('All leads cleared successfully')
+      } else {
+        alert('Failed to clear leads')
+      }
+    } catch (error) {
+      console.error('Error clearing leads:', error)
+      alert('Error clearing leads')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const handleSelectTestLeads = () => {
+    // Select leads that look like test data
+    const testLeads = leads.filter(lead => 
+      lead.name?.toLowerCase().includes('test') ||
+      lead.email?.toLowerCase().includes('test') ||
+      lead.email?.toLowerCase().includes('example') ||
+      lead.phone?.includes('555') ||
+      lead.message?.toLowerCase().includes('test') ||
+      lead.source === 'website' && lead.name?.includes('John') ||
+      lead.source === 'website' && lead.name?.includes('Sarah') ||
+      lead.source === 'website' && lead.name?.includes('Mike')
+    )
+    
+    setSelectedLeads(new Set(testLeads.map(lead => lead.id)))
+    alert(`Selected ${testLeads.length} test leads`)
   }
 
   const handleSelectLead = (leadId: string) => {
@@ -397,6 +441,7 @@ export default function LeadsManagement() {
             </div>
           )}
 
+
           {/* Leads Table */}
           <div className="bg-white rounded-lg shadow">
             <div className="px-6 py-4 border-b border-gray-200">
@@ -409,12 +454,20 @@ export default function LeadsManagement() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      <input
-                        type="checkbox"
-                        checked={selectedLeads.size === filteredLeads.length && filteredLeads.length > 0}
-                        onChange={handleSelectAll}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedLeads.size === filteredLeads.length && filteredLeads.length > 0}
+                          onChange={handleSelectAll}
+                          className="h-5 w-5 text-blue-600 focus:ring-2 focus:ring-blue-500 border-2 border-gray-400 rounded cursor-pointer"
+                        />
+                        {selectedLeads.size === filteredLeads.length && filteredLeads.length > 0 && (
+                          <span className="text-green-600 font-bold text-sm">✓</span>
+                        )}
+                        <span className="text-sm font-medium text-gray-700">
+                          Select All ({selectedLeads.size}/{filteredLeads.length})
+                        </span>
+                      </div>
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Contact
@@ -440,12 +493,17 @@ export default function LeadsManagement() {
                   {filteredLeads.map((lead) => (
                     <tr key={lead.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          checked={selectedLeads.has(lead.id)}
-                          onChange={() => handleSelectLead(lead.id)}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        />
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedLeads.has(lead.id)}
+                            onChange={() => handleSelectLead(lead.id)}
+                            className="h-5 w-5 text-blue-600 focus:ring-2 focus:ring-blue-500 border-2 border-gray-400 rounded cursor-pointer"
+                          />
+                          {selectedLeads.has(lead.id) && (
+                            <span className="ml-2 text-green-600 font-bold text-sm">✓</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>

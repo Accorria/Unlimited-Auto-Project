@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, useCallback, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import ImageUpload from '@/components/ImageUpload'
+import PhotoUpload from '@/components/PhotoUpload'
 
 // Vehicle condition options
 const conditionOptions = [
@@ -16,79 +16,129 @@ const conditionOptions = [
   'Rebuilt'
 ]
 
-// Sample vehicle data - in production, this would come from an API
-const sampleVehicle = {
-  id: 1,
-  year: 2020,
-  make: 'Honda',
-  model: 'Civic',
-  trim: 'LX',
-  price: 18995,
-  miles: 45000,
-  condition: 'Excellent',
-  status: 'active',
-  fuelType: 'Gas',
-  transmission: 'Automatic',
-  drivetrain: 'FWD',
-  color: 'Silver',
-  vin: '1HGCV1F3XLA123456',
-  engine: '1.5L 4-Cylinder',
-  mpg: '32 City / 42 Highway',
-  bodyStyle: 'Sedan',
-  doors: 4,
-  passengers: 5,
-  features: 'Automatic,Bluetooth,Backup Camera,Cruise Control',
-  description: 'This 2020 Honda Civic LX is in excellent condition with low mileage and a clean history.',
-  images: []
+// Common vehicle colors
+const colorOptions = [
+  'Black', 'White', 'Silver', 'Gray', 'Red', 'Blue', 'Green', 'Brown', 'Gold', 'Orange', 'Yellow', 'Purple', 'Beige', 'Tan', 'Maroon', 'Navy', 'Other'
+]
+
+// Common vehicle makes (alphabetical order)
+const commonMakes = [
+  'Acura', 'Audi', 'BMW', 'Buick', 'Cadillac', 'Chevrolet', 'Chrysler', 'Dodge', 'Ford', 'GMC', 'Honda', 'Hyundai', 'Infiniti', 'Jeep', 'Kia', 'Lexus', 'Lincoln', 'Mazda', 'Mercedes-Benz', 'Mini', 'Mitsubishi', 'Nissan', 'Ram', 'Subaru', 'Tesla', 'Toyota', 'Volkswagen', 'Volvo'
+]
+
+// Common models by make (alphabetical order)
+const commonModels: Record<string, string[]> = {
+  'Acura': ['CDX', 'ILX', 'MDX', 'NSX', 'RDX', 'RLX', 'TLX'],
+  'Audi': ['A3', 'A4', 'A6', 'A8', 'Q3', 'Q5', 'Q7', 'Q8', 'R8', 'TT'],
+  'BMW': ['3 Series', '5 Series', '7 Series', 'i3', 'i8', 'X1', 'X3', 'X5', 'X7', 'Z4'],
+  'Buick': ['Cascada', 'Enclave', 'Encore', 'Envision', 'LaCrosse', 'Regal'],
+  'Cadillac': ['ATS', 'CT6', 'CTS', 'Escalade', 'XTS', 'XT4', 'XT5', 'XT6'],
+  'Chevrolet': ['Camaro', 'Colorado', 'Corvette', 'Cruze', 'Equinox', 'Express', 'Impala', 'Malibu', 'Silverado 1500', 'Silverado 2500 HD', 'Silverado 3500 HD', 'Sonic', 'Spark', 'Suburban', 'Tahoe', 'Trailblazer', 'Traverse', 'Bolt EV', 'Bolt EUV', 'Blazer', 'Trax'],
+  'Chrysler': ['300', 'Pacifica', 'Voyager'],
+  'Dodge': ['Challenger', 'Charger', 'Durango', 'Grand Caravan', 'Journey'],
+  'Ford': ['Bronco', 'Edge', 'Escape', 'Expedition', 'Explorer', 'F-150', 'Focus', 'Fusion', 'Maverick', 'Mustang', 'Ranger', 'Transit'],
+  'GMC': ['Acadia', 'Canyon', 'Savana', 'Sierra', 'Terrain', 'Yukon'],
+  'Honda': ['Accord', 'Civic', 'CR-V', 'Fit', 'HR-V', 'Insight', 'Passport', 'Pilot', 'Ridgeline'],
+  'Hyundai': ['Elantra', 'Genesis', 'Kona', 'Palisade', 'Santa Fe', 'Sonata', 'Tucson', 'Veloster', 'Venue'],
+  'Infiniti': ['FX', 'G37', 'Q50', 'Q60', 'Q70', 'QX50', 'QX60', 'QX80'],
+  'Jeep': ['Cherokee', 'Compass', 'Gladiator', 'Grand Cherokee', 'Grand Wagoneer', 'Renegade', 'Wrangler'],
+  'Kia': ['Forte', 'Niro', 'Optima', 'Seltos', 'Sorento', 'Soul', 'Sportage', 'Stinger', 'Telluride'],
+  'Lexus': ['BRZ', 'Crosstrek', 'ES', 'GX', 'GS', 'IS', 'LC', 'LS', 'LX', 'NX', 'RC', 'RX'],
+  'Lincoln': ['Aviator', 'Continental', 'Corsair', 'MKC', 'MKT', 'MKX', 'MKZ', 'Navigator'],
+  'Mazda': ['CX-3', 'CX-30', 'CX-5', 'CX-9', 'Mazda3', 'Mazda6', 'MX-5 Miata'],
+  'Mercedes-Benz': ['A-Class', 'C-Class', 'CLA', 'E-Class', 'G-Class', 'GLA', 'GLC', 'GLE', 'GLS', 'S-Class'],
+  'Mini': ['Cooper', 'Cooper S', 'Cooper SE', 'Cooper JCW', 'Countryman', 'Countryman S', 'Countryman JCW', 'Hardtop', 'Hardtop S', 'Hardtop JCW', 'Convertible', 'Convertible S', 'Convertible JCW', 'Clubman', 'Clubman S', 'Clubman JCW', 'Paceman', 'Roadster'],
+  'Mitsubishi': ['Eclipse Cross', 'Mirage', 'Outlander', 'Outlander Sport'],
+  'Nissan': ['370Z', 'Altima', 'Armada', 'Frontier', 'GT-R', 'Kicks', 'Leaf', 'Maxima', 'Murano', 'Pathfinder', 'Rogue', 'Sentra', 'Titan', 'Versa'],
+  'Ram': ['1500', '2500', '3500', 'ProMaster', 'ProMaster City'],
+  'Subaru': ['Ascent', 'BRZ', 'Crosstrek', 'Forester', 'Impreza', 'Legacy', 'Outback', 'WRX'],
+  'Tesla': ['Model 3', 'Model S', 'Model X', 'Model Y'],
+  'Toyota': ['4Runner', 'Avalon', 'Camry', 'Corolla', 'Highlander', 'Prius', 'RAV4', 'Sequoia', 'Sienna', 'Tacoma', 'Tundra', 'Venza', 'Yaris'],
+  'Volkswagen': ['Atlas', 'Beetle', 'Golf', 'Jetta', 'Passat', 'Tiguan'],
+  'Volvo': ['S60', 'S90', 'V60', 'V90', 'XC40', 'XC60', 'XC90']
 }
 
-// CarQuery API integration
-interface CarQueryMake {
-  make_id: string
-  make_display: string
-  make_is_common: string
-  make_country: string
+// Make-specific trim levels
+const makeSpecificTrims: Record<string, string[]> = {
+  'Honda': ['Base', 'LX', 'EX', 'EX-L', 'Sport', 'Touring'],
+  'Toyota': ['Base', 'LE', 'XLE', 'Limited', 'Platinum'],
+  'Ford': ['Base', 'XL', 'XLT', 'Lariat', 'King Ranch', 'Platinum'],
+  'Chevrolet': ['Base', 'LS', 'LT', 'LTZ', 'Premier', 'High Country', 'Work Truck (WT)', 'Custom', 'Custom Trail Boss', 'RST', 'LT Trail Boss', 'ZR2', 'SS', 'RS', 'Z71'],
+  'Silverado 1500': ['Work Truck (WT)', 'Custom', 'Custom Trail Boss', 'LT', 'RST', 'LT Trail Boss', 'LTZ', 'ZR2', 'High Country'],
+  'Silverado 2500 HD': ['Work Truck (WT)', 'Custom', 'LT', 'LTZ', 'High Country'],
+  'Silverado 3500 HD': ['Work Truck (WT)', 'Custom', 'LT', 'LTZ', 'High Country'],
+  'BMW': ['Base', 'Sport', 'Luxury', 'M Sport', 'M'],
+  'Mercedes-Benz': ['Base', 'AMG Line', 'AMG'],
+  'Audi': ['Base', 'Premium', 'Premium Plus', 'Prestige'],
+  'Lexus': ['Base', 'F Sport', 'Luxury'],
+  'Acura': ['Base', 'Technology', 'Advance'],
+  'Infiniti': ['Base', 'Luxury', 'Sport'],
+  'Cadillac': ['Base', 'Luxury', 'Premium Luxury', 'Platinum'],
+  'Lincoln': ['Base', 'Reserve', 'Black Label'],
+  'Chrysler': ['Base', 'Touring', 'Limited', 'Pinnacle', 'L', 'LX', 'LXI'],
+  'Dodge': ['Base', 'SXT', 'GT', 'R/T', 'Scat Pack', 'Hellcat'],
+  'Jeep': ['Base', 'Sport', 'Sahara', 'Rubicon', 'Trailhawk'],
+  'Ram': ['Base', 'Tradesman', 'Big Horn', 'Laramie', 'Longhorn', 'Limited'],
+  'GMC': ['Base', 'SLE', 'SLT', 'Denali'],
+  'Nissan': ['Base', 'S', 'SV', 'SL', 'Platinum'],
+  'Hyundai': ['Base', 'SE', 'SEL', 'Limited'],
+  'Kia': ['Base', 'LX', 'EX', 'SX'],
+  'Mazda': ['Base', 'Sport', 'Touring', 'Grand Touring'],
+  'Subaru': ['Base', 'Premium', 'Limited', 'Touring'],
+  'Volkswagen': ['Base', 'S', 'SE', 'SEL'],
+  'Volvo': ['Base', 'Momentum', 'R-Design', 'Inscription']
 }
 
-interface CarQueryModel {
-  model_id: string
-  model_make_id: string
-  model_name: string
-  model_trim: string
-  model_year: string
-  model_body: string
-  model_engine_position: string
-  model_engine_cc: string
-  model_engine_cyl: string
-  model_engine_type: string
-  model_engine_valves_per_cyl: string
-  model_engine_power_ps: string
-  model_engine_power_rpm: string
-  model_engine_torque_nm: string
-  model_engine_torque_rpm: string
-  model_engine_bore_mm: string
-  model_engine_stroke_mm: string
-  model_engine_compression: string
-  model_engine_fuel: string
-  model_top_speed_kph: string
-  model_0_to_100_kph: string
-  model_drive: string
-  model_transmission_type: string
-  model_seats: string
-  model_doors: string
-  model_weight_kg: string
-  model_length_mm: string
-  model_width_mm: string
-  model_height_mm: string
-  model_wheelbase_mm: string
-  model_lkm_hwy: string
-  model_lkm_mixed: string
-  model_lkm_city: string
-  model_fuel_cap_l: string
-  model_sold_in_us: string
-  model_co2: string
-  model_make_display: string
+// Vehicle features organized by category
+const vehicleFeatures = {
+  'Exterior': [
+    'Alloy Wheels', 'Chrome Wheels', 'Steel Wheels', 'Fog Lights', 'LED Headlights', 'Xenon Headlights', 'Halogen Headlights', 'Daytime Running Lights', 'Power Mirrors', 'Heated Mirrors', 'Auto-Dimming Mirrors', 'Tinted Windows', 'Privacy Glass', 'Spoiler', 'Running Boards', 'Roof Rails', 'Tow Package', 'Trailer Hitch'
+  ],
+  'Interior': [
+    'Leather Seats', 'Cloth Seats', 'Vinyl Seats', 'Heated Seats', 'Cooled Seats', 'Power Seats', 'Memory Seats', 'Lumbar Support', 'Split Folding Rear Seats', 'Stow \'n Go Seating', 'Third Row Seating', 'Captain\'s Chairs', 'Bench Seating', 'Leather Steering Wheel', 'Wood Trim', 'Carbon Fiber Trim', 'Ambient Lighting', 'Cargo Cover', 'Cargo Net'
+  ],
+  'Climate Control': [
+    'Air Conditioning', 'Automatic Climate Control', 'Dual Zone Climate Control', 'Tri-Zone Climate Control', 'Rear Climate Control', 'Heated Steering Wheel', 'Heated Seats', 'Cooled Seats', 'Remote Start', 'Defrost System'
+  ],
+  'Technology & Audio': [
+    'AM/FM Radio', 'CD Player', 'MP3 Player', 'USB Port', 'Auxiliary Input', 'Bluetooth', 'Apple CarPlay', 'Android Auto', 'Uconnect Touchscreen', 'Navigation System', 'GPS', 'Satellite Radio', 'HD Radio', 'Premium Audio', 'Bose Audio', 'Harman Kardon', 'JBL Audio', 'Infotainment System', 'WiFi Hotspot', 'Wireless Charging'
+  ],
+  'Safety & Security': [
+    'Backup Camera', 'Rearview Camera', '360° Camera', 'Parking Sensors', 'Blind Spot Monitoring', 'Lane Departure Warning', 'Forward Collision Warning', 'Automatic Emergency Braking', 'Adaptive Cruise Control', 'Lane Keep Assist', 'Traffic Sign Recognition', 'Driver Attention Monitor', 'Tire Pressure Monitoring', 'Stability Control', 'Traction Control', 'Anti-lock Brakes', 'Airbags', 'Security System', 'Immobilizer', 'Theft Deterrent'
+  ],
+  'Convenience': [
+    'Power Windows', 'Power Locks', 'Keyless Entry', 'Push Button Start', 'Remote Start', 'Cruise Control', 'Adaptive Cruise Control', 'Tilt Steering Wheel', 'Telescoping Steering Wheel', 'Power Steering', 'Steering Wheel Controls', 'Cup Holders', 'Storage Compartments', 'Cargo Area', 'Cargo Management', 'Roof Rack', 'Tonneau Cover', 'Bed Liner'
+  ],
+  'Doors & Access': [
+    'Power Sliding Doors', 'Power Liftgate', 'Power Tailgate', 'Keyless Entry', 'Remote Keyless Entry', 'Smart Key', 'Proximity Key', 'Key Fob', 'Manual Doors', 'Manual Liftgate'
+  ],
+  'Transmission & Performance': [
+    'Manual Transmission', 'Automatic Transmission', 'CVT Transmission', 'Semi-Automatic Transmission', 'Paddle Shifters', 'Sport Mode', 'Eco Mode', 'Tow Mode', '4WD', 'AWD', 'FWD', 'RWD', 'Limited Slip Differential', 'Locking Differential'
+  ],
+  'Special Features': [
+    'Sunroof', 'Moonroof', 'Panoramic Sunroof', 'Convertible Top', 'Hardtop', 'Soft Top', 'T-Top', 'Targa Top', 'Hatchback', 'Liftback', 'Wagon', 'Crossover', 'Hybrid', 'Electric', 'Plug-in Hybrid', 'Turbocharged', 'Supercharged', 'V6 Engine', 'V8 Engine', '4-Cylinder Engine', '6-Cylinder Engine', '8-Cylinder Engine'
+  ]
 }
+
+// Description templates
+const descriptionTemplates = [
+  {
+    name: 'Standard',
+    template: 'Great value, perfect for families, financing available'
+  },
+  {
+    name: 'Premium',
+    template: 'Luxury features, low mileage, excellent condition, certified pre-owned'
+  },
+  {
+    name: 'Value',
+    template: 'Affordable pricing, reliable transportation, well-maintained'
+  },
+  {
+    name: 'Urgency',
+    template: 'Limited time offer, must sell, great deal, call today!'
+  }
+]
 
 export default function EditVehicle({ params }: { params: Promise<{ id: string }> }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -97,16 +147,35 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
   const router = useRouter()
   const resolvedParams = use(params)
 
-  const [formData, setFormData] = useState<any>({})
-  const [loading, setLoading] = useState(true)
+  const [formData, setFormData] = useState({
+    year: '',
+    make: '',
+    model: '',
+    trim: '',
+    price: '',
+    miles: '',
+    condition: 'Excellent',
+    status: 'active',
+    fuelType: 'Gas',
+    transmission: 'Automatic',
+    drivetrain: 'FWD',
+    color: '',
+    interiorColor: '',
+    vin: '',
+    engine: '',
+    mpg: '',
+    bodyStyle: 'Sedan',
+    doors: 4,
+    passengers: 5,
+    features: [] as string[],
+    description: '',
+    images: [] as string[],
+    downPayment: 999
+  })
   
-  // CarQuery API state
-  const [makes, setMakes] = useState<CarQueryMake[]>([])
-  const [models, setModels] = useState<CarQueryModel[]>([])
-  const [trims, setTrims] = useState<CarQueryModel[]>([])
-  const [loadingMakes, setLoadingMakes] = useState(false)
-  const [loadingModels, setLoadingModels] = useState(false)
-  const [loadingTrims, setLoadingTrims] = useState(false)
+  // Form validation state
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     // Check authentication
@@ -117,9 +186,6 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
       router.push('/admin/login')
     }
 
-    // Load makes on component mount
-    loadMakes()
-
     // Fetch vehicle data by ID
     const fetchVehicle = async () => {
       try {
@@ -127,182 +193,60 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
         if (response.ok) {
           const vehicle = await response.json()
           console.log('Fetched vehicle for editing:', vehicle)
-          setFormData(vehicle)
+          
+          // Transform the vehicle data to match formData structure
+          const transformedVehicle = {
+            ...vehicle,
+            // Map vehicle_photos to images array
+            images: vehicle.photos ? vehicle.photos.map((photo: any) => photo.public_url) : [],
+            // Ensure features is an array
+            features: Array.isArray(vehicle.features) ? vehicle.features : []
+          }
+          
+          setFormData(transformedVehicle)
         } else {
           console.error('Failed to fetch vehicle')
-          // Fallback to sample data if fetch fails
-          setFormData(sampleVehicle)
         }
       } catch (error) {
         console.error('Error fetching vehicle:', error)
-        // Fallback to sample data if fetch fails
-        setFormData(sampleVehicle)
       } finally {
         setLoading(false)
       }
     }
+    
     fetchVehicle()
   }, [router, resolvedParams.id])
 
-  // CarQuery API functions
-  const loadMakes = async () => {
-    setLoadingMakes(true)
-    try {
-      // Try with CORS proxy first, then fallback to direct API
-      const proxyUrl = 'https://api.allorigins.win/raw?url='
-      const apiUrl = 'https://www.carqueryapi.com/api/0.3/?cmd=getMakes'
-      
-      let response
-      try {
-        // First try with CORS proxy
-        response = await fetch(proxyUrl + encodeURIComponent(apiUrl), {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-          },
-        })
-      } catch (proxyError) {
-        console.log('Proxy failed, trying direct API...')
-        // Fallback to direct API call
-        response = await fetch(apiUrl, {
-          method: 'GET',
-          mode: 'cors',
-          headers: {
-            'Accept': 'application/json',
-          },
-        })
-      }
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-      
-      const data = await response.json()
-      setMakes(data.Makes || [])
-    } catch (error) {
-      console.error('Error loading makes:', error)
-      // Fallback to static makes list if API fails
-      setMakes([
-        { make_id: 'honda', make_display: 'Honda', make_is_common: '1', make_country: 'Japan' },
-        { make_id: 'toyota', make_display: 'Toyota', make_is_common: '1', make_country: 'Japan' },
-        { make_id: 'ford', make_display: 'Ford', make_is_common: '1', make_country: 'USA' },
-        { make_id: 'chevrolet', make_display: 'Chevrolet', make_is_common: '1', make_country: 'USA' },
-        { make_id: 'nissan', make_display: 'Nissan', make_is_common: '1', make_country: 'Japan' },
-        { make_id: 'bmw', make_display: 'BMW', make_is_common: '1', make_country: 'Germany' },
-        { make_id: 'mercedes-benz', make_display: 'Mercedes-Benz', make_is_common: '1', make_country: 'Germany' },
-        { make_id: 'audi', make_display: 'Audi', make_is_common: '1', make_country: 'Germany' },
-        { make_id: 'tesla', make_display: 'Tesla', make_is_common: '1', make_country: 'USA' },
-        { make_id: 'hyundai', make_display: 'Hyundai', make_is_common: '1', make_country: 'South Korea' },
-        { make_id: 'kia', make_display: 'Kia', make_is_common: '1', make_country: 'South Korea' },
-        { make_id: 'subaru', make_display: 'Subaru', make_is_common: '1', make_country: 'Japan' },
-        { make_id: 'mazda', make_display: 'Mazda', make_is_common: '1', make_country: 'Japan' },
-        { make_id: 'volkswagen', make_display: 'Volkswagen', make_is_common: '1', make_country: 'Germany' },
-        { make_id: 'lexus', make_display: 'Lexus', make_is_common: '1', make_country: 'Japan' },
-        { make_id: 'acura', make_display: 'Acura', make_is_common: '1', make_country: 'Japan' },
-        { make_id: 'infiniti', make_display: 'Infiniti', make_is_common: '1', make_country: 'Japan' },
-        { make_id: 'cadillac', make_display: 'Cadillac', make_is_common: '1', make_country: 'USA' },
-        { make_id: 'lincoln', make_display: 'Lincoln', make_is_common: '1', make_country: 'USA' },
-        { make_id: 'jeep', make_display: 'Jeep', make_is_common: '1', make_country: 'USA' }
-      ])
-    } finally {
-      setLoadingMakes(false)
-    }
-  }
-
-  const loadModels = async (make: string) => {
-    if (!make) return
-    setLoadingModels(true)
-    try {
-      const proxyUrl = 'https://api.allorigins.win/raw?url='
-      const apiUrl = `https://www.carqueryapi.com/api/0.3/?cmd=getModels&make=${encodeURIComponent(make)}`
-      
-      let response
-      try {
-        response = await fetch(proxyUrl + encodeURIComponent(apiUrl), {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' },
-        })
-      } catch (proxyError) {
-        response = await fetch(apiUrl, {
-          method: 'GET',
-          mode: 'cors',
-          headers: { 'Accept': 'application/json' },
-        })
-      }
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-      
-      const data = await response.json()
-      setModels(data.Models || [])
-    } catch (error) {
-      console.error('Error loading models:', error)
-      // Fallback to empty array if API fails
-      setModels([])
-    } finally {
-      setLoadingModels(false)
-    }
-  }
-
-  const loadTrims = async (make: string, model: string, year: string) => {
-    if (!make || !model || !year) return
-    setLoadingTrims(true)
-    try {
-      const proxyUrl = 'https://api.allorigins.win/raw?url='
-      const apiUrl = `https://www.carqueryapi.com/api/0.3/?cmd=getTrims&make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}&year=${year}`
-      
-      let response
-      try {
-        response = await fetch(proxyUrl + encodeURIComponent(apiUrl), {
-          method: 'GET',
-          headers: { 'Accept': 'application/json' },
-        })
-      } catch (proxyError) {
-        response = await fetch(apiUrl, {
-          method: 'GET',
-          mode: 'cors',
-          headers: { 'Accept': 'application/json' },
-        })
-      }
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-      
-      const data = await response.json()
-      setTrims(data.Trims || [])
-    } catch (error) {
-      console.error('Error loading trims:', error)
-      // Fallback to empty array if API fails
-      setTrims([])
-    } finally {
-      setLoadingTrims(false)
-    }
+  // Form validation
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {}
+    
+    if (!formData.year) newErrors.year = 'Year is required'
+    if (!formData.make) newErrors.make = 'Make is required'
+    if (!formData.model) newErrors.model = 'Model is required'
+    if (!formData.price) newErrors.price = 'Price is required'
+    if (!formData.miles) newErrors.miles = 'Miles is required'
+    if (!formData.description) newErrors.description = 'Description is required'
+    
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: value || ''
     }))
+  }
 
-    // Auto-load models when make changes
-    if (name === 'make') {
-      loadModels(value)
-      setFormData(prev => ({ ...prev, model: '', trim: '' }))
-    }
-
-    // Auto-load trims when model or year changes
-    if (name === 'model' || name === 'year') {
-      if (name === 'model') {
-        setFormData(prev => ({ ...prev, trim: '' }))
-      }
-      if (formData.make && (name === 'model' ? value : formData.model) && (name === 'year' ? value : formData.year)) {
-        loadTrims(formData.make, String(name === 'model' ? value : formData.model), String(name === 'year' ? value : formData.year))
-      }
-    }
+  const handleFeatureToggle = (feature: string) => {
+    setFormData(prev => ({
+      ...prev,
+      features: prev.features.includes(feature)
+        ? prev.features.filter(f => f !== feature)
+        : [...prev.features, feature]
+    }))
   }
 
   const handleImagesChange = (images: string[]) => {
@@ -338,29 +282,56 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
     }
   }
 
+  const parseNumber = (value: string | number) => {
+    if (typeof value === 'number') return value
+    if (typeof value === 'string') {
+      const parsed = parseInt(value.replace(/[^0-9]/g, ''))
+      return isNaN(parsed) ? 0 : parsed
+    }
+    return 0
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!validateForm()) {
+      alert('Please fix the errors in the form before submitting.')
+      return
+    }
+
     setLoading(true)
 
     try {
-      // Update the vehicle via API
+      // Prepare data for submission
+      const submitData = {
+        ...formData,
+        price: parseNumber(formData.price),
+        miles: parseNumber(formData.miles)
+      }
+
+      console.log('Submitting vehicle data:', submitData)
+
+      // Call the API to update the vehicle
       const response = await fetch(`/api/vehicles/${resolvedParams.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(submitData)
       })
 
       const result = await response.json()
+      console.log('API response:', result)
 
       if (!response.ok) {
+        console.error('API error details:', result)
         throw new Error(result.error || 'Failed to update vehicle')
       }
 
       console.log('Vehicle updated successfully:', result)
       alert('Vehicle updated successfully!')
-      router.push('/admin/inventory')
+      // Force refresh the inventory page
+      router.push('/admin/inventory?refresh=' + Date.now())
     } catch (error) {
       console.error('Error updating vehicle:', error)
       alert(`Failed to update vehicle: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -371,10 +342,13 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+          <p className="text-gray-600 mb-4">You need to be logged in to access this page.</p>
+          <Link href="/admin/login" className="text-blue-600 hover:text-blue-800">
+            Go to Login
+          </Link>
         </div>
       </div>
     )
@@ -382,61 +356,50 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading vehicle data...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading vehicle data...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <Link href="/admin/inventory" className="text-blue-600 hover:text-blue-800 mr-4">
-                ← Back to Inventory
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Edit Vehicle</h1>
-                <p className="text-sm text-gray-600">Update vehicle information with AI assistance</p>
-              </div>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <Link 
+            href="/admin/inventory" 
+            className="text-blue-600 hover:text-blue-800 mb-4 inline-block"
+          >
+            ← Back to Inventory
+          </Link>
+          <h1 className="text-3xl font-bold text-gray-900">Edit Vehicle</h1>
+          <p className="text-gray-600 mt-2">Update vehicle information in your inventory.</p>
         </div>
-      </header>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* AI Assistant Toggle */}
+          {/* AI Assistant */}
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">AI Assistant</h2>
                 <p className="text-sm text-gray-600">Enable AI to auto-generate descriptions from photos</p>
               </div>
-              <div className="flex items-center space-x-3">
-                <span className={`text-sm font-medium ${aiEnabled ? 'text-green-600' : 'text-gray-500'}`}>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={aiEnabled}
+                  onChange={(e) => setAiEnabled(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                <span className="ml-3 text-sm font-medium text-gray-700">
                   {aiEnabled ? 'Enabled' : 'Disabled'}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setAiEnabled(!aiEnabled)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    aiEnabled ? 'bg-blue-600' : 'bg-gray-200'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      aiEnabled ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-              </div>
+              </label>
             </div>
           </div>
 
@@ -448,14 +411,14 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
                 <label className="block text-sm font-medium text-gray-700 mb-2">Year *</label>
                 <select
                   name="year"
-                  value={formData.year}
+                  value={formData.year || ''}
                   onChange={handleInputChange}
                   required
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 >
-                  <option key="year-placeholder" value="">Select Year</option>
+                  <option value="">Select Year</option>
                   {Array.from({ length: 115 }, (_, i) => {
-                    const year = 2024 - i
+                    const year = new Date().getFullYear() - i
                     return (
                       <option key={year} value={year}>
                         {year}
@@ -463,83 +426,114 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
                     )
                   })}
                 </select>
+                {errors.year && <p className="text-red-500 text-sm mt-1">{errors.year}</p>}
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Make *</label>
                 <select
                   name="make"
-                  value={formData.make}
+                  value={formData.make || ''}
                   onChange={handleInputChange}
                   required
-                  disabled={loadingMakes}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 >
-                  <option key="make-placeholder" value="">{loadingMakes ? 'Loading makes...' : 'Select Make'}</option>
-                  {makes.map((make) => (
-                    <option key={make.make_id} value={make.make_display}>
-                      {make.make_display}
+                  <option value="">Select Make</option>
+                  {commonMakes.map((make) => (
+                    <option key={make} value={make}>
+                      {make}
                     </option>
                   ))}
                 </select>
+                {errors.make && <p className="text-red-500 text-sm mt-1">{errors.make}</p>}
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Model *</label>
                 <select
                   name="model"
-                  value={formData.model}
+                  value={formData.model || ''}
                   onChange={handleInputChange}
                   required
-                  disabled={loadingModels || !formData.make}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 >
-                  <option key="model-placeholder" value="">{loadingModels ? 'Loading models...' : 'Select Model'}</option>
-                  {models.map((model) => (
-                    <option key={model.model_id} value={model.model_name}>
-                      {model.model_name}
+                  <option value="">Select Model</option>
+                  {formData.make && commonModels[formData.make]?.map((model) => (
+                    <option key={model} value={model}>
+                      {model}
                     </option>
                   ))}
                 </select>
+                {errors.model && <p className="text-red-500 text-sm mt-1">{errors.model}</p>}
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Trim</label>
                 <select
                   name="trim"
-                  value={formData.trim}
+                  value={formData.trim || ''}
                   onChange={handleInputChange}
-                  disabled={loadingTrims || !formData.model || !formData.year}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 >
-                  <option key="trim-placeholder" value="">{loadingTrims ? 'Loading trims...' : 'Select Trim'}</option>
-                  {trims.map((trim, index) => (
-                    <option key={`trim-${index}-${trim.model_trim}`} value={trim.model_trim}>
-                      {trim.model_trim}
+                  <option value="">Select Trim</option>
+                  {formData.make && makeSpecificTrims[formData.make]?.map((trim) => (
+                    <option key={trim} value={trim}>
+                      {trim}
                     </option>
                   ))}
                 </select>
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Price *</label>
-                <input
-                  type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleInputChange}
-                  required
-                  min="0"
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
-                />
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500 sm:text-sm">$</span>
+                  </div>
+                  <input
+                    type="text"
+                    name="price"
+                    value={formData.price || ''}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="Enter price"
+                    className="w-full pl-8 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                  />
+                </div>
+                {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price}</p>}
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Miles *</label>
                 <input
-                  type="number"
+                  type="text"
                   name="miles"
-                  value={formData.miles}
+                  value={formData.miles || ''}
                   onChange={handleInputChange}
                   required
-                  min="0"
+                  placeholder="Enter miles"
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 />
+                {errors.miles && <p className="text-red-500 text-sm mt-1">{errors.miles}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Down Payment</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500 sm:text-sm">$</span>
+                  </div>
+                  <input
+                    type="number"
+                    name="downPayment"
+                    value={formData.downPayment || ''}
+                    onChange={handleInputChange}
+                    placeholder="Enter down payment amount"
+                    min="0"
+                    className="w-full pl-8 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                  />
+                </div>
+                <p className="text-sm text-gray-500 mt-1">This will appear as a badge on the vehicle listing</p>
               </div>
             </div>
           </div>
@@ -552,7 +546,7 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
                 <label className="block text-sm font-medium text-gray-700 mb-2">Condition *</label>
                 <select
                   name="condition"
-                  value={formData.condition}
+                  value={formData.condition || ''}
                   onChange={handleInputChange}
                   required
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
@@ -563,29 +557,29 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
                     </option>
                   ))}
                 </select>
+                {errors.condition && <p className="text-red-500 text-sm mt-1">{errors.condition}</p>}
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
                 <select
                   name="status"
-                  value={formData.status}
+                  value={formData.status || ''}
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 >
                   <option value="active">Active (For Sale)</option>
                   <option value="pending">Pending Sale</option>
                   <option value="sold">Sold</option>
-                  <option value="not-for-sale">Not For Sale</option>
-                  <option value="maintenance">In Maintenance</option>
-                  <option value="reserved">Reserved</option>
-                  <option value="archived">Archived</option>
+                  <option value="reconditioning">Reconditioning</option>
                 </select>
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Fuel Type</label>
                 <select
                   name="fuelType"
-                  value={formData.fuelType}
+                  value={formData.fuelType || ''}
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 >
@@ -595,11 +589,12 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
                   <option value="Electric">Electric</option>
                 </select>
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Transmission</label>
                 <select
                   name="transmission"
-                  value={formData.transmission}
+                  value={formData.transmission || ''}
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 >
@@ -608,11 +603,12 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
                   <option value="CVT">CVT</option>
                 </select>
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Drivetrain</label>
                 <select
                   name="drivetrain"
-                  value={formData.drivetrain}
+                  value={formData.drivetrain || ''}
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 >
@@ -620,17 +616,41 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
                   <option value="RWD">RWD</option>
                   <option value="AWD">AWD</option>
                   <option value="4WD">4WD</option>
+                  <option value="4x4">4x4</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
+                <select
+                  name="color"
+                  value={formData.color || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                >
+                  <option value="">Select Color</option>
+                  {colorOptions.map((color) => (
+                    <option key={color} value={color}>
+                      {color}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
-                <input
-                  type="text"
-                  name="color"
-                  value={formData.color}
+                <label className="block text-sm font-medium text-gray-700 mb-2">Interior Color</label>
+                <select
+                  name="interiorColor"
+                  value={formData.interiorColor || ''}
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
-                />
+                >
+                  <option value="">Select Interior Color</option>
+                  {colorOptions.map((color) => (
+                    <option key={color} value={color}>
+                      {color}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
@@ -640,14 +660,14 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Technical Specifications</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">VIN *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">VIN</label>
                 <input
                   type="text"
                   name="vin"
-                  value={formData.vin}
+                  value={formData.vin || ''}
                   onChange={handleInputChange}
-                  required
                   maxLength={17}
+                  placeholder="Optional"
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 />
               </div>
@@ -656,7 +676,7 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
                 <input
                   type="text"
                   name="engine"
-                  value={formData.engine}
+                  value={formData.engine || ''}
                   onChange={handleInputChange}
                   placeholder="e.g., 2.0L 4-Cylinder"
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
@@ -667,7 +687,7 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
                 <input
                   type="text"
                   name="mpg"
-                  value={formData.mpg}
+                  value={formData.mpg || ''}
                   onChange={handleInputChange}
                   placeholder="e.g., 28 City / 39 Highway"
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
@@ -677,7 +697,7 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
                 <label className="block text-sm font-medium text-gray-700 mb-2">Body Style</label>
                 <select
                   name="bodyStyle"
-                  value={formData.bodyStyle}
+                  value={formData.bodyStyle || ''}
                   onChange={handleInputChange}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 >
@@ -688,6 +708,7 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
                   <option value="Convertible">Convertible</option>
                   <option value="Hatchback">Hatchback</option>
                   <option value="Wagon">Wagon</option>
+                  <option value="Minivan">Minivan</option>
                 </select>
               </div>
               <div>
@@ -695,7 +716,7 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
                 <input
                   type="number"
                   name="doors"
-                  value={formData.doors}
+                  value={formData.doors || ''}
                   onChange={handleInputChange}
                   min="2"
                   max="5"
@@ -707,7 +728,7 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
                 <input
                   type="number"
                   name="passengers"
-                  value={formData.passengers}
+                  value={formData.passengers || ''}
                   onChange={handleInputChange}
                   min="2"
                   max="8"
@@ -719,11 +740,14 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
 
           {/* Photo Upload */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Vehicle Photos (Max 20)</h2>
-            <ImageUpload 
-              onImagesChange={handleImagesChange}
-              existingImages={formData.images}
-              maxImages={20}
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Vehicle Photos</h2>
+            <PhotoUpload 
+              onPhotosChange={handleImagesChange}
+              vehicleData={{
+                year: formData.year,
+                make: formData.make,
+                model: formData.model
+              }}
             />
           </div>
 
@@ -732,16 +756,35 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Features and Description</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Features</label>
-                <input
-                  type="text"
-                  name="features"
-                  value={formData.features}
-                  onChange={handleInputChange}
-                  placeholder="Enter features separated by commas (e.g., Bluetooth, Backup Camera, Cruise Control)"
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
-                />
-                <p className="text-sm text-gray-500 mt-1">Separate multiple features with commas</p>
+                <label className="block text-sm font-medium text-gray-700 mb-3">Features</label>
+                <div className="max-h-96 overflow-y-auto border border-gray-300 rounded-lg p-4 bg-gray-50">
+                  {Object.entries(vehicleFeatures).map(([category, features]) => (
+                    <div key={category} className="mb-6 last:mb-0">
+                      <h4 className="text-sm font-semibold text-gray-800 mb-3 border-b border-gray-300 pb-1">
+                        {category}
+                      </h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                        {features.map((feature) => (
+                          <button
+                            key={feature}
+                            type="button"
+                            onClick={() => handleFeatureToggle(feature)}
+                            className={`px-3 py-2 text-xs rounded-lg border transition-colors ${
+                              (formData.features || []).includes(feature)
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {feature}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-sm text-gray-500 mt-2">
+                  Click features to select them. Selected: {(formData.features || []).length} features
+                </p>
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -759,18 +802,36 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
                 </div>
                 <textarea
                   name="description"
-                  value={formData.description}
+                  value={formData.description || ''}
                   onChange={handleInputChange}
                   required
                   rows={4}
                   placeholder="Enter a detailed description of the vehicle..."
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 />
-                {aiEnabled && (
-                  <p className="text-sm text-purple-600 mt-1">
-                    💡 AI Assistant is enabled. Upload photos and click &quot;Generate with AI&quot; to auto-create descriptions.
-                  </p>
-                )}
+                {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
+                
+                {/* Quick Description Templates */}
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Quick Description Templates</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {descriptionTemplates.map((template) => (
+                      <div key={template.name} className="border border-gray-300 rounded-lg p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-gray-700">{template.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, description: template.template }))}
+                            className="text-blue-600 hover:text-blue-800 text-sm"
+                          >
+                            Use
+                          </button>
+                        </div>
+                        <p className="text-xs text-gray-600">{template.template}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -786,7 +847,7 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? 'Updating Vehicle...' : 'Update Vehicle'}
             </button>

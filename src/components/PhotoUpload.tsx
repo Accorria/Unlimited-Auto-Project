@@ -65,12 +65,6 @@ export default function PhotoUpload({ onPhotosChange, vehicleData }: PhotoUpload
   const handleFileSelect = async (files: FileList | null) => {
     if (!files) return
     
-    // Check if vehicle data is available
-    if (!vehicleData?.year || !vehicleData?.make || !vehicleData?.model) {
-      alert('Please fill in the vehicle details (Year, Make, Model) before uploading photos.')
-      return
-    }
-    
     setUploading(true)
     const newPhotos: string[] = []
     
@@ -144,12 +138,12 @@ export default function PhotoUpload({ onPhotosChange, vehicleData }: PhotoUpload
           onChange={(e) => handleFileSelect(e.target.files)}
           className="hidden"
           id="photo-input"
-          disabled={uploading || (!vehicleData?.year || !vehicleData?.make || !vehicleData?.model)}
+          disabled={uploading}
         />
         <label
           htmlFor="photo-input"
           className={`inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors ${
-            uploading || (!vehicleData?.year || !vehicleData?.make || !vehicleData?.model) ? 'opacity-50 cursor-not-allowed' : ''
+            uploading ? 'opacity-50 cursor-not-allowed' : ''
           }`}
         >
           {uploading ? '📤 Uploading...' : '📸 Select Photos'}
@@ -157,13 +151,6 @@ export default function PhotoUpload({ onPhotosChange, vehicleData }: PhotoUpload
         <p className="text-sm text-gray-500 mt-2">
           Supports JPG, PNG, WebP, HEIC. Photos will be uploaded to the server.
         </p>
-        {(!vehicleData?.year || !vehicleData?.make || !vehicleData?.model) && (
-          <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm text-yellow-800">
-              ⚠️ Please fill in Year, Make, and Model above before uploading photos.
-            </p>
-          </div>
-        )}
       </div>
 
       {/* Upload Progress */}

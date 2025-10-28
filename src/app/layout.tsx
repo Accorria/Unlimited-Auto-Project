@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Unlimited Auto and Repair",
+  title: "Unlimited Auto Repair & Collision",
   description: "Quality used cars at unbeatable prices. Auto repair, collision, and detailing services in Redford Township, MI.",
 };
 
