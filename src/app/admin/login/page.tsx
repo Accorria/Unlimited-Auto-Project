@@ -37,7 +37,7 @@ function AdminLoginForm() {
 
     try {
       // Simple admin login - in production, this would be more secure
-      if (email === 'admin@unlimitedauto.com' && password === 'unlimited2024') {
+      if (email === 'admin@unlimitedauto.com' && password === 'Accorria2024!') {
         localStorage.setItem('adminAuth', 'true')
         localStorage.setItem('adminUser', JSON.stringify({
           id: 1,
@@ -47,7 +47,7 @@ function AdminLoginForm() {
         }))
         router.push('/admin/dashboard')
       } else {
-        setError('Invalid email or password. Use admin@unlimitedauto.com / unlimited2024')
+        setError('Invalid email or password.')
       }
     } catch (error) {
       setError('An unexpected error occurred. Please try again.')
@@ -94,7 +94,7 @@ function AdminLoginForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="admin@unlimitedauto.com"
+                  placeholder="Enter your email"
                 />
               </div>
             </div>
