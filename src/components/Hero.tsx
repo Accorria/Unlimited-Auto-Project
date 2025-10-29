@@ -10,7 +10,7 @@ export default function Hero() {
 
   const slides = [
     {
-      image: '/Dealership_Photos/Unlimited Auto Front.png',
+      image: '/Dealership_Photos/Unlimited_Auto_Front.png',
       title: 'REDFORD\'S EASIEST CREDIT APPROVAL',
       subtitle: 'Best Used Car Deals • All Credit Types Welcome',
       description: 'Quality used cars with guaranteed financing. Bad credit? No credit? No problem! Drive home today.',
@@ -18,7 +18,7 @@ export default function Hero() {
       ctaLink: '/financing',
     },
     {
-      image: '/Dealership_Photos/Unlimited Auto Side View.webp',
+      image: '/Dealership_Photos/Unlimited_Auto_Side_View.webp',
       title: 'View Inventory',
       subtitle: 'Drive Off Today',
       description: 'Browse our quality used cars and drive home today. All credit types welcome with our easy financing options.',
@@ -70,7 +70,7 @@ export default function Hero() {
             priority={index === 0}
             className="object-cover"
           />
-          <div className="absolute inset-0 bg-black/50" />
+          <div className="absolute inset-0 bg-black/20" />
           
           <div className="absolute inset-0 flex items-center">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
