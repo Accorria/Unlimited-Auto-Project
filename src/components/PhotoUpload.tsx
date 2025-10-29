@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import imageCompression from 'browser-image-compression'
 
 interface PhotoUploadProps {
   onPhotosChange: (photos: string[]) => void
@@ -20,10 +21,20 @@ export default function PhotoUpload({ onPhotosChange, vehicleData }: PhotoUpload
 
   const uploadFile = async (file: File, index: number): Promise<string | null> => {
     try {
+      setUploadProgress(prev => ({ ...prev, [index]: 10 }))
+      
+      // Compress image to reduce file size
+      const compressedFile = await imageCompression(file, {
+        maxSizeMB: 2, // Maximum 2MB
+        maxWidthOrHeight: 1920, // Maximum width or height
+        useWebWorker: true,
+        fileType: 'image/jpeg'
+      })
+      
       setUploadProgress(prev => ({ ...prev, [index]: 25 }))
       
       const formData = new FormData()
-      formData.append('file', file)
+      formData.append('file', compressedFile)
       formData.append('fileName', file.name)
       
       // Add vehicle data if available
