@@ -1,26 +1,10 @@
 {
-  "name": "unlimited-auto-repair-collision",
+  "name": "unlimited-auto-dealership",
   "version": 2,
   "builds": [
     {
       "src": "package.json",
       "use": "@vercel/next"
-    }
-  ],
-  "functions": {
-    "src/app/api/upload/route.ts": {
-      "maxDuration": 30
-    }
-  },
-  "headers": [
-    {
-      "source": "/api/upload",
-      "headers": [
-        {
-          "key": "Access-Control-Max-Age",
-          "value": "86400"
-        }
-      ]
     }
   ]
 }
