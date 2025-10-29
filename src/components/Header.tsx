@@ -41,7 +41,7 @@ export default function Header() {
             <Link href="/inventory" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-semibold uppercase transition-colors">
               Inventory
             </Link>
-            <Link href="/financing" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-semibold uppercase transition-colors">
+            <Link href="/credit-application" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-semibold uppercase transition-colors">
               Financing
             </Link>
             <Link href="/services" className="text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-semibold uppercase transition-colors">
@@ -85,7 +85,7 @@ export default function Header() {
               <Link href="/inventory" className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium">
                 Inventory
               </Link>
-              <Link href="/financing" className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium">
+              <Link href="/credit-application" className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium">
                 Financing
               </Link>
               <Link href="/services" className="text-gray-700 hover:text-blue-600 block px-3 py-2 text-base font-medium">

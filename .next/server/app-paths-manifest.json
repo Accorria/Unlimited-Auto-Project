@@ -1,4 +1,4 @@
 {
-  "/admin/inventory/page": "app/admin/inventory/page.js",
-  "/credit-application/page": "app/credit-application/page.js"
+  "/services/page": "app/services/page.js",
+  "/about/page": "app/about/page.js"
 }

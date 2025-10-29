@@ -147,7 +147,7 @@ export default function ContactPage() {
     {
       icon: '✉️',
       title: 'Email',
-      details: ['info@unlimitedauto.com'],
+      details: ['info@unlimitedautorepaircollision.com'],
       action: 'Send Email'
     },
     {
@@ -351,7 +351,7 @@ export default function ContactPage() {
                   Browse Inventory
                 </Link>
                 <Link
-                  href="/financing"
+                  href="/credit-application"
                   className="block w-full border-2 border-blue-600 text-blue-600 text-center py-3 rounded-lg hover:bg-blue-600 hover:text-white transition-colors font-semibold"
                 >
                   Get Pre-Approved

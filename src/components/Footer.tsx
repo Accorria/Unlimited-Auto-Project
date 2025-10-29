@@ -37,17 +37,17 @@ export default function Footer() {
               </p>
               <p>
                 📧 <a 
-                  href="mailto:unlimitedautoredford@gmail.com" 
+                  href="mailto:info@unlimitedautorepaircollision.com" 
                   className="hover:text-white transition-colors"
                   onClick={() => {
                     if (typeof window !== 'undefined') {
                       import('@/lib/tracking').then(({ trackEmailClick }) => {
-                        trackEmailClick('unlimitedautoredford@gmail.com', 'footer')
+                        trackEmailClick('info@unlimitedautorepaircollision.com', 'footer')
                       })
                     }
                   }}
                 >
-                  unlimitedautoredford@gmail.com
+                  info@unlimitedautorepaircollision.com
                 </a>
               </p>
             </div>
@@ -63,7 +63,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/financing" className="text-gray-300 hover:text-white transition-colors">
+                <Link href="/credit-application" className="text-gray-300 hover:text-white transition-colors">
                   Financing
                 </Link>
               </li>
