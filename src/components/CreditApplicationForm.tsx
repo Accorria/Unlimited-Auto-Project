@@ -712,6 +712,7 @@ export default function CreditApplicationForm() {
                 <input
                   type="date"
                   value={data.applicant.dateOfBirth}
+                  max={new Date().toISOString().split('T')[0]}
                   onChange={(e) => {
                     const birthDate = e.target.value;
                     set("applicant", { ...data.applicant, dateOfBirth: birthDate });
@@ -1082,6 +1083,7 @@ export default function CreditApplicationForm() {
                   <input
                     type="date"
                     value={data.jointApplicant.dateOfBirth}
+                    max={new Date().toISOString().split('T')[0]}
                     onChange={(e) => {
                       const birthDate = e.target.value;
                       set("jointApplicant", { ...data.jointApplicant, dateOfBirth: birthDate });
@@ -1384,35 +1386,33 @@ export default function CreditApplicationForm() {
           </div>
         </div>
 
-        {/* REQUIRED DOCUMENTS */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">REQUIRED DOCUMENTS</h2>
-          <p className="text-gray-600 mb-6">Please upload the following documents for your credit application:</p>
-          
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <h3 className="text-lg font-bold text-blue-900 mb-3">📋 Required Documents Checklist</h3>
-            <div className="space-y-2">
-              <div className="flex items-center">
-                <span className="text-green-600 mr-2">✓</span>
-                <span className="text-blue-800 text-sm">Valid Driver's License</span>
-              </div>
-              <div className="flex items-center">
-                <span className="text-green-600 mr-2">✓</span>
-                <span className="text-blue-800 text-sm">Two Most Recent Pay Stubs</span>
-              </div>
-              <div className="flex items-center">
-                <span className="text-green-600 mr-2">✓</span>
-                <span className="text-blue-800 text-sm">Must have 30+ days on current job</span>
+        {/* REQUIRED DOCUMENTS (disabled as per request) */}
+        {false && (
+          <div className="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">REQUIRED DOCUMENTS</h2>
+            <p className="text-gray-600 mb-6">Please upload the following documents for your credit application:</p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <h3 className="text-lg font-bold text-blue-900 mb-3">📋 Required Documents Checklist</h3>
+              <div className="space-y-2">
+                <div className="flex items-center">
+                  <span className="text-green-600 mr-2">✓</span>
+                  <span className="text-blue-800 text-sm">Valid Driver's License</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-green-600 mr-2">✓</span>
+                  <span className="text-blue-800 text-sm">Two Most Recent Pay Stubs</span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-green-600 mr-2">✓</span>
+                  <span className="text-blue-800 text-sm">Must have 30+ days on current job</span>
+                </div>
               </div>
             </div>
+            <ClientOnly fallback={<div className="text-center py-8 text-gray-500">Loading document upload...</div>}>
+              <DocumentUpload onDocumentsChange={setDocuments} />
+            </ClientOnly>
           </div>
-          
-          <ClientOnly fallback={<div className="text-center py-8 text-gray-500">Loading document upload...</div>}>
-            <DocumentUpload 
-              onDocumentsChange={setDocuments}
-            />
-          </ClientOnly>
-        </div>
+        )}
 
         {/* NOTICE & AUTHORIZATION */}
         <div className="bg-gray-50 p-6 rounded-lg">

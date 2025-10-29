@@ -511,7 +511,7 @@ export default function InventoryPage() {
                         </Link>
                       </div>
                       <Link
-                        href={`/finance?vehicle=${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                        href="/credit-application"
                         className="w-full bg-green-600 text-white text-center py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold block"
                       >
                         💳 Get Pre-Approved
@@ -542,7 +542,7 @@ export default function InventoryPage() {
               Contact Us
             </Link>
             <Link
-              href="/financing"
+              href="/credit-application"
               className="border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-bold hover:bg-white hover:text-blue-800 transition-colors"
             >
               Get Pre-Approved
