@@ -26,7 +26,7 @@ export default function Hero() {
       ctaLink: '/inventory',
     },
     {
-      image: '/Dealership_Photos/Complete Auto Services.jpg',
+      image: '/Dealership_Photos/Complete_Auto_Services.jpg',
       title: 'Complete Auto Services',
       subtitle: 'Repair • Collision • Detailing • Tinting • Wrapping',
       description: 'From sales to service, we handle all your automotive needs at one location.',

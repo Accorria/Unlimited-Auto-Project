@@ -825,7 +825,6 @@ export default function ProfessionalCreditApplicationForm() {
               {/* Legal Notice */}
               <div className="mb-3 p-2 bg-gray-100 border border-gray-400">
                 <p className="text-xs text-black">
-                  <strong>ALIMONY, CHILD SUPPORT OR SEPARATE MAINTENANCE INCOME NEED NOT BE REVEALED IF YOU DO NOT WISH TO HAVE IT CONSIDERED AS A BASIS FOR REPAYING THIS DEBT.</strong>
                 </p>
               </div>
 

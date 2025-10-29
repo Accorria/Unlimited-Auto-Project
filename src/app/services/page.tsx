@@ -11,7 +11,7 @@ const services = [
     title: 'Car Sales',
     description: 'Quality used cars with comprehensive inspections and warranties',
     icon: '🚗',
-    image: '/Dealership_Photos/Unlimited Auto Front.png',
+    image: '/Dealership_Photos/Unlimited_Auto_Front.png',
     features: [
       'Quality Used Vehicles',
       'Comprehensive Inspections',
@@ -34,7 +34,7 @@ const services = [
     title: 'Auto Repair',
     description: 'Professional mechanical services for all makes and models',
     icon: '🔧',
-    image: '/Dealership_Photos/Complete Auto Services.jpg',
+    image: '/Dealership_Photos/Complete_Auto_Services.jpg',
     features: [
       'Engine Diagnostics & Repair',
       'Transmission Service',
@@ -57,7 +57,7 @@ const services = [
     title: 'Collision Repair',
     description: 'Expert body work and paint services to restore your vehicle',
     icon: '💥',
-    image: '/Dealership_Photos/Before and After.jpg',
+    image: '/Dealership_Photos/Before_and_After.jpg',
     features: [
       'Auto Body Repair',
       'Paint Matching & Refinishing',
@@ -80,7 +80,7 @@ const services = [
     title: 'Vehicle Detailing',
     description: 'Premium cleaning and detailing services for your vehicle',
     icon: '✨',
-    image: '/Dealership_Photos/Complete Auto Services.jpg',
+    image: '/Dealership_Photos/Complete_Auto_Services.jpg',
     features: [
       'Interior Deep Cleaning',
       'Exterior Wash & Wax',
@@ -103,7 +103,7 @@ const services = [
     title: 'Window Tinting',
     description: 'Professional window tinting for style and protection',
     icon: '🪟',
-    image: '/Dealership_Photos/Complete Auto Services.jpg',
+    image: '/Dealership_Photos/Complete_Auto_Services.jpg',
     features: [
       '3M Window Films',
       'UV Protection',
@@ -126,7 +126,7 @@ const services = [
     title: 'Vehicle Wrapping',
     description: 'Custom vinyl wraps and graphics for your vehicle',
     icon: '🎨',
-    image: '/Dealership_Photos/Complete Auto Services.jpg',
+    image: '/Dealership_Photos/Complete_Auto_Services.jpg',
     features: [
       'Full Vehicle Wraps',
       'Partial Wraps',

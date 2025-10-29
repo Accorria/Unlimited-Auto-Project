@@ -924,7 +924,6 @@ export default function CreditApplicationForm() {
 
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
               <p className="text-sm text-yellow-800">
-                <strong>Alimony, child support or separate maintenance income need not be revealed if you do not wish to have it considered as a basis for repaying this debt.</strong>
               </p>
             </div>
           </div>
@@ -1276,7 +1275,6 @@ export default function CreditApplicationForm() {
 
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
                 <p className="text-sm text-yellow-800">
-                  <strong>Alimony, child support or separate maintenance income need not be revealed if you do not wish to have it considered as a basis for repaying this debt.</strong>
                 </p>
               </div>
             </div>
