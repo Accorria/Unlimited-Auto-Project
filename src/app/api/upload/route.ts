@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
-import { existsSync } from 'fs'
+import { createServerClient } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,24 +22,26 @@ export async function POST(req: NextRequest) {
     const fileExtension = fileName.split('.').pop()
     const uniqueFileName = `${timestamp}_${fileName}`
     
-    // Create upload directory if it doesn't exist
-    const uploadDir = join(process.cwd(), 'public', 'uploads', 'vehicles')
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true })
+    // Upload to Supabase Storage
+    const supabase = createServerClient()
+    
+    const { data, error } = await supabase.storage
+      .from('vehicle-images')
+      .upload(uniqueFileName, file, {
+        cacheControl: '3600',
+        upsert: false
+      })
+
+    if (error) {
+      console.error('Supabase upload error:', error)
+      return NextResponse.json({ error: 'Failed to upload to storage' }, { status: 500 })
     }
 
-    // Save file to local storage
-    const filePath = join(uploadDir, uniqueFileName)
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    
-    await writeFile(filePath, buffer)
+    // Get public URL from Supabase Storage
+    const { data: { publicUrl } } = supabase.storage
+      .from('vehicle-images')
+      .getPublicUrl(uniqueFileName)
 
-    // Create public URL
-    const publicUrl = `/uploads/vehicles/${uniqueFileName}`
-
-    // For now, return success with local file info
-    // In production, you'd save this to a database
     return NextResponse.json({
       success: true,
       publicUrl,

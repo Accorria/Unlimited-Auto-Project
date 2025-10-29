@@ -59,6 +59,17 @@ const commonModels: Record<string, string[]> = {
   'Volvo': ['S60', 'S90', 'V60', 'V90', 'XC40', 'XC60', 'XC90']
 }
 
+// Model-specific trims for Jeep
+const jeepModelTrims: Record<string, string[]> = {
+  'Wrangler': ['Sport', 'Sport S', 'Willys Sport', 'Willys', 'Sahara', 'Rubicon', 'Rubicon X', 'Rubicon Recon', 'High Altitude', 'Freedom Edition', '4xe (Hybrid)', 'Rubicon 392 (V8)'],
+  'Cherokee': ['Latitude', 'Latitude Plus', 'Altitude', 'Trailhawk', 'Limited', 'Overland'],
+  'Grand Cherokee': ['Laredo', 'Altitude', 'Limited', 'Overland', 'Summit', 'Trailhawk', 'Trackhawk (SRT)'],
+  'Compass': ['Sport', 'Latitude', 'Limited', 'Trailhawk', 'High Altitude'],
+  'Renegade': ['Sport', 'Latitude', 'Altitude', 'Limited', 'Trailhawk', 'Upland'],
+  'Gladiator': ['Sport', 'Sport S', 'Willys', 'Overland', 'Rubicon', 'Mojave', 'High Altitude'],
+  'Patriot': ['Sport', 'Latitude', 'Limited', 'High Altitude']
+}
+
 // Make-specific trims
 const makeSpecificTrims: Record<string, string[]> = {
   'Mini': ['Base', 'Cooper', 'Cooper S', 'Cooper SE', 'Cooper JCW', 'Hardtop', 'Hardtop S', 'Hardtop JCW', 'Convertible', 'Convertible S', 'Convertible JCW', 'Clubman', 'Clubman S', 'Clubman JCW', 'Countryman', 'Countryman S', 'Countryman JCW', 'Paceman', 'Roadster'],
@@ -95,7 +106,7 @@ const makeSpecificTrims: Record<string, string[]> = {
 // Organized vehicle features by category
 const vehicleFeatures = {
   'Exterior': [
-    'Alloy Wheels', 'Chrome Wheels', 'Steel Wheels', 'Fog Lights', 'LED Headlights', 'Xenon Headlights', 'Halogen Headlights', 'Daytime Running Lights', 'Power Mirrors', 'Heated Mirrors', 'Auto-Dimming Mirrors', 'Tinted Windows', 'Privacy Glass', 'Spoiler', 'Running Boards', 'Roof Rails', 'Tow Package', 'Trailer Hitch'
+    'Alloy Wheels', 'Chrome Wheels', 'Steel Wheels', 'Premium Wheels', 'Fog Lights', 'LED Headlights', 'Xenon Headlights', 'Halogen Headlights', 'Daytime Running Lights', 'Power Mirrors', 'Heated Mirrors', 'Auto-Dimming Mirrors', 'Tinted Windows', 'Privacy Glass', 'Spoiler', 'Running Boards', 'Roof Rails', 'Tow Package', 'Trailer Hitch'
   ],
   'Interior': [
     'Leather Seats', 'Cloth Seats', 'Vinyl Seats', 'Heated Seats', 'Cooled Seats', 'Power Seats', 'Memory Seats', 'Lumbar Support', 'Split Folding Rear Seats', 'Stow \'n Go Seating', 'Third Row Seating', 'Captain\'s Chairs', 'Bench Seating', 'Leather Steering Wheel', 'Wood Trim', 'Carbon Fiber Trim', 'Ambient Lighting', 'Cargo Cover', 'Cargo Net'
@@ -104,7 +115,7 @@ const vehicleFeatures = {
     'Air Conditioning', 'Automatic Climate Control', 'Dual Zone Climate Control', 'Tri-Zone Climate Control', 'Rear Climate Control', 'Heated Steering Wheel', 'Heated Seats', 'Cooled Seats', 'Remote Start', 'Defrost System'
   ],
   'Technology & Audio': [
-    'AM/FM Radio', 'CD Player', 'MP3 Player', 'USB Port', 'Auxiliary Input', 'Bluetooth', 'Apple CarPlay', 'Android Auto', 'Uconnect Touchscreen', 'Navigation System', 'GPS', 'Satellite Radio', 'HD Radio', 'Premium Audio', 'Bose Audio', 'Harman Kardon', 'JBL Audio', 'Infotainment System', 'WiFi Hotspot', 'Wireless Charging'
+    'AM/FM Radio', 'CD Player', 'MP3 Player', 'USB Port', 'Auxiliary Input', 'Bluetooth', 'Apple CarPlay', 'Android Auto', 'Touchscreen Radio', '7" Touchscreen', '8" Touchscreen', '8.4" Touchscreen', '10" Touchscreen', '12" Touchscreen', 'Uconnect Touchscreen', 'Navigation System', 'GPS', 'Satellite Radio', 'HD Radio', 'Premium Audio', 'Bose Audio', 'Harman Kardon', 'JBL Audio', 'Infotainment System', 'WiFi Hotspot', 'Wireless Charging'
   ],
   'Safety & Security': [
     'Backup Camera', 'Rearview Camera', '360° Camera', 'Parking Sensors', 'Blind Spot Monitoring', 'Lane Departure Warning', 'Forward Collision Warning', 'Automatic Emergency Braking', 'Adaptive Cruise Control', 'Lane Keep Assist', 'Traffic Sign Recognition', 'Driver Attention Monitor', 'Tire Pressure Monitoring', 'Stability Control', 'Traction Control', 'Anti-lock Brakes', 'Airbags', 'Security System', 'Immobilizer', 'Theft Deterrent'
@@ -119,7 +130,7 @@ const vehicleFeatures = {
     'Manual Transmission', 'Automatic Transmission', 'CVT Transmission', 'Semi-Automatic Transmission', 'Paddle Shifters', 'Sport Mode', 'Eco Mode', 'Tow Mode', '4WD', 'AWD', 'FWD', 'RWD', 'Limited Slip Differential', 'Locking Differential'
   ],
   'Special Features': [
-    'Sunroof', 'Moonroof', 'Panoramic Sunroof', 'Convertible Top', 'Hardtop', 'Soft Top', 'T-Top', 'Targa Top', 'Hatchback', 'Liftback', 'Wagon', 'Crossover', 'Hybrid', 'Electric', 'Plug-in Hybrid', 'Turbocharged', 'Supercharged', 'V6 Engine', 'V8 Engine', '4-Cylinder Engine', '6-Cylinder Engine', '8-Cylinder Engine'
+    'Sunroof', 'Moonroof', 'Panoramic Sunroof', 'Convertible Top', 'Hardtop', 'Soft Top', 'Removable Hard Top', 'T-Top', 'Targa Top', 'Hatchback', 'Liftback', 'Wagon', 'Crossover', 'Hybrid', 'Electric', 'Plug-in Hybrid', 'Turbocharged', 'Supercharged', 'V6 Engine', 'V8 Engine', '4-Cylinder Engine', '6-Cylinder Engine', '8-Cylinder Engine'
   ]
 }
 
@@ -201,6 +212,14 @@ export default function AddVehicle() {
   // Parse number from formatted string
   const parseNumber = (value: string): string => {
     return value.replace(/,/g, '')
+  }
+
+  // Get trim options based on make and model
+  const getTrimOptions = (make: string, model: string): string[] => {
+    if (make === 'Jeep' && jeepModelTrims[model]) {
+      return jeepModelTrims[model]
+    }
+    return makeSpecificTrims[make] || ['Base', 'Premium', 'Limited', 'Sport']
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -510,8 +529,8 @@ export default function AddVehicle() {
                   name="trim"
                   value={formData.trim}
                   onChange={handleInputChange}
-                  options={makeSpecificTrims[formData.make] || ['Base', 'Premium', 'Limited', 'Sport']}
-                  placeholder="Select or type trim..."
+                  options={getTrimOptions(formData.make, formData.model)}
+                  placeholder="Select or type trim... ▼"
                   learnType="trims"
                   make={formData.make}
                   model={formData.model}

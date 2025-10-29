@@ -57,19 +57,16 @@ export async function GET(req: NextRequest) {
 
     // Transform data to include cover photo (first photo by angle order)
     const transformedVehicles = vehicles?.map(vehicle => {
-      const photos = vehicle.vehicle_photos || []
-      const coverPhoto = photos.find(photo => photo.angle === 'FDS') || 
-                        photos.find(photo => photo.angle === 'FPS') || 
-                        photos.find(photo => photo.angle === 'F') || 
-                        photos[0]
+      const vehiclePhotos = vehicle.vehicle_photos || []
+      const coverPhoto = vehiclePhotos.find(photo => photo.angle === 'FDS') || 
+                        vehiclePhotos.find(photo => photo.angle === 'FPS') || 
+                        vehiclePhotos.find(photo => photo.angle === 'F') || 
+                        vehiclePhotos[0]
 
       return {
         ...vehicle,
-        coverPhoto: coverPhoto?.public_url || null,
-        photos: photos.sort((a, b) => {
-          const angleOrder = ['FDS','FPS','SDS','SPS','SRDS','SRPS','RDS','R','F','INT','INTB','ENG','TRK','ODOM','VIN']
-          return angleOrder.indexOf(a.angle) - angleOrder.indexOf(b.angle)
-        }),
+        coverPhoto: coverPhoto?.public_url || vehicle.photos?.[0] || null,
+        photos: vehicle.photos || vehiclePhotos.map(p => p.public_url),
         // Map database fields to expected API response format
         transmission: vehicle.transmission,
         drivetrain: vehicle.drivetrain,

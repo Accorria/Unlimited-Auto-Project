@@ -60,6 +60,9 @@ export async function POST(req: NextRequest) {
       status: 'new',
       consent: body.consentCallSms || false,
       
+      // Document attachments
+      documents: body.documents ? JSON.stringify(body.documents) : null,
+      
       // Additional credit application data (store in notes for now)
       notes: JSON.stringify({
         // Applicant details
@@ -227,14 +230,10 @@ export async function POST(req: NextRequest) {
           
           <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
           <p><strong>Dealer:</strong> ${body.dealerName}</p>
-          <p><strong>Program Type:</strong> ${body.programType || 'N/A'}</p>
           
-          <details style="margin-top: 20px;">
-            <summary style="cursor: pointer; font-weight: bold;">View Complete Application Data</summary>
-            <pre style="background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; margin-top: 10px;">
-${JSON.stringify(body, null, 2)}
-            </pre>
-          </details>
+          <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
+            <p style="margin: 0; font-weight: bold; color: #155724;">✅ Application successfully submitted and ready for review!</p>
+          </div>
         `,
       })
         console.log('Credit application email notification sent successfully')

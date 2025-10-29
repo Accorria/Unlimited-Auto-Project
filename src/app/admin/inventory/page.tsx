@@ -14,7 +14,8 @@ interface Vehicle {
   price?: number
   miles?: number
   coverPhoto?: string
-  photos?: Array<{
+  photos?: string[] // Array of photo URLs
+  vehicle_photos?: Array<{
     id: string
     angle: string
     file_path: string
@@ -68,7 +69,7 @@ export default function InventoryManagement() {
 
   const fetchVehicles = async () => {
     try {
-      const response = await fetch('/api/vehicles?dealer=unlimited-auto')
+      const response = await fetch(`/api/vehicles?dealer=unlimited-auto&t=${Date.now()}`)
       if (response.ok) {
         const data = await response.json()
         console.log('Fetched vehicles:', data.vehicles)
@@ -386,7 +387,7 @@ export default function InventoryManagement() {
                       <div className="flex items-center">
                         <div className="shrink-0 h-12 w-12">
                           {(() => {
-                            const imageUrl = vehicle.coverPhoto || vehicle.vehicle_photos?.[0]?.public_url || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop'
+                            const imageUrl = vehicle.coverPhoto || vehicle.photos?.[0] || vehicle.vehicle_photos?.[0]?.public_url || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjY2NjIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzY2NjY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=='
                             console.log(`Vehicle ${vehicle.year} ${vehicle.make} ${vehicle.model} image URL:`, imageUrl)
                             return (
                               <img
@@ -398,7 +399,7 @@ export default function InventoryManagement() {
                                 }}
                                 onError={(e) => {
                                   console.error(`Failed to load image for ${vehicle.year} ${vehicle.make} ${vehicle.model}:`, imageUrl)
-                                  e.currentTarget.src = 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop'
+                                  e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjY2NjIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzY2NjY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=='
                                 }}
                               />
                             )

@@ -48,10 +48,6 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
   const [showAllFeatures, setShowAllFeatures] = useState(false)
   const [vehicle, setVehicle] = useState<Vehicle | null>(null)
   const [loading, setLoading] = useState(true)
-  const [downPayment, setDownPayment] = useState(0)
-  const [loanTerm, setLoanTerm] = useState(48)
-  const [interestRate, setInterestRate] = useState(6.9)
-  const [monthlyPayment, setMonthlyPayment] = useState(0)
   const resolvedParams = use(params)
 
   useEffect(() => {
@@ -86,22 +82,6 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
     fetchVehicle()
   }, [resolvedParams.id])
 
-  // Calculate monthly payment when inputs change
-  useEffect(() => {
-    if (vehicle?.price) {
-      const principal = vehicle.price - downPayment
-      const monthlyRate = interestRate / 100 / 12
-      const numPayments = loanTerm
-      
-      if (monthlyRate > 0) {
-        const payment = principal * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
-                       (Math.pow(1 + monthlyRate, numPayments) - 1)
-        setMonthlyPayment(Math.round(payment))
-      } else {
-        setMonthlyPayment(Math.round(principal / numPayments))
-      }
-    }
-  }, [vehicle?.price, downPayment, loanTerm, interestRate])
   
   if (loading) {
     return (
@@ -367,86 +347,6 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
 
-        {/* Financing Calculator */}
-        <div className="mt-12 bg-white rounded-lg p-8 shadow-sm border">
-          <h3 className="text-2xl font-bold text-gray-900 mb-6">Payment Calculator</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Down Payment</label>
-              <div className="space-y-2">
-                <input
-                  type="number"
-                  placeholder="Enter amount"
-                  value={downPayment || ''}
-                  onChange={(e) => setDownPayment(Number(e.target.value) || 0)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setDownPayment(1000)}
-                    className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded hover:bg-blue-200"
-                  >
-                    $1,000
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDownPayment(2000)}
-                    className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded hover:bg-blue-200"
-                  >
-                    $2,000
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDownPayment(3000)}
-                    className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded hover:bg-blue-200"
-                  >
-                    $3,000
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDownPayment(5000)}
-                    className="px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded hover:bg-blue-200"
-                  >
-                    $5,000
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Loan Term (months)</label>
-              <select 
-                value={loanTerm}
-                onChange={(e) => setLoanTerm(Number(e.target.value))}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="36">36 months</option>
-                <option value="48">48 months</option>
-                <option value="60">60 months</option>
-                <option value="72">72 months</option>
-                <option value="84">84 months</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Interest Rate (%)</label>
-              <input
-                type="number"
-                placeholder="6.9"
-                step="0.1"
-                value={interestRate}
-                onChange={(e) => setInterestRate(Number(e.target.value))}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <div className="text-center">
-              <p className="text-gray-600">Estimated Monthly Payment</p>
-              <p className="text-3xl font-bold text-blue-600">${monthlyPayment.toLocaleString()}/month*</p>
-              <p className="text-sm text-gray-500 mt-2">*Actual payment may vary based on credit approval</p>
-            </div>
-          </div>
-        </div>
       </div>
 
       <Footer />

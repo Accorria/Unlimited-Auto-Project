@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 
 export default function Footer() {
@@ -18,8 +20,36 @@ export default function Footer() {
             </p>
             <div className="text-gray-300 space-y-2">
               <p>📍 24645 Plymouth Rd Unit A, Redford Township, MI 48239</p>
-              <p>📞 (313) 766-4475</p>
-              <p>📧 unlimitedautoredford@gmail.com</p>
+              <p>
+                📞                         <a
+                          href="tel:+13137664475"
+                          className="hover:text-white transition-colors"
+                          onClick={() => {
+                            if (typeof window !== 'undefined') {
+                              import('@/lib/tracking').then(({ trackPhoneClick }) => {
+                                trackPhoneClick('(313) 766-4475', 'footer')
+                              })
+                            }
+                          }}
+                        >
+                          (313) 766-4475
+                        </a>
+              </p>
+              <p>
+                📧 <a 
+                  href="mailto:unlimitedautoredford@gmail.com" 
+                  className="hover:text-white transition-colors"
+                  onClick={() => {
+                    if (typeof window !== 'undefined') {
+                      import('@/lib/tracking').then(({ trackEmailClick }) => {
+                        trackEmailClick('unlimitedautoredford@gmail.com', 'footer')
+                      })
+                    }
+                  }}
+                >
+                  unlimitedautoredford@gmail.com
+                </a>
+              </p>
             </div>
           </div>
 

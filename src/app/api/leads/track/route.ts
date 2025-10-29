@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/auth'
+import { sendEmail } from '@/lib/email'
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,7 +13,7 @@ export async function POST(req: NextRequest) {
     const { data: dealer, error: dealerError } = await supabase
       .from('dealers')
       .select('*')
-      .eq('name', 'Unlimited Auto Repair & Collision LLC')
+      .eq('slug', 'unlimited-auto')
       .single()
 
     if (dealerError || !dealer) {
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
       
       // Attribution tracking
       source: 'website_incomplete',
-      status: 'incomplete',
+      status: 'new',
       consent: false, // They didn't complete the form
       
       // Track what they filled out
@@ -76,6 +77,24 @@ export async function POST(req: NextRequest) {
 
     console.log('Incomplete lead tracked successfully:', lead.id)
     
+    // Send email notification for incomplete leads with contact info
+    if (body.firstName || body.phone || body.email) {
+      await sendEmail({
+        to: 'unlimitedautosales@gmail.com',
+        subject: `🚨 Incomplete Lead: ${body.firstName || 'Unknown'}`,
+        html: `
+          <h2>Incomplete Lead Captured</h2>
+          <p><strong>Name:</strong> ${body.firstName || 'Unknown'}</p>
+          <p><strong>Phone:</strong> ${body.phone || 'No phone'}</p>
+          <p><strong>Email:</strong> ${body.email || 'No email'}</p>
+          <p><strong>Form Type:</strong> ${body.formStep || 'Unknown form'}</p>
+          <p><strong>Source:</strong> ${body.source || 'Website'}</p>
+          <p><strong>Timestamp:</strong> ${new Date().toISOString()}</p>
+          <p><em>This person started filling out a form but didn't complete it. Follow up with them!</em></p>
+        `
+      })
+    }
+
     return NextResponse.json({ 
       success: true, 
       leadId: lead.id,

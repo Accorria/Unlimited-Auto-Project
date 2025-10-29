@@ -170,7 +170,8 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
     features: [] as string[],
     description: '',
     images: [] as string[],
-    downPayment: 999
+    downPayment: 999,
+    customDownPayment: ''
   })
   
   // Form validation state
@@ -197,7 +198,7 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
           // Transform the vehicle data to match formData structure
           const transformedVehicle = {
             ...vehicle,
-            // Map vehicle_photos to images array
+            // Map photos to images array (photos are already sorted by angle)
             images: vehicle.photos ? vehicle.photos.map((photo: any) => photo.public_url) : [],
             // Ensure features is an array
             features: Array.isArray(vehicle.features) ? vehicle.features : []
@@ -519,20 +520,44 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Down Payment</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 sm:text-sm">$</span>
+                <select
+                  name="downPayment"
+                  value={formData.downPayment || ''}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                >
+                  <option value="">Select down payment</option>
+                  <option value="0">$0 Down Payment</option>
+                  <option value="500">$500 Down Payment</option>
+                  <option value="1000">$1,000 Down Payment</option>
+                  <option value="1500">$1,500 Down Payment</option>
+                  <option value="2000">$2,000 Down Payment</option>
+                  <option value="2500">$2,500 Down Payment</option>
+                  <option value="3000">$3,000 Down Payment</option>
+                  <option value="3500">$3,500 Down Payment</option>
+                  <option value="4000">$4,000 Down Payment</option>
+                  <option value="4500">$4,500 Down Payment</option>
+                  <option value="5000">$5,000 Down Payment</option>
+                  <option value="custom">Custom Amount</option>
+                </select>
+                {formData.downPayment === 'custom' && (
+                  <div className="mt-2">
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span className="text-gray-500 sm:text-sm">$</span>
+                      </div>
+                      <input
+                        type="number"
+                        name="customDownPayment"
+                        value={formData.customDownPayment || ''}
+                        onChange={handleInputChange}
+                        placeholder="Enter custom amount"
+                        min="0"
+                        className="w-full pl-8 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                      />
+                    </div>
                   </div>
-                  <input
-                    type="number"
-                    name="downPayment"
-                    value={formData.downPayment || ''}
-                    onChange={handleInputChange}
-                    placeholder="Enter down payment amount"
-                    min="0"
-                    className="w-full pl-8 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
-                  />
-                </div>
+                )}
                 <p className="text-sm text-gray-500 mt-1">This will appear as a badge on the vehicle listing</p>
               </div>
             </div>

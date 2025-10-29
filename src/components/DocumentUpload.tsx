@@ -27,22 +27,31 @@ const documentTypes = [
 export default function DocumentUpload({ onDocumentsChange, leadId }: DocumentUploadProps) {
   const [documents, setDocuments] = useState<DocumentFile[]>([])
   const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({})
 
   const handleFileSelect = async (type: string, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
 
+    // Prevent any form submission or validation triggers
+    event.preventDefault()
+    event.stopPropagation()
+
+    // Clear any previous errors
+    setError(null)
+
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf']
     if (!allowedTypes.includes(file.type)) {
-      alert('Please upload only JPG, PNG, or PDF files')
+      setError('Please upload only JPG, PNG, or PDF files')
       return
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB')
+      setError('File size must be less than 5MB. Please compress your image or choose a smaller file.')
       return
     }
 
@@ -55,7 +64,15 @@ export default function DocumentUpload({ onDocumentsChange, leadId }: DocumentUp
 
     const updatedDocuments = [...documents.filter(doc => doc.type !== type), newDocument]
     setDocuments(updatedDocuments)
-    onDocumentsChange(updatedDocuments)
+    
+    // Use setTimeout to prevent immediate state updates that might trigger form validation
+    setTimeout(() => {
+      onDocumentsChange(updatedDocuments)
+    }, 0)
+    
+    // Clear any previous errors when successfully adding a document
+    setError(null)
+    setSuccess(null)
 
     // Auto-upload the document
     try {
@@ -77,9 +94,14 @@ export default function DocumentUpload({ onDocumentsChange, leadId }: DocumentUp
       const finalDocuments = updatedDocuments.map(doc => doc.id === newDocument.id ? uploadedDoc : doc)
       setDocuments(finalDocuments)
       onDocumentsChange(finalDocuments)
+      
+      // Show success message
+      const docTypeLabel = documentTypes.find(dt => dt.value === type)?.label || 'Document'
+      setSuccess(`${docTypeLabel} uploaded successfully!`)
+      setTimeout(() => setSuccess(null), 3000)
     } catch (error) {
       console.error('Upload error:', error)
-      alert('Failed to upload document. Please try again.')
+      setError('Failed to upload document. Please try again.')
     } finally {
       setUploading(false)
     }
@@ -137,6 +159,56 @@ export default function DocumentUpload({ onDocumentsChange, leadId }: DocumentUp
         </p>
       </div>
 
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex">
+            <div className="shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+            <div className="ml-auto pl-3">
+              <button
+                onClick={() => setError(null)}
+                className="text-red-400 hover:text-red-600"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {success && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex">
+            <div className="shrink-0">
+              <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-green-800">{success}</p>
+            </div>
+            <div className="ml-auto pl-3">
+              <button
+                onClick={() => setSuccess(null)}
+                className="text-green-400 hover:text-green-600"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4">
         {documentTypes.map((docType) => {
           const existingDoc = getDocumentForType(docType.value)
@@ -191,9 +263,15 @@ export default function DocumentUpload({ onDocumentsChange, leadId }: DocumentUp
                     accept=".jpg,.jpeg,.png,.pdf"
                     onChange={(e) => handleFileSelect(docType.value, e)}
                     className="hidden"
+                    onClick={(e) => e.stopPropagation()}
                   />
                   <button
-                    onClick={() => fileInputRefs.current[docType.value]?.click()}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      fileInputRefs.current[docType.value]?.click()
+                    }}
                     className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors"
                   >
                     <div className="text-gray-400 mb-2">

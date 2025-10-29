@@ -202,9 +202,19 @@ export default function Contact() {
                   <div>
                     <h4 className="font-semibold text-lg">Phone</h4>
                     <p className="text-gray-300">
-                      <a href="tel:+13137664475" className="hover:text-white transition-colors">
-                        (313) 766-4475
-                      </a>
+        <a
+          href="tel:+13137664475"
+          className="hover:text-white transition-colors"
+          onClick={() => {
+            if (typeof window !== 'undefined') {
+              import('@/lib/tracking').then(({ trackPhoneClick }) => {
+                trackPhoneClick('(313) 766-4475', 'contact_section')
+              })
+            }
+          }}
+        >
+          (313) 766-4475
+        </a>
                     </p>
                   </div>
                 </div>
@@ -214,7 +224,17 @@ export default function Contact() {
                   <div>
                     <h4 className="font-semibold text-lg">Email</h4>
                     <p className="text-gray-300">
-                      <a href="mailto:unlimitedautoredford@gmail.com" className="hover:text-white transition-colors">
+                      <a 
+                        href="mailto:unlimitedautoredford@gmail.com" 
+                        className="hover:text-white transition-colors"
+                        onClick={() => {
+                          if (typeof window !== 'undefined') {
+                            import('@/lib/tracking').then(({ trackEmailClick }) => {
+                              trackEmailClick('unlimitedautoredford@gmail.com', 'contact_section')
+                            })
+                          }
+                        }}
+                      >
                         unlimitedautoredford@gmail.com
                       </a>
                     </p>

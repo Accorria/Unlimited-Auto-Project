@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{}"
+self.__REACT_LOADABLE_MANIFEST="{\"components/Contact.tsx -> @/lib/tracking\":{\"id\":\"components/Contact.tsx -> @/lib/tracking\",\"files\":[\"static/chunks/_app-pages-browser_src_lib_tracking_ts.js\"]},\"components/Footer.tsx -> @/lib/tracking\":{\"id\":\"components/Footer.tsx -> @/lib/tracking\",\"files\":[\"static/chunks/_app-pages-browser_src_lib_tracking_ts.js\"]}}"

@@ -3,6 +3,9 @@ import { createServerClient } from '@/lib/auth'
 
 export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url)
+    const timeRange = searchParams.get('timeRange') || '24h'
+    
     // Use service role client to bypass RLS
     const supabase = createServerClient()
 
@@ -17,6 +20,77 @@ export async function GET(req: NextRequest) {
       console.error('Error fetching dealer:', dealerError)
       return NextResponse.json({ error: 'Dealer not found' }, { status: 404 })
     }
+
+    // Calculate time filter
+    const now = new Date()
+    let timeFilter = new Date()
+    
+    switch (timeRange) {
+      case '1h':
+        timeFilter.setHours(now.getHours() - 1)
+        break
+      case '24h':
+        timeFilter.setDate(now.getDate() - 1)
+        break
+      case '7d':
+        timeFilter.setDate(now.getDate() - 7)
+        break
+      case '30d':
+        timeFilter.setDate(now.getDate() - 30)
+        break
+      default:
+        timeFilter.setDate(now.getDate() - 1)
+    }
+
+    // Get tracking events
+    const { data: trackingEvents, error: trackingError } = await supabase
+      .from('tracking_events')
+      .select('*')
+      .eq('dealer_id', dealer.id)
+      .gte('created_at', timeFilter.toISOString())
+      .order('created_at', { ascending: false })
+
+    if (trackingError) {
+      console.error('Error fetching tracking events:', trackingError)
+      return NextResponse.json({ error: 'Failed to fetch tracking events' }, { status: 500 })
+    }
+
+    // Calculate tracking analytics
+    const totalEvents = trackingEvents?.length || 0
+    const phoneClicks = trackingEvents?.filter(e => e.event_type === 'phone_click').length || 0
+    const emailClicks = trackingEvents?.filter(e => e.event_type === 'email_click').length || 0
+    const formSubmissions = trackingEvents?.filter(e => e.event_type === 'form_submit').length || 0
+    const pageViews = trackingEvents?.filter(e => e.event_type === 'page_view').length || 0
+    const vehicleInterests = trackingEvents?.filter(e => e.event_type === 'vehicle_interest').length || 0
+
+    // Events by source
+    const eventsBySource = trackingEvents?.reduce((acc, event) => {
+      acc[event.source] = (acc[event.source] || 0) + 1
+      return acc
+    }, {} as Record<string, number>) || {}
+
+    // Events by hour
+    const eventsByHour = trackingEvents?.reduce((acc, event) => {
+      const hour = new Date(event.created_at).getHours()
+      acc[hour] = (acc[hour] || 0) + 1
+      return acc
+    }, {} as Record<string, number>) || {}
+
+    // Top vehicles
+    const vehicleCounts = trackingEvents?.reduce((acc, event) => {
+      if (event.vehicle_name) {
+        acc[event.vehicle_name] = (acc[event.vehicle_name] || 0) + 1
+      }
+      return acc
+    }, {} as Record<string, number>) || {}
+
+    const topVehicles = Object.entries(vehicleCounts)
+      .map(([vehicle_name, count]) => ({ vehicle_name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10)
+
+    // Recent events (last 20)
+    const recentEvents = trackingEvents?.slice(0, 20) || []
 
     // Get total leads count
     const { count: totalLeads, error: leadsError } = await supabase
@@ -131,17 +205,29 @@ export async function GET(req: NextRequest) {
     // Calculate Time-to-First-Response (mock for now - would need message timestamps)
     const avgTTFR = 2.5 // minutes - would calculate from actual message data
 
-    // Return Toyota SmartPath-style analytics
+    // Return comprehensive analytics including tracking data
     return NextResponse.json({
       success: true,
       analytics: {
-        // Core SmartPath KPIs
+        // Tracking Analytics
+        total_events: totalEvents,
+        phone_clicks: phoneClicks,
+        email_clicks: emailClicks,
+        form_submissions: formSubmissions,
+        page_views: pageViews,
+        vehicle_interests: vehicleInterests,
+        events_by_source: eventsBySource,
+        events_by_hour: eventsByHour,
+        top_vehicles: topVehicles,
+        recent_events: recentEvents,
+        
+        // Lead Analytics (existing)
         eligible_unique_leads: eligibleUniqueLeads,
         set_rate: setRate,
         show_rate: showRate,
         close_rate: closeRate,
         overall_close_rate: overallCloseRate,
-        time_to_first_response: avgTTFR, // minutes
+        time_to_first_response: avgTTFR,
         
         // Breakdown by status
         leads_by_status: {

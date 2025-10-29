@@ -2,421 +2,261 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import AdminLayout from '@/components/AdminLayout'
-import { LeadAnalytics, LeadStatus } from '@/lib/types'
 
-// Sample analytics data - in production, this would come from Supabase
-const sampleAnalytics: LeadAnalytics = {
-  total_leads: 156,
-  set_rate: 0.68, // 68%
-  show_rate: 0.45, // 45%
-  close_rate: 0.23, // 23%
-  leads_by_source: {
-    'website': 89,
-    'facebook': 34,
-    'sms': 18,
-    'craigslist': 15
-  },
-  leads_by_agent: {
-    'mo': 45,
-    'fred': 38,
-    'rio': 32,
-    'dewey': 25,
-    'unassigned': 16
-  },
-  leads_by_status: {
-    'new': 67,
-    'set': 45,
-    'show': 28,
-    'close': 16
-  },
-  recent_leads: []
+interface TrackingEvent {
+  id: string
+  event_type: string
+  source: string
+  vehicle_name?: string
+  session_id: string
+  created_at: string
+  ip_address?: string
 }
 
-export default function AnalyticsDashboard() {
-  const [user, setUser] = useState<any>(null)
-  const [analytics, setAnalytics] = useState<LeadAnalytics | null>(null)
+interface AnalyticsData {
+  total_events: number
+  phone_clicks: number
+  email_clicks: number
+  form_submissions: number
+  page_views: number
+  vehicle_interests: number
+  events_by_source: Record<string, number>
+  events_by_hour: Record<string, number>
+  recent_events: TrackingEvent[]
+  top_vehicles: Array<{ vehicle_name: string; count: number }>
+}
+
+export default function AnalyticsPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [dateRange, setDateRange] = useState('30d')
+  const [timeRange, setTimeRange] = useState('24h')
   const router = useRouter()
 
-  // Check admin authentication
   useEffect(() => {
-    const userData = localStorage.getItem('adminUser')
-    const isLoggedIn = localStorage.getItem('adminAuth')
-    
-    if (isLoggedIn === 'true' && userData) {
-      try {
-        if (userData.startsWith('{')) {
-          setUser(JSON.parse(userData))
-        } else {
-          setUser({
-            id: 1,
-            email: 'admin@unlimitedauto.com',
-            name: 'Admin User',
-            role: 'admin'
-          })
-        }
-      } catch (error) {
-        console.error('Error parsing user data:', error)
-        router.push('/admin/login')
-      }
+    // Check authentication
+    const auth = localStorage.getItem('adminAuth')
+    if (auth === 'true') {
+      setIsAuthenticated(true)
+      fetchAnalytics()
     } else {
       router.push('/admin/login')
     }
-  }, [router])
+  }, [router, timeRange])
 
-  // Fetch real analytics data
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      try {
-        const response = await fetch('/api/analytics')
-        if (response.ok) {
-          const data = await response.json()
-          // Transform the API response to match the expected format
-          const transformedAnalytics: LeadAnalytics = {
-            total_leads: data.analytics.eligible_unique_leads,
-            set_rate: data.analytics.set_rate,
-            show_rate: data.analytics.show_rate,
-            close_rate: data.analytics.close_rate,
-            leads_by_source: data.analytics.leads_by_source,
-            leads_by_agent: data.analytics.leads_by_agent,
-            leads_by_status: data.analytics.leads_by_status,
-            recent_leads: data.analytics.recent_leads
-          }
-          setAnalytics(transformedAnalytics)
-        } else {
-          console.error('Failed to fetch analytics')
-          // Fallback to sample data
-          setAnalytics(sampleAnalytics)
-        }
-      } catch (error) {
-        console.error('Error fetching analytics:', error)
-        // Fallback to sample data
-        setAnalytics(sampleAnalytics)
-      } finally {
-        setLoading(false)
+  const fetchAnalytics = async () => {
+    try {
+      const response = await fetch(`/api/analytics?timeRange=${timeRange}`)
+      if (response.ok) {
+        const data = await response.json()
+        setAnalytics(data.analytics)
+      } else {
+        console.error('Failed to fetch analytics')
       }
+    } catch (error) {
+      console.error('Error fetching analytics:', error)
+    } finally {
+      setLoading(false)
     }
-
-    fetchAnalytics()
-  }, [])
-
-  const handleLogout = () => {
-    localStorage.removeItem('adminAuth')
-    localStorage.removeItem('adminUser')
-    router.push('/admin/login')
   }
 
-  // Calculate KPI metrics
-  const kpiMetrics = analytics ? [
-    {
-      name: 'Set Rate',
-      value: `${(analytics.set_rate * 100).toFixed(1)}%`,
-      description: 'Appointments Set / Total Leads',
-      color: 'bg-blue-500',
-      change: '+2.3%'
-    },
-    {
-      name: 'Show Rate',
-      value: `${(analytics.show_rate * 100).toFixed(1)}%`,
-      description: 'Customers Showed / Appointments Set',
-      color: 'bg-green-500',
-      change: '+1.8%'
-    },
-    {
-      name: 'Close Rate',
-      value: `${(analytics.close_rate * 100).toFixed(1)}%`,
-      description: 'Deals Closed / Total Leads',
-      color: 'bg-purple-500',
-      change: '+0.9%'
-    },
-    {
-      name: 'Total Leads',
-      value: analytics.total_leads.toString(),
-      description: 'Leads received this period',
-      color: 'bg-orange-500',
-      change: '+12'
-    }
-  ] : [
-    {
-      name: 'Set Rate',
-      value: '...',
-      description: 'Loading...',
-      color: 'bg-gray-500',
-      change: '...'
-    },
-    {
-      name: 'Show Rate',
-      value: '...',
-      description: 'Loading...',
-      color: 'bg-gray-500',
-      change: '...'
-    },
-    {
-      name: 'Close Rate',
-      value: '...',
-      description: 'Loading...',
-      color: 'bg-gray-500',
-      change: '...'
-    },
-    {
-      name: 'Total Leads',
-      value: '...',
-      description: 'Loading...',
-      color: 'bg-gray-500',
-      change: '...'
-    }
-  ]
-
-  // Filter analytics based on user role
-  const getFilteredAnalytics = () => {
-    if (user?.role === 'sales_rep') {
-      // SR only sees their own stats
-      return {
-        ...analytics,
-        leads_by_agent: {
-          [user.name.toLowerCase()]: analytics.leads_by_agent[user.name.toLowerCase()] || 0
-        }
-      }
-    }
-    return analytics
+  if (!isAuthenticated) {
+    return <div>Loading...</div>
   }
 
-  const filteredAnalytics = getFilteredAnalytics()
-
-  if (!user) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading analytics...</p>
         </div>
       </div>
     )
   }
 
+  const eventTypeLabels = {
+    'phone_click': '📞 Phone Clicks',
+    'email_click': '📧 Email Clicks',
+    'form_submit': '📝 Form Submissions',
+    'page_view': '👁️ Page Views',
+    'vehicle_interest': '🚗 Vehicle Interests'
+  }
+
   return (
-    <AdminLayout>
-      <div className="min-h-screen bg-gray-50">
-        
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <header className="bg-white shadow">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-6">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
-                <p className="text-gray-600">Track performance and lead conversion metrics</p>
-              </div>
-              <div className="flex items-center space-x-4">
-                <select
-                  value={dateRange}
-                  onChange={(e) => setDateRange(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="7d">Last 7 days</option>
-                  <option value="30d">Last 30 days</option>
-                  <option value="90d">Last 90 days</option>
-                  <option value="1y">Last year</option>
-                </select>
-                <button
-                  onClick={handleLogout}
-                  className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
-                >
-                  Logout
-                </button>
-              </div>
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Funnel Analytics</h1>
+              <p className="text-gray-600 mt-2">Track every customer interaction and lead source</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <select
+                value={timeRange}
+                onChange={(e) => setTimeRange(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="1h">Last Hour</option>
+                <option value="24h">Last 24 Hours</option>
+                <option value="7d">Last 7 Days</option>
+                <option value="30d">Last 30 Days</option>
+              </select>
+              <button
+                onClick={fetchAnalytics}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+              >
+                Refresh
+              </button>
             </div>
           </div>
-        </header>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {kpiMetrics.map((metric) => (
-              <div key={metric.name} className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center">
-                  <div className={`w-12 h-12 ${metric.color} rounded-lg flex items-center justify-center mr-4`}>
-                    <span className="text-white font-bold text-lg">
-                      {metric.name === 'Set Rate' ? '📅' : 
-                       metric.name === 'Show Rate' ? '👥' : 
-                       metric.name === 'Close Rate' ? '💰' : '📊'}
-                    </span>
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600">{metric.name}</p>
-                    <p className="text-2xl font-bold text-gray-900">{metric.value}</p>
-                    <p className="text-sm text-gray-500">{metric.description}</p>
-                    <p className="text-sm text-green-600">{metric.change}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Leads by Source */}
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">Leads by Source</h2>
-              </div>
-              <div className="p-6">
-                <div className="space-y-4">
-                  {filteredAnalytics && filteredAnalytics.leads_by_source ? 
-                    Object.entries(filteredAnalytics.leads_by_source).map(([source, count]) => {
-                      const percentage = analytics && analytics.total_leads > 0 ? (count / analytics.total_leads * 100).toFixed(1) : '0.0'
-                      return (
-                        <div key={source} className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
-                            <span className="text-sm font-medium text-gray-900 capitalize">{source}</span>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-sm font-bold text-gray-900">{count}</span>
-                            <span className="text-sm text-gray-500 ml-2">({percentage}%)</span>
-                          </div>
-                        </div>
-                      )
-                    }) : (
-                      <div className="text-center text-gray-500 py-4">
-                        No lead source data available
-                      </div>
-                    )
-                  }
-                </div>
-              </div>
-            </div>
-
-            {/* Leads by Agent */}
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">Leads by Agent</h2>
-              </div>
-              <div className="p-6">
-                <div className="space-y-4">
-                  {filteredAnalytics && filteredAnalytics.leads_by_agent ? 
-                    Object.entries(filteredAnalytics.leads_by_agent).map(([agent, count]) => {
-                      const percentage = analytics && analytics.total_leads > 0 ? (count / analytics.total_leads * 100).toFixed(1) : '0.0'
-                      return (
-                        <div key={agent} className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                            <span className="text-sm font-medium text-gray-900 capitalize">{agent}</span>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-sm font-bold text-gray-900">{count}</span>
-                            <span className="text-sm text-gray-500 ml-2">({percentage}%)</span>
-                          </div>
-                        </div>
-                      )
-                    }) : (
-                      <div className="text-center text-gray-500 py-4">
-                        No agent data available
-                      </div>
-                    )
-                  }
-                </div>
-              </div>
-            </div>
-
-            {/* Lead Status Funnel */}
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">Lead Status Funnel</h2>
-              </div>
-              <div className="p-6">
-                <div className="space-y-4">
-                  {filteredAnalytics && filteredAnalytics.leads_by_status ? 
-                    Object.entries(filteredAnalytics.leads_by_status).map(([status, count], index) => {
-                      const statusLabels: Record<LeadStatus, string> = {
-                        'new': 'New Leads',
-                        'set': 'Appointments Set',
-                        'show': 'Customers Showed',
-                        'close': 'Deals Closed'
-                      }
-                      const statusColors = ['bg-blue-500', 'bg-yellow-500', 'bg-green-500', 'bg-purple-500']
-                      const percentage = analytics && analytics.total_leads > 0 ? (count / analytics.total_leads * 100).toFixed(1) : '0.0'
-                    
-                      return (
-                        <div key={status} className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <div className={`w-3 h-3 ${statusColors[index]} rounded-full mr-3`}></div>
-                            <span className="text-sm font-medium text-gray-900">{statusLabels[status as LeadStatus]}</span>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-sm font-bold text-gray-900">{count}</span>
-                            <span className="text-sm text-gray-500 ml-2">({percentage}%)</span>
-                          </div>
-                        </div>
-                      )
-                    }) : (
-                      <div className="text-center text-gray-500 py-4">
-                        No status data available
-                      </div>
-                    )
-                  }
-                </div>
-              </div>
-            </div>
-
-            {/* Performance Summary */}
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">Performance Summary</h2>
-              </div>
-              <div className="p-6">
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Conversion Rate</span>
-                    <span className="text-sm font-bold text-gray-900">23.0%</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Avg. Time to Set</span>
-                    <span className="text-sm font-bold text-gray-900">2.3 hours</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Avg. Time to Show</span>
-                    <span className="text-sm font-bold text-gray-900">3.2 days</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Avg. Time to Close</span>
-                    <span className="text-sm font-bold text-gray-900">7.8 days</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Revenue per Lead</span>
-                    <span className="text-sm font-bold text-gray-900">$1,247</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Role-specific insights */}
-          {user?.role === 'sales_rep' && (
-            <div className="mt-8 bg-blue-50 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-blue-900 mb-4">Your Performance</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-900">
-                    {filteredAnalytics && filteredAnalytics.leads_by_agent ? 
-                      (filteredAnalytics.leads_by_agent[user.name.toLowerCase()] || 0) : 0
-                    }
-                  </div>
-                  <div className="text-sm text-blue-700">Leads Assigned</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-900">87%</div>
-                  <div className="text-sm text-blue-700">Follow-up Rate</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-900">4.2</div>
-                  <div className="text-sm text-blue-700">Avg. Response Time (hrs)</div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
+
+        {analytics && (
+          <>
+            {/* Key Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center">
+                  <div className="text-3xl">📊</div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">Total Events</p>
+                    <p className="text-2xl font-bold text-gray-900">{analytics.total_events}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center">
+                  <div className="text-3xl">📞</div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">Phone Clicks</p>
+                    <p className="text-2xl font-bold text-green-600">{analytics.phone_clicks}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center">
+                  <div className="text-3xl">📧</div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">Email Clicks</p>
+                    <p className="text-2xl font-bold text-blue-600">{analytics.email_clicks}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center">
+                  <div className="text-3xl">📝</div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">Form Submissions</p>
+                    <p className="text-2xl font-bold text-purple-600">{analytics.form_submissions}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-center">
+                  <div className="text-3xl">🚗</div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">Vehicle Interests</p>
+                    <p className="text-2xl font-bold text-orange-600">{analytics.vehicle_interests}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Charts Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+              {/* Events by Source */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Events by Source</h3>
+                <div className="space-y-3">
+                  {Object.entries(analytics.events_by_source).map(([source, count]) => (
+                    <div key={source} className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-600 capitalize">{source.replace('_', ' ')}</span>
+                      <div className="flex items-center">
+                        <div className="w-32 bg-gray-200 rounded-full h-2 mr-3">
+                          <div 
+                            className="bg-blue-600 h-2 rounded-full" 
+                            style={{ width: `${(count / analytics.total_events) * 100}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm font-bold text-gray-900">{count}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Top Vehicles */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Most Viewed Vehicles</h3>
+                <div className="space-y-3">
+                  {analytics.top_vehicles.slice(0, 5).map((vehicle, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-600 truncate">{vehicle.vehicle_name}</span>
+                      <div className="flex items-center">
+                        <div className="w-24 bg-gray-200 rounded-full h-2 mr-3">
+                          <div 
+                            className="bg-green-600 h-2 rounded-full" 
+                            style={{ width: `${(vehicle.count / Math.max(...analytics.top_vehicles.map(v => v.count))) * 100}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm font-bold text-gray-900">{vehicle.count}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Events */}
+            <div className="bg-white rounded-lg shadow">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Recent Events</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Session</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {analytics.recent_events.map((event) => (
+                      <tr key={event.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(event.created_at).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {eventTypeLabels[event.event_type as keyof typeof eventTypeLabels] || event.event_type}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize">
+                          {event.source.replace('_', ' ')}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                          {event.vehicle_name || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+                          {event.session_id.slice(-8)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
       </div>
-    </AdminLayout>
+    </div>
   )
 }

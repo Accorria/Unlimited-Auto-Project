@@ -96,7 +96,6 @@ type FormData = {
   jointApplicantSignatureName: string;
   applicantSignatureDate: string;
   jointApplicantSignatureDate: string;
-  programType: string;
   customDownPayment: string;
 };
 
@@ -169,6 +168,28 @@ export default function CreditApplicationForm() {
     }
     fetchVehicles()
   }, [])
+
+  // Track incomplete leads when user starts filling out form
+  const trackIncompleteLead = async (formStep: string) => {
+    if (data.applicant.firstName || data.applicant.homePhone || data.applicant.email) {
+      try {
+        await fetch('/api/leads/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            firstName: data.applicant.firstName,
+            lastName: data.applicant.lastName,
+            phone: data.applicant.homePhone,
+            email: data.applicant.email,
+            formStep: formStep,
+            source: 'credit_application'
+          })
+        })
+      } catch (error) {
+        console.error('Error tracking incomplete lead:', error)
+      }
+    }
+  }
 
   // Phone number formatting function
   const formatPhoneNumber = (value: string) => {
@@ -367,18 +388,32 @@ export default function CreditApplicationForm() {
     jointApplicantSignature: false,
     applicantSignatureName: "",
     jointApplicantSignatureName: "",
-    applicantSignatureDate: "",
-    jointApplicantSignatureDate: "",
-    programType: "",
+    applicantSignatureDate: new Date().toISOString().split('T')[0], // Today's date
+    jointApplicantSignatureDate: new Date().toISOString().split('T')[0], // Today's date
     customDownPayment: "",
   });
 
   function set<K extends keyof FormData>(key: K, value: FormData[K]) {
-    setData((d) => ({ ...d, [key]: value }));
+    setData((d) => {
+      const newData = { ...d, [key]: value };
+      
+      // Auto-update signature name when applicant name changes
+      if (key === 'applicant' && typeof value === 'object' && value !== null) {
+        const applicant = value as Applicant;
+        if (applicant.firstName || applicant.lastName) {
+          newData.applicantSignatureName = `${applicant.firstName} ${applicant.lastName}`.trim();
+        }
+      }
+      
+      return newData;
+    });
   }
 
   function validate(): string[] {
     const e: string[] = [];
+    
+    console.log('🔍 VALIDATING FORM DATA:', data);
+    
     if (!data.applicant.firstName || !data.applicant.lastName) e.push("Applicant full name is required.");
     if (!data.applicant.homePhone) e.push("Applicant phone is required.");
     if (!data.applicant.streetAddress) e.push("Applicant address is required.");
@@ -389,8 +424,16 @@ export default function CreditApplicationForm() {
     if (!data.financing.vehicleId) e.push("Please select a vehicle from inventory.");
     // Condition is auto-populated from vehicle selection
     if (!data.financing.salesPrice) e.push("Sales price is required.");
+    console.log('🔍 SIGNATURE VALIDATION:', {
+      applicantSignature: data.applicantSignature,
+      applicantSignatureName: data.applicantSignatureName,
+      applicantSignatureDate: data.applicantSignatureDate,
+      applicantName: `${data.applicant.firstName} ${data.applicant.lastName}`.trim()
+    });
+    
     if (!data.applicantSignature || !data.applicantSignatureName)
       e.push("Applicant must sign and print name.");
+    if (!data.applicantSignatureDate) e.push("Applicant signature date is required.");
     if (data.jointApplicantEnabled) {
       if (!data.jointApplicant.firstName || !data.jointApplicant.lastName) e.push("Joint applicant full name is required.");
       if (!data.jointApplicant.homePhone) e.push("Joint applicant phone is required.");
@@ -398,34 +441,73 @@ export default function CreditApplicationForm() {
       if (!data.jointApplicant.socialSecurityNumber) e.push("Joint applicant SSN (last 4 digits) is required.");
       if (!data.jointApplicantSignature || !data.jointApplicantSignatureName)
         e.push("Joint applicant must sign and print name.");
+      if (!data.jointApplicantSignatureDate) e.push("Joint applicant signature date is required.");
     }
+    
+    console.log('❌ VALIDATION ERRORS:', e);
     return e;
   }
 
   async function onSubmit(ev: React.FormEvent) {
     ev.preventDefault();
-    console.log('Form submitted!', data);
+    console.log('🚀 FORM SUBMIT CLICKED!', data);
+    console.log('🔍 Form event:', ev);
+    console.log('🔍 Current loading state:', loading);
     setOk(null);
+    setErrors([]);
+    
     const e = validate();
-    console.log('Validation errors:', e);
+    console.log('🔍 Validation errors:', e);
+    
     if (e.length) {
+      console.log('❌ Validation failed:', e);
       setErrors(e);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      // Only scroll to top if there are validation errors on form submission
+      // Don't scroll if this is triggered by document upload
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }, 100);
       return;
     }
-    setErrors([]);
+    
+    console.log('✅ Validation passed, submitting...');
     setLoading(true);
+    
     try {
+      console.log('📤 Sending request to /api/applications...');
+      console.log('📎 Documents to send:', documents);
+      
+      const requestData = {
+        ...data,
+        documents: documents.map(doc => ({
+          type: doc.type,
+          url: doc.url,
+          uploaded: doc.uploaded
+        }))
+      };
+      
       const res = await fetch("/api/applications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(requestData),
       });
-      if (!res.ok) throw new Error(await res.text());
+      
+      console.log('📥 Response received:', res.status, res.statusText);
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('❌ API Error:', errorText);
+        throw new Error(errorText);
+      }
+      
       const result = await res.json();
-      setOk(`Application submitted successfully! ✅ We'll contact you within 24 hours. Lead ID: ${result.leadId}`);
+      console.log('✅ Success response:', result);
+      
+      setOk(`Application submitted successfully! ✅ We'll contact you within 24 hours. Thank you for submitting your application.`);
+      
       // Scroll to top to show success message
       window.scrollTo({ top: 0, behavior: "smooth" });
+      
       // Reset form
       setData((d) => ({
         ...d,
@@ -436,12 +518,13 @@ export default function CreditApplicationForm() {
         jointApplicantSignature: false,
         applicantSignatureName: "",
         jointApplicantSignatureName: "",
-        applicantSignatureDate: "",
-        jointApplicantSignatureDate: "",
-        programType: "",
+        applicantSignatureDate: new Date().toISOString().split('T')[0],
+        jointApplicantSignatureDate: new Date().toISOString().split('T')[0],
         customDownPayment: "",
       }));
+      
     } catch (err: any) {
+      console.error('❌ Form submission error:', err);
       setErrors([err.message || "Submission failed."]);
     } finally {
       setLoading(false);
@@ -481,26 +564,37 @@ export default function CreditApplicationForm() {
       </div>
 
       {errors.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <h3 className="font-semibold text-red-800 mb-2">Please fix the following errors:</h3>
-          <ul className="list-disc list-inside text-red-700 space-y-1">
+        <div className="bg-red-50 border-2 border-red-300 rounded-lg p-6 mb-6 shadow-lg">
+          <h3 className="font-bold text-red-900 mb-3 text-lg">❌ Please fix the following errors:</h3>
+          <ul className="list-disc list-inside text-red-800 space-y-2">
             {errors.map((error, i) => (
-              <li key={i}>{error}</li>
+              <li key={i} className="font-medium">{error}</li>
             ))}
           </ul>
         </div>
       )}
 
-      {ok && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-          <p className="text-green-800">{ok}</p>
+      {loading && (
+        <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-6 mb-6 shadow-lg">
+          <div className="flex items-center">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-3"></div>
+            <span className="text-blue-800 font-medium">Submitting your application...</span>
+          </div>
         </div>
       )}
+
+      {ok && (
+        <div className="bg-green-50 border-2 border-green-300 rounded-lg p-6 mb-6 shadow-lg">
+          <h3 className="font-bold text-green-900 mb-2 text-lg">✅ Success!</h3>
+          <p className="text-green-800 text-lg font-medium">{ok}</p>
+        </div>
+      )}
+
 
       <form onSubmit={onSubmit} className="space-y-8">
         {/* APPLICANT INFORMATION */}
         <div className="bg-gray-50 p-6 rounded-lg">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">APPLICANT INFORMATION (MARRIED MAY APPLY AS AN INDIVIDUAL)</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">APPLICANT INFORMATION</h2>
           
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">APPLICANT (PRINCIPAL DRIVER OF VEHICLE)</h3>
@@ -509,21 +603,13 @@ export default function CreditApplicationForm() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">FULL NAME</label>
                 <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                  <div className="hidden sm:flex">
-                    <select
-                      value={data.applicant.srJr}
-                      onChange={(e) => set("applicant", { ...data.applicant, srJr: e.target.value })}
-                      className="px-3 py-2 border border-gray-300 rounded-md"
-                    >
-                      <option value="">SR/JR</option>
-                      <option value="SR">SR</option>
-                      <option value="JR">JR</option>
-                    </select>
-                  </div>
                     <input
                       type="text"
                       value={data.applicant.firstName}
-                      onChange={(e) => set("applicant", { ...data.applicant, firstName: e.target.value })}
+                      onChange={(e) => {
+                        set("applicant", { ...data.applicant, firstName: e.target.value });
+                        trackIncompleteLead('applicant_name');
+                      }}
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
                       placeholder="First Name"
                       autoComplete="given-name"
@@ -628,49 +714,28 @@ export default function CreditApplicationForm() {
                   value={data.applicant.dateOfBirth}
                   onChange={(e) => {
                     const birthDate = e.target.value;
-                    const age = birthDate ? Math.floor((new Date().getTime() - new Date(birthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : '';
-                    set("applicant", { ...data.applicant, dateOfBirth: birthDate, age: age.toString() });
+                    set("applicant", { ...data.applicant, dateOfBirth: birthDate });
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">AGE</label>
-                <input
-                  type="text"
-                  value={data.applicant.age}
-                  readOnly
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
-                  placeholder="Auto-calculated"
-                />
-              </div>
-              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">HOME PHONE</label>
-                <input
-                  type="tel"
-                  value={data.applicant.homePhone}
-                  onChange={(e) => set("applicant", { ...data.applicant, homePhone: formatPhoneNumber(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  required
-                />
+                  <input
+                    type="tel"
+                    value={data.applicant.homePhone}
+                    onChange={(e) => {
+                      set("applicant", { ...data.applicant, homePhone: formatPhoneNumber(e.target.value) });
+                      trackIncompleteLead('applicant_phone');
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    required
+                  />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">MONTHLY PAYMENT $</label>
-                <select
-                  value={data.applicant.monthlyPayment}
-                  onChange={(e) => set("applicant", { ...data.applicant, monthlyPayment: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                >
-                  <option value="">Select Amount</option>
-                  {monthlyPaymentOptions.map((amount) => (
-                    <option key={amount} value={amount}>{amount}</option>
-                  ))}
-                </select>
-              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">HOUSING STATUS</label>
                 <select
@@ -683,6 +748,19 @@ export default function CreditApplicationForm() {
                   <option value="rent">RENT/LEASE</option>
                   <option value="relative">LIVE WITH RELATIVE</option>
                   <option value="other">OTHER</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">MONTHLY PAYMENT $</label>
+                <select
+                  value={data.applicant.monthlyPayment}
+                  onChange={(e) => set("applicant", { ...data.applicant, monthlyPayment: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="">Select Amount</option>
+                  {monthlyPaymentOptions.map((amount) => (
+                    <option key={amount} value={amount}>{amount}</option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -702,54 +780,10 @@ export default function CreditApplicationForm() {
                   required
                 >
                   <option value="">Select duration...</option>
-                  <option value="0-0">Less than 1 month</option>
-                  <option value="0-1">1 month</option>
-                  <option value="0-2">2 months</option>
-                  <option value="0-3">3 months</option>
-                  <option value="0-4">4 months</option>
-                  <option value="0-5">5 months</option>
                   <option value="0-6">6 months</option>
-                  <option value="0-7">7 months</option>
-                  <option value="0-8">8 months</option>
-                  <option value="0-9">9 months</option>
-                  <option value="0-10">10 months</option>
-                  <option value="0-11">11 months</option>
                   <option value="1-0">1 year</option>
-                  <option value="1-1">1 year 1 month</option>
-                  <option value="1-2">1 year 2 months</option>
-                  <option value="1-3">1 year 3 months</option>
-                  <option value="1-4">1 year 4 months</option>
-                  <option value="1-5">1 year 5 months</option>
-                  <option value="1-6">1 year 6 months</option>
-                  <option value="1-7">1 year 7 months</option>
-                  <option value="1-8">1 year 8 months</option>
-                  <option value="1-9">1 year 9 months</option>
-                  <option value="1-10">1 year 10 months</option>
-                  <option value="1-11">1 year 11 months</option>
                   <option value="2-0">2 years</option>
-                  <option value="2-1">2 years 1 month</option>
-                  <option value="2-2">2 years 2 months</option>
-                  <option value="2-3">2 years 3 months</option>
-                  <option value="2-4">2 years 4 months</option>
-                  <option value="2-5">2 years 5 months</option>
-                  <option value="2-6">2 years 6 months</option>
-                  <option value="2-7">2 years 7 months</option>
-                  <option value="2-8">2 years 8 months</option>
-                  <option value="2-9">2 years 9 months</option>
-                  <option value="2-10">2 years 10 months</option>
-                  <option value="2-11">2 years 11 months</option>
                   <option value="3-0">3 years</option>
-                  <option value="3-1">3 years 1 month</option>
-                  <option value="3-2">3 years 2 months</option>
-                  <option value="3-3">3 years 3 months</option>
-                  <option value="3-4">3 years 4 months</option>
-                  <option value="3-5">3 years 5 months</option>
-                  <option value="3-6">3 years 6 months</option>
-                  <option value="3-7">3 years 7 months</option>
-                  <option value="3-8">3 years 8 months</option>
-                  <option value="3-9">3 years 9 months</option>
-                  <option value="3-10">3 years 10 months</option>
-                  <option value="3-11">3 years 11 months</option>
                   <option value="4-0">4 years</option>
                   <option value="5-0">5 years</option>
                   <option value="6-0">6 years</option>
@@ -850,7 +884,7 @@ export default function CreditApplicationForm() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">WORK PHONE</label>
                   <input
@@ -861,42 +895,21 @@ export default function CreditApplicationForm() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">ANNUAL SALARY $</label>
-                  <input
-                    type="text"
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ANNUAL AMOUNT $</label>
+                  <select
                     value={data.applicant.annualAmount}
                     onChange={(e) => set("applicant", { ...data.applicant, annualAmount: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="Enter annual salary"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">PREVIOUS EMPLOYER OR SCHOOL</label>
-                  <input
-                    type="text"
-                    value={data.applicant.previousEmployerOrSchool}
-                    onChange={(e) => set("applicant", { ...data.applicant, previousEmployerOrSchool: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">HOW LONG?</label>
-                  <select
-                    value={data.applicant.previousHowLongDuration}
-                    onChange={(e) => set("applicant", { ...data.applicant, previousHowLongDuration: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   >
-                    <option value="">Select Duration</option>
-                    {employmentDurationOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
+                    <option value="">Select Annual Amount</option>
+                    {annualIncomeOptions.map((income) => (
+                      <option key={income} value={income}>{income}</option>
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">OTHER INCOME SOURCE</label>
                   <input
@@ -948,17 +961,6 @@ export default function CreditApplicationForm() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">FULL NAME</label>
                   <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                    <div className="hidden sm:flex">
-                      <select
-                        value={data.jointApplicant.srJr}
-                        onChange={(e) => set("jointApplicant", { ...data.jointApplicant, srJr: e.target.value })}
-                        className="px-3 py-2 border border-gray-300 rounded-md"
-                      >
-                        <option value="">SR/JR</option>
-                        <option value="SR">SR</option>
-                        <option value="JR">JR</option>
-                      </select>
-                    </div>
                     <input
                       type="text"
                       value={data.jointApplicant.firstName}
@@ -1028,11 +1030,17 @@ export default function CreditApplicationForm() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   >
                     <option value="">Select Duration</option>
-                    {addressDurationOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
+                    <option value="0-6">6 months</option>
+                    <option value="1-0">1 year</option>
+                    <option value="2-0">2 years</option>
+                    <option value="3-0">3 years</option>
+                    <option value="4-0">4 years</option>
+                    <option value="5-0">5 years</option>
+                    <option value="6-0">6 years</option>
+                    <option value="7-0">7 years</option>
+                    <option value="8-0">8 years</option>
+                    <option value="9-0">9 years</option>
+                    <option value="10-0">10+ years</option>
                   </select>
                 </div>
               </div>
@@ -1077,20 +1085,9 @@ export default function CreditApplicationForm() {
                     value={data.jointApplicant.dateOfBirth}
                     onChange={(e) => {
                       const birthDate = e.target.value;
-                      const age = birthDate ? Math.floor((new Date().getTime() - new Date(birthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000)) : '';
-                      set("jointApplicant", { ...data.jointApplicant, dateOfBirth: birthDate, age: age.toString() });
+                      set("jointApplicant", { ...data.jointApplicant, dateOfBirth: birthDate });
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">AGE</label>
-                  <input
-                    type="text"
-                    value={data.jointApplicant.age}
-                    readOnly
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
-                    placeholder="Auto-calculated"
                   />
                 </div>
                 <div>
@@ -1106,19 +1103,6 @@ export default function CreditApplicationForm() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">MONTHLY PAYMENT $</label>
-                  <select
-                    value={data.jointApplicant.monthlyPayment}
-                    onChange={(e) => set("jointApplicant", { ...data.jointApplicant, monthlyPayment: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  >
-                    <option value="">Select Amount</option>
-                    {monthlyPaymentOptions.map((amount) => (
-                      <option key={amount} value={amount}>{amount}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">HOUSING STATUS</label>
                   <select
                     value={data.jointApplicant.housingStatus}
@@ -1130,6 +1114,19 @@ export default function CreditApplicationForm() {
                     <option value="rent">RENT/LEASE</option>
                     <option value="relative">LIVE WITH RELATIVE</option>
                     <option value="other">OTHER</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">MONTHLY PAYMENT $</label>
+                  <select
+                    value={data.jointApplicant.monthlyPayment}
+                    onChange={(e) => set("jointApplicant", { ...data.jointApplicant, monthlyPayment: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="">Select Amount</option>
+                    {monthlyPaymentOptions.map((amount) => (
+                      <option key={amount} value={amount}>{amount}</option>
+                    ))}
                   </select>
                 </div>
               <div>
@@ -1239,7 +1236,7 @@ export default function CreditApplicationForm() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">WORK PHONE</label>
                     <input
@@ -1250,58 +1247,21 @@ export default function CreditApplicationForm() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">GROSS ANNUAL SALARY $</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ANNUAL AMOUNT $</label>
                     <select
-                      value={data.jointApplicant.grossAnnualSalary}
-                      onChange={(e) => set("jointApplicant", { ...data.jointApplicant, grossAnnualSalary: e.target.value })}
+                      value={data.jointApplicant.annualAmount}
+                      onChange={(e) => set("jointApplicant", { ...data.jointApplicant, annualAmount: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     >
-                      <option value="">Select Annual Income</option>
+                      <option value="">Select Annual Amount</option>
                       {annualIncomeOptions.map((income) => (
                         <option key={income} value={income}>{income}</option>
                       ))}
                     </select>
                   </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">ANNUAL AMOUNT $</label>
-                      <select
-                        value={data.jointApplicant.annualAmount}
-                        onChange={(e) => set("jointApplicant", { ...data.jointApplicant, annualAmount: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      >
-                        <option value="">Select Annual Amount</option>
-                        {annualIncomeOptions.map((income) => (
-                          <option key={income} value={income}>{income}</option>
-                        ))}
-                      </select>
-                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">PREVIOUS EMPLOYER OR SCHOOL</label>
-                    <input
-                      type="text"
-                      value={data.jointApplicant.previousEmployerOrSchool}
-                      onChange={(e) => set("jointApplicant", { ...data.jointApplicant, previousEmployerOrSchool: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">HOW LONG?</label>
-                    <select
-                      value={data.jointApplicant.previousHowLongDuration}
-                      onChange={(e) => set("jointApplicant", { ...data.jointApplicant, previousHowLongDuration: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    >
-                      <option value="">Select Duration</option>
-                      {employmentDurationOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">OTHER INCOME SOURCE</label>
                     <input
@@ -1512,7 +1472,10 @@ export default function CreditApplicationForm() {
                   <input
                     type="text"
                     value={data.applicantSignatureName || `${data.applicant.firstName} ${data.applicant.lastName}`.trim()}
-                    onChange={(e) => set("applicantSignatureName", e.target.value)}
+                    onChange={(e) => {
+                      console.log('📝 Signature name changed:', e.target.value);
+                      set("applicantSignatureName", e.target.value);
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     placeholder="Print Full Name"
                     required
@@ -1537,16 +1500,44 @@ export default function CreditApplicationForm() {
                     maxLength={4}
                     required
                   />
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={data.applicantSignature}
-                      onChange={(e) => set("applicantSignature", e.target.checked)}
-                      className="mr-2"
-                      required
-                    />
-                    <span className="text-sm text-gray-700">I agree to the terms and authorize this application</span>
-                  </label>
+                  <div className="flex items-center p-3 bg-white border border-gray-300 rounded">
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        id="applicantSignature"
+                        checked={data.applicantSignature}
+                        onChange={(e) => {
+                          console.log('🔘 Checkbox onChange triggered!', e.target.checked);
+                          console.log('🔘 Current state before change:', data.applicantSignature);
+                          set("applicantSignature", e.target.checked);
+                          console.log('🔘 State should now be:', e.target.checked);
+                        }}
+                        className="mr-3 w-5 h-5 text-green-600 bg-white border-2 border-gray-600 rounded focus:ring-green-500 cursor-pointer appearance-none transition-all duration-200 hover:border-green-500"
+                        required
+                      />
+                      {data.applicantSignature && (
+                        <div className="absolute top-0 left-0 w-5 h-5 flex items-center justify-center pointer-events-none">
+                          <svg 
+                            className="w-3 h-3 text-green-600" 
+                            fill="currentColor" 
+                            viewBox="0 0 20 20"
+                          >
+                            <path 
+                              fillRule="evenodd" 
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" 
+                              clipRule="evenodd" 
+                            />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    <label 
+                      htmlFor="applicantSignature" 
+                      className="text-sm text-gray-900 cursor-pointer"
+                    >
+                      I agree to the terms and authorize this application
+                    </label>
+                  </div>
                 </div>
               </div>
               
@@ -1603,15 +1594,6 @@ export default function CreditApplicationForm() {
               </p>
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Program Type</label>
-              <input
-                type="text"
-                value={data.programType}
-                onChange={(e) => set("programType", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
           </div>
         </div>
 
@@ -1622,9 +1604,20 @@ export default function CreditApplicationForm() {
           <button
             type="submit"
             disabled={loading}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold py-3 px-8 rounded-lg text-lg transition-colors"
+            onClick={(e) => {
+              console.log('🔘 BUTTON CLICKED!', { loading, data });
+              console.log('🔍 Current form data:', JSON.stringify(data, null, 2));
+            }}
+            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold py-4 px-12 rounded-lg text-xl transition-all duration-200 transform hover:scale-105 disabled:scale-100 shadow-lg hover:shadow-xl"
           >
-            {loading ? "Submitting..." : "Submit Credit Application"}
+            {loading ? (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                Submitting...
+              </div>
+            ) : (
+              "Submit Credit Application"
+            )}
           </button>
         </div>
       </form>

@@ -605,6 +605,55 @@ export default function LeadsManagement() {
                       </div>
                     </div>
 
+                    {/* Documents Section */}
+                    {selectedLead.documents && (() => {
+                      try {
+                        const documents = JSON.parse(selectedLead.documents);
+                        return (
+                          <div className="bg-green-50 p-4 rounded-lg">
+                            <h4 className="text-lg font-semibold text-green-900 mb-4">📎 Uploaded Documents</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {documents.map((doc: any, index: number) => (
+                                <div key={index} className="bg-white p-3 rounded border">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <p className="text-sm font-medium text-gray-900">
+                                        {doc.type === 'drivers_license' ? 'Driver\'s License' :
+                                         doc.type === 'pay_stub_1' ? 'Pay Stub #1' :
+                                         doc.type === 'pay_stub_2' ? 'Pay Stub #2' :
+                                         doc.type === 'bank_statement' ? 'Bank Statement' :
+                                         'Other Document'}
+                                      </p>
+                                      <p className="text-xs text-gray-500">
+                                        {doc.uploaded ? '✅ Uploaded' : '⏳ Pending'}
+                                      </p>
+                                    </div>
+                                    {doc.url && (
+                                      <a
+                                        href={doc.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                      >
+                                        View →
+                                      </a>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      } catch (error) {
+                        return (
+                          <div className="bg-red-50 p-4 rounded-lg">
+                            <h4 className="text-lg font-semibold text-red-900 mb-2">Error Loading Documents</h4>
+                            <p className="text-sm text-red-700">Unable to parse document information.</p>
+                          </div>
+                        );
+                      }
+                    })()}
+
                     {/* Credit Application Details */}
                     {selectedLead.notes && (() => {
                       try {

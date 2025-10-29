@@ -5,42 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import AdminLayout from '@/components/AdminLayout'
 
-// Sample data - in production, this would come from an API
-const sampleVehicles = [
-  {
-    id: 1,
-    year: 2020,
-    make: 'Honda',
-    model: 'Civic',
-    trim: 'LX',
-    price: 18995,
-    miles: 45000,
-    condition: 'Excellent',
-    status: 'active'
-  },
-  {
-    id: 2,
-    year: 2019,
-    make: 'Toyota',
-    model: 'Camry',
-    trim: 'LE',
-    price: 21995,
-    miles: 38000,
-    condition: 'Very Good',
-    status: 'active'
-  },
-  {
-    id: 3,
-    year: 2021,
-    make: 'Nissan',
-    model: 'Altima',
-    trim: 'SV',
-    price: 23995,
-    miles: 25000,
-    condition: 'Like New',
-    status: 'sold'
-  }
-]
+// Real vehicle data will be fetched from API
 
 export default function AdminDashboard() {
   const [user, setUser] = useState<any>(null)
@@ -82,27 +47,37 @@ export default function AdminDashboard() {
   }
 
   const [analytics, setAnalytics] = useState<any>(null)
+  const [vehicles, setVehicles] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Fetch real analytics data
+  // Fetch real analytics and vehicle data
   useEffect(() => {
-    const fetchAnalytics = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('/api/analytics')
-        if (response.ok) {
-          const data = await response.json()
-          setAnalytics(data.analytics)
+        // Fetch analytics
+        const analyticsResponse = await fetch('/api/analytics')
+        if (analyticsResponse.ok) {
+          const analyticsData = await analyticsResponse.json()
+          setAnalytics(analyticsData.analytics)
         } else {
           console.error('Failed to fetch analytics')
         }
+
+        // Fetch recent vehicles
+        const vehiclesResponse = await fetch('/api/vehicles?dealer=unlimited-auto')
+        if (vehiclesResponse.ok) {
+          const vehiclesData = await vehiclesResponse.json()
+          // Get the 3 most recent vehicles
+          setVehicles(vehiclesData.vehicles?.slice(0, 3) || [])
+        }
       } catch (error) {
-        console.error('Error fetching analytics:', error)
+        console.error('Error fetching data:', error)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchAnalytics()
+    fetchData()
   }, [])
 
   // Toyota SmartPath KPIs
@@ -340,22 +315,22 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {sampleVehicles.map((vehicle) => (
+                  {vehicles.map((vehicle) => (
                     <tr key={vehicle.id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim}
+                          {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim || ''}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">${vehicle.price.toLocaleString()}</div>
+                        <div className="text-sm text-gray-900">${vehicle.price?.toLocaleString() || 'N/A'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{vehicle.miles.toLocaleString()}</div>
+                        <div className="text-sm text-gray-900">{vehicle.miles?.toLocaleString() || 'N/A'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                          {vehicle.condition}
+                          {vehicle.condition || 'N/A'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -364,7 +339,7 @@ export default function AdminDashboard() {
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-gray-100 text-gray-800'
                         }`}>
-                          {vehicle.status}
+                          {vehicle.status || 'Unknown'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
