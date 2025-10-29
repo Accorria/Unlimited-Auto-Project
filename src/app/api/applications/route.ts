@@ -154,9 +154,10 @@ export async function POST(req: NextRequest) {
       .select()
       .single()
 
+    // If DB insert fails (e.g., RLS or env misconfig in prod), don't block the user.
+    // We'll still send the notification email so the dealership receives the application.
     if (leadError) {
-      console.error('Error inserting lead:', leadError)
-      return NextResponse.json({ error: 'Failed to submit application' }, { status: 500 })
+      console.error('Error inserting lead (non-blocking):', leadError)
     }
 
     console.log('Credit application submitted successfully:', lead.id)
@@ -167,7 +168,7 @@ export async function POST(req: NextRequest) {
         await resend.emails.send({
         from: 'Unlimited Auto <onboarding@resend.dev>',
         to: 'unlimitedautoredford@gmail.com',
-        subject: `New Credit Application from ${lead.name} - Unlimited Auto`,
+        subject: `New Credit Application from ${lead?.name || body.applicant?.firstName || 'Applicant'} - Unlimited Auto`,
         html: `
           <h2>New Credit Application Received!</h2>
           
@@ -247,8 +248,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ 
       success: true, 
-      leadId: lead.id,
-      message: 'Credit application submitted successfully! We\'ll contact you within 24 hours.' 
+      leadId: lead?.id || null,
+      message: 'Application received! We\'ll contact you within 24 hours.' 
     })
 
   } catch (error: any) {
