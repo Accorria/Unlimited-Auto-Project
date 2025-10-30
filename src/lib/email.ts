@@ -6,7 +6,7 @@ export async function sendEmail({
   to,
   subject,
   html,
-  from = 'noreply@unlimitedautorepaircollision.com'
+  from = 'onboarding@resend.dev'
 }: {
   to: string
   subject: string
