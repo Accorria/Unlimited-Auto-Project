@@ -133,9 +133,9 @@ export default function FeaturedVehicles() {
                   fill
                   className="object-cover"
                 />
-                {/* Only show $999 Down badge, positioned to not touch the car */}
+                {/* Down payment badge from vehicle data with $999 fallback */}
                 <div className="absolute top-2 left-2 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-bold shadow-lg">
-                  $999 Down
+                  {`$${(((vehicle as any).downPayment ?? 999)).toLocaleString()} Down`}
                 </div>
               </div>
 
