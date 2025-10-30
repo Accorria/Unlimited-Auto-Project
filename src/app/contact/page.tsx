@@ -26,6 +26,8 @@ export default function ContactPage() {
   const [source, setSource] = useState('contact_form')
   const [vehicleId, setVehicleId] = useState('')
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [success, setSuccess] = useState('')
+  const [error, setError] = useState('')
 
   useEffect(() => {
     // Check if user came from a vehicle page
