@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     // Send email notification for incomplete leads with contact info
     if (body.firstName || body.phone || body.email) {
       await sendEmail({
-        to: 'unlimitedautosales@gmail.com',
+        to: 'unlimitedautoredford@gmail.com',
         subject: `🚨 Incomplete Lead: ${body.firstName || 'Unknown'}`,
         html: `
           <h2>Incomplete Lead Captured</h2>

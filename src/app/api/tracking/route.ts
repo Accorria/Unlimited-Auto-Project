@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     // Send email notification to unlimitedautosales@gmail.com
     try {
       await sendEmail({
-        to: 'unlimitedautosales@gmail.com',
+        to: 'unlimitedautoredford@gmail.com',
         subject: `🚗 New ${body.eventType} from your website`,
         html: `
           <h2>New ${body.eventType} from your website</h2>
@@ -155,12 +155,12 @@ async function sendTrackingNotification(trackingData: any, dealer: any) {
 
     await resend.emails.send({
       from: 'Unlimited Auto Funnel <noreply@unlimitedauto.com>',
-      to: ['unlimitedautosales@gmail.com'],
+      to: ['unlimitedautoredford@gmail.com'],
       subject: `🚗 Customer Interaction: ${eventTypeLabels[trackingData.event_type as keyof typeof eventTypeLabels] || trackingData.event_type}`,
       html: emailHtml,
     })
 
-    console.log('📧 Tracking notification sent to unlimitedautosales@gmail.com')
+    console.log('📧 Tracking notification sent to unlimitedautoredford@gmail.com')
   } catch (error) {
     console.error('Error sending tracking notification:', error)
   }
