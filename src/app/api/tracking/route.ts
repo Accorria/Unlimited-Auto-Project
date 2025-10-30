@@ -154,7 +154,7 @@ async function sendTrackingNotification(trackingData: any, dealer: any) {
     `
 
     await resend.emails.send({
-      from: 'Unlimited Auto Funnel <noreply@unlimitedauto.com>',
+      from: 'Unlimited Auto Funnel <noreply@unlimitedautorepaircollision.com>',
       to: ['unlimitedautoredford@gmail.com'],
       subject: `🚗 Customer Interaction: ${eventTypeLabels[trackingData.event_type as keyof typeof eventTypeLabels] || trackingData.event_type}`,
       html: emailHtml,

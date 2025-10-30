@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Transform the data to match the expected format
-    const transformedLeads = leads.map(lead => ({
+    const transformedLeads = (leads as any[]).map((lead: any) => ({
       id: lead.id,
       dealer_id: lead.dealer_id,
       vehicle_id: lead.vehicle_id,
@@ -205,8 +205,8 @@ export async function POST(req: NextRequest) {
         if (resend) {
           try {
             await resend.emails.send({
-        from: 'Unlimited Auto <onboarding@resend.dev>',
-        to: 'info@unlimitedautorepaircollision.com',
+        from: 'Unlimited Auto <noreply@unlimitedautorepaircollision.com>',
+        to: 'unlimitedautoredford@gmail.com',
         subject: `New Lead from ${lead.name} - Unlimited Auto`,
         html: `
           <h2>New Lead Received!</h2>
