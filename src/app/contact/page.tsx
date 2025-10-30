@@ -81,6 +81,8 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setSuccess('')
+    setError('')
     
     // Convert vehicle ID to vehicle name if it's a UUID
     let vehicleInterestName = formData.vehicleInterest
@@ -112,7 +114,7 @@ export default function ContactPage() {
       })
 
       if (response.ok) {
-        alert('Thank you for contacting Unlimited Auto! We\'ll get back to you within 24 hours.')
+        setSuccess("Thank you! We'll get back to you within 24 hours.")
         // Reset form
         setFormData({
           name: '',
@@ -123,11 +125,11 @@ export default function ContactPage() {
           vehicleInterest: ''
         })
       } else {
-        alert('There was an error submitting your message. Please try again or call us directly at (313) 766-4475.')
+        setError('There was an error submitting your message. Please try again or call us directly at (313) 766-4475.')
       }
     } catch (error) {
       console.error('Error submitting contact form:', error)
-      alert('There was an error submitting your message. Please try again or call us directly.')
+      setError('There was an error submitting your message. Please try again or call us directly.')
     }
   }
 
@@ -190,6 +192,12 @@ export default function ContactPage() {
       </section>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        {success && (
+          <div className="mb-6 rounded-md border border-green-200 bg-green-50 p-4 text-green-800">{success}</div>
+        )}
+        {error && (
+          <div className="mb-6 rounded-md border border-red-200 bg-red-50 p-4 text-red-800">{error}</div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Contact Form */}
           <div className="bg-white rounded-lg shadow-lg p-8">

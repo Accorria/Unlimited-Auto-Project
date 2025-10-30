@@ -206,7 +206,7 @@ export async function POST(req: NextRequest) {
           try {
             await resend.emails.send({
         from: 'Unlimited Auto <onboarding@resend.dev>',
-        to: 'unlimitedautoredford@gmail.com',
+        to: 'info@unlimitedautorepaircollision.com',
         subject: `New Lead from ${lead.name} - Unlimited Auto`,
         html: `
           <h2>New Lead Received!</h2>
