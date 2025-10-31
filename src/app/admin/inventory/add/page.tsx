@@ -38,7 +38,7 @@ const commonModels: Record<string, string[]> = {
   'Chrysler': ['200', '300', 'Pacifica', 'Voyager'],
   'Dodge': ['Challenger', 'Charger', 'Durango', 'Grand Caravan', 'Journey'],
   'Ford': ['Bronco', 'Edge', 'Escape', 'Expedition', 'Explorer', 'F-150', 'Focus', 'Fusion', 'Maverick', 'Mustang', 'Ranger', 'Transit'],
-  'GMC': ['Acadia', 'Canyon', 'Savana', 'Sierra', 'Terrain', 'Yukon'],
+  'GMC': ['Acadia', 'Canyon', 'Savana', 'Sierra 1500', 'Sierra 2500 HD', 'Sierra 3500 HD', 'Terrain', 'Yukon'],
   'Honda': ['Accord', 'Civic', 'CR-V', 'Fit', 'HR-V', 'Insight', 'Passport', 'Pilot', 'Ridgeline'],
   'Hyundai': ['Elantra', 'Genesis', 'Kona', 'Palisade', 'Santa Fe', 'Sonata', 'Tucson', 'Veloster', 'Venue'],
   'Infiniti': ['FX', 'G37', 'Q50', 'Q60', 'Q70', 'QX50', 'QX60', 'QX80'],
@@ -250,12 +250,15 @@ const modelSpecificTrims: Record<string, Record<string, string[]>> = {
   
   // GMC
   'GMC': {
-    'Sierra': ['SLE', 'Elevation', 'SLT', 'AT4', 'Denali'],
+    'Sierra 1500': ['Base', 'SLE', 'Elevation', 'SLT', 'AT4', 'Denali', 'Pro', 'Work Truck (WT)', 'Custom', 'Z71'],
+    'Sierra 2500 HD': ['Base', 'SLE', 'SLT', 'AT4', 'Denali', 'Pro', 'Work Truck (WT)', 'Custom', 'Z71'],
+    'Sierra 3500 HD': ['Base', 'SLE', 'SLT', 'AT4', 'Denali', 'Pro', 'Work Truck (WT)', 'Custom', 'Z71'],
     'Acadia': ['SLE', 'SLT', 'AT4', 'Denali'],
     'Yukon': ['SLE', 'SLT', 'AT4', 'Denali'],
+    'Yukon XL': ['SLE', 'SLT', 'AT4', 'Denali'],
     'Terrain': ['SLE', 'SLT', 'AT4'],
     'Canyon': ['SLE', 'Elevation', 'AT4'],
-    'Savana': ['2500', '3500', '1500', 'Commercial Cutaway']
+    'Savana': ['1500', '2500', '3500', 'Commercial Cutaway']
   },
   
   // BMW
@@ -812,9 +815,12 @@ export default function AddVehicle() {
     
     // GMC
     'GMC': {
-      'Sierra': ['2.7L Turbo 4-Cylinder', '3.0L Turbo Diesel V6', '5.3L V8', '6.2L V8'],
+      'Sierra 1500': ['2.7L Turbo 4-Cylinder', '3.0L Turbo Diesel V6', '5.3L V8', '6.2L V8'],
+      'Sierra 2500 HD': ['6.6L V8', '6.6L Turbo Diesel V8', '6.6L Turbo Diesel V8 (High Output)'],
+      'Sierra 3500 HD': ['6.6L V8', '6.6L Turbo Diesel V8', '6.6L Turbo Diesel V8 (High Output)'],
       'Acadia': ['2.5L 4-Cylinder', '3.6L V6'],
       'Yukon': ['5.3L V8', '6.2L V8', '3.0L Turbo Diesel'],
+      'Yukon XL': ['5.3L V8', '6.2L V8', '3.0L Turbo Diesel'],
       'Terrain': ['1.5L Turbo 4-Cylinder', '2.0L Turbo 4-Cylinder'],
       'Canyon': ['2.5L 4-Cylinder', '3.6L V6', '2.8L Turbo Diesel'],
       'Savana': ['4.3L V6', '5.3L V8', '6.6L Turbo Diesel V8']

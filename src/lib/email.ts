@@ -19,16 +19,19 @@ export async function sendEmail({
   }
 
   try {
+    console.log('📧 Attempting to send email via Resend to:', to)
     const result = await resend.emails.send({
       from,
       to,
       subject,
       html,
     })
-    console.log('Email sent successfully:', result.data?.id)
-    return { success: true, messageId: result.data?.id }
-  } catch (error) {
-    console.error('Error sending email:', error)
-    return { success: false, error }
+    console.log('✅ Email sent successfully! Full result:', JSON.stringify(result, null, 2))
+    console.log('📧 Email ID:', result.data?.id || 'No ID returned')
+    return { success: true, messageId: result.data?.id || result.id }
+  } catch (error: any) {
+    console.error('❌ Error sending email:', error)
+    console.error('Error details:', error.message, error.stack)
+    return { success: false, error: error.message }
   }
 }

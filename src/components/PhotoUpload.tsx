@@ -50,18 +50,31 @@ export default function PhotoUpload({ onPhotosChange, vehicleData }: PhotoUpload
       
       setUploadProgress(prev => ({ ...prev, [index]: 50 }))
       
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData
-      })
+      let response
+      try {
+        response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        })
+      } catch (fetchError: any) {
+        console.error('Network error during upload:', fetchError)
+        throw new Error(`Network error: ${fetchError.message || 'Failed to connect to server'}\n💡 Check your internet connection and make sure the server is running`)
+      }
       
       setUploadProgress(prev => ({ ...prev, [index]: 75 }))
       
       if (!response.ok) {
-        const error = await response.json()
-        const errorMessage = error.error || 'Upload failed'
-        const errorDetails = error.details || error.message || ''
-        const errorHint = error.hint || ''
+        let errorData
+        try {
+          errorData = await response.json()
+        } catch (parseError) {
+          // If we can't parse the error response, use the status text
+          throw new Error(`Upload failed: ${response.status} ${response.statusText}\n💡 Server returned an error but couldn't parse the response`)
+        }
+        
+        const errorMessage = errorData.error || 'Upload failed'
+        const errorDetails = errorData.details || errorData.message || ''
+        const errorHint = errorData.hint || ''
         
         // Create a more informative error message
         let fullErrorMessage = errorMessage

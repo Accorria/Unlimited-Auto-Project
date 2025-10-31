@@ -314,9 +314,41 @@ export default function ContactPage() {
                           <p key={idx} className="text-gray-600">{detail}</p>
                         ))}
                       </div>
-                      <button className="mt-3 text-blue-600 hover:text-blue-800 font-semibold">
-                        {info.action} →
-                      </button>
+                      {info.title === 'Email' ? (
+                        <a 
+                          href="mailto:unlimitedautoredford@gmail.com"
+                          className="mt-3 inline-block text-blue-600 hover:text-blue-800 font-semibold"
+                          onClick={() => {
+                            if (typeof window !== 'undefined') {
+                              import('@/lib/tracking').then(({ trackEmailClick }) => {
+                                trackEmailClick('info@unlimitedautorepaircollision.com', 'contact_page')
+                              })
+                            }
+                          }}
+                        >
+                          {info.action} →
+                        </a>
+                      ) : info.title === 'Phone' ? (
+                        <a 
+                          href="tel:+13137664475"
+                          className="mt-3 inline-block text-blue-600 hover:text-blue-800 font-semibold"
+                        >
+                          {info.action} →
+                        </a>
+                      ) : info.title === 'Address' ? (
+                        <a 
+                          href="https://www.google.com/maps/dir//24645+Plymouth+Rd+Unit+A,+Redford+Township,+MI+48239"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-3 inline-block text-blue-600 hover:text-blue-800 font-semibold"
+                        >
+                          {info.action} →
+                        </a>
+                      ) : (
+                        <button className="mt-3 text-blue-600 hover:text-blue-800 font-semibold">
+                          {info.action} →
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -201,6 +201,9 @@ export default function ProfessionalCreditApplicationForm() {
     if (!data.applicant.streetAddress) e.push("Applicant address is required.");
     if (!data.vehicle.vin) e.push("Vehicle VIN is required.");
     if (!data.financing.salesPrice) e.push("Sales price is required.");
+    if (!data.financing.downPayment || data.financing.downPayment === "" || parseFloat(data.financing.downPayment.replace(/[^0-9.]/g, '')) < 1000) {
+      e.push("Down payment selection is required. Please select a down payment option (minimum $1,000).");
+    }
     if (!data.applicantSignature) e.push("Applicant signature is required.");
     return e;
   }
@@ -1395,7 +1398,9 @@ export default function ProfessionalCreditApplicationForm() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-black mb-1">DOWN PAYMENT $</label>
+                    <label className="block text-sm font-bold text-black mb-1">
+                      DOWN PAYMENT $ <span className="text-red-500">*</span>
+                    </label>
                     <div className="space-y-2">
                       <div className="flex gap-2">
                         <button
@@ -1404,7 +1409,9 @@ export default function ProfessionalCreditApplicationForm() {
                           className={`px-3 py-1 text-sm border ${
                             data.financing.downPayment === "1000" 
                               ? "bg-blue-600 text-white border-blue-600" 
-                              : "bg-white text-black border-gray-400 hover:bg-gray-50"
+                              : errors.some(e => e.includes('Down payment'))
+                                ? "bg-red-50 text-black border-red-500 hover:bg-red-100"
+                                : "bg-white text-black border-gray-400 hover:bg-gray-50"
                           }`}
                         >
                           $1,000
@@ -1415,7 +1422,9 @@ export default function ProfessionalCreditApplicationForm() {
                           className={`px-3 py-1 text-sm border ${
                             data.financing.downPayment === "1500" 
                               ? "bg-blue-600 text-white border-blue-600" 
-                              : "bg-white text-black border-gray-400 hover:bg-gray-50"
+                              : errors.some(e => e.includes('Down payment'))
+                                ? "bg-red-50 text-black border-red-500 hover:bg-red-100"
+                                : "bg-white text-black border-gray-400 hover:bg-gray-50"
                           }`}
                         >
                           $1,500
@@ -1426,7 +1435,9 @@ export default function ProfessionalCreditApplicationForm() {
                           className={`px-3 py-1 text-sm border ${
                             data.financing.downPayment === "2500" 
                               ? "bg-blue-600 text-white border-blue-600" 
-                              : "bg-white text-black border-gray-400 hover:bg-gray-50"
+                              : errors.some(e => e.includes('Down payment'))
+                                ? "bg-red-50 text-black border-red-500 hover:bg-red-100"
+                                : "bg-white text-black border-gray-400 hover:bg-gray-50"
                           }`}
                         >
                           $2,500
@@ -1442,9 +1453,17 @@ export default function ProfessionalCreditApplicationForm() {
                             setFinancing("downPayment", value);
                           }
                         }}
-                        className="w-full border border-gray-400 px-2 py-1 bg-white text-black"
+                        className={`w-full border px-2 py-1 bg-white text-black ${
+                          errors.some(e => e.includes('Down payment'))
+                            ? 'border-red-500 bg-red-50'
+                            : 'border-gray-400'
+                        }`}
+                        required
                       />
-                      <p className="text-xs text-gray-600">Minimum down payment: $1,000</p>
+                      <p className="text-xs text-gray-600">Minimum down payment: $1,000 <span className="text-red-500">*</span> Required</p>
+                      {errors.some(e => e.includes('Down payment')) && (
+                        <p className="text-red-500 text-xs mt-1">Please select a down payment option (minimum $1,000)</p>
+                      )}
                     </div>
                   </div>
                   <div>

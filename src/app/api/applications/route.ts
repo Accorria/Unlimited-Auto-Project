@@ -160,17 +160,73 @@ export async function POST(req: NextRequest) {
       console.error('Error inserting lead (non-blocking):', leadError)
     }
 
-    console.log('Credit application submitted successfully:', lead.id)
+    console.log('Credit application submitted successfully:', lead?.id || 'No lead ID (DB insert may have failed)')
+    
+    // Fetch vehicle details if vehicleId is provided but vehicle info is missing
+    let vehicleInfo = {
+      year: body.financing?.year,
+      make: body.financing?.make,
+      model: body.financing?.model,
+      trim: body.financing?.trim,
+      price: body.financing?.salesPrice || body.financing?.price,
+      mileage: body.financing?.mileage,
+      vin: body.financing?.vin || body.financing?.retailLeaseVin,
+      condition: body.financing?.condition
+    }
+    
+    if (body.financing?.vehicleId && (!vehicleInfo.year || !vehicleInfo.make || !vehicleInfo.model)) {
+      console.log('Fetching vehicle details for vehicleId:', body.financing.vehicleId)
+      const { data: vehicle, error: vehicleError } = await supabase
+        .from('vehicles')
+        .select('year, make, model, trim, price, miles, vin, condition')
+        .eq('id', body.financing.vehicleId)
+        .single()
+      
+      if (!vehicleError && vehicle) {
+        vehicleInfo = {
+          year: vehicleInfo.year || vehicle.year,
+          make: vehicleInfo.make || vehicle.make,
+          model: vehicleInfo.model || vehicle.model,
+          trim: vehicleInfo.trim || vehicle.trim,
+          price: vehicleInfo.price || vehicle.price,
+          mileage: vehicleInfo.mileage || vehicle.miles,
+          vin: vehicleInfo.vin || vehicle.vin,
+          condition: vehicleInfo.condition || vehicle.condition
+        }
+        console.log('Vehicle details fetched:', vehicleInfo)
+      }
+    }
     
     // Send email notification to dealer
     if (resend) {
       try {
-        await resend.emails.send({
-        from: 'Unlimited Auto <onboarding@resend.dev>',
+        console.log('Attempting to send credit application email via Resend...')
+        const emailResult = await resend.emails.send({
+          from: 'Unlimited Auto <onboarding@resend.dev>',
         to: 'unlimitedautoredford@gmail.com',
-        subject: `New Credit Application from ${lead?.name || body.applicant?.firstName || 'Applicant'} - Unlimited Auto`,
+        subject: `New Credit Application from ${lead?.name || body.applicant?.firstName || 'Applicant'}${vehicleInfo.year && vehicleInfo.make && vehicleInfo.model ? ` - ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}` : ''} - Unlimited Auto`,
         html: `
           <h2>New Credit Application Received!</h2>
+          
+          ${body.financing?.vehicleId || vehicleInfo.year || vehicleInfo.make || vehicleInfo.model ? `
+          <div style="background: #fff4e6; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ff9800;">
+            <h3 style="color: #2c3e50; margin-top: 0;">🚗 Vehicle Information</h3>
+            ${body.financing?.vehicleId ? `<p><strong>Vehicle ID:</strong> ${body.financing.vehicleId}</p>` : ''}
+            ${vehicleInfo.year || vehicleInfo.make || vehicleInfo.model ? `
+            <p><strong>Vehicle:</strong> ${vehicleInfo.year || ''} ${vehicleInfo.make || ''} ${vehicleInfo.model || ''}${vehicleInfo.trim ? ` ${vehicleInfo.trim}` : ''}</p>
+            ` : ''}
+            ${vehicleInfo.price ? `<p><strong>Price:</strong> $${parseFloat(String(vehicleInfo.price || '0')).toLocaleString()}</p>` : ''}
+            ${body.financing?.salesPrice ? `<p><strong>Sales Price:</strong> $${parseFloat(String(body.financing.salesPrice || '0').replace(/[^0-9.]/g, '')).toLocaleString()}</p>` : ''}
+            ${body.financing?.downPayment && body.financing.downPayment !== "" ? `<p><strong>Down Payment:</strong> $${parseFloat(String(body.financing.downPayment || '0').replace(/[^0-9.]/g, '')).toLocaleString()}</p>` : '<p><strong>Down Payment:</strong> Not selected</p>'}
+            ${body.financing?.tradeInValue ? `<p><strong>Trade-In Value:</strong> $${parseFloat(body.financing.tradeInValue).toLocaleString()}</p>` : ''}
+            ${body.financing?.loanAmount ? `<p><strong>Loan Amount:</strong> $${parseFloat(body.financing.loanAmount).toLocaleString()}</p>` : ''}
+            ${body.financing?.termMonths ? `<p><strong>Loan Term:</strong> ${body.financing.termMonths} months</p>` : ''}
+            ${body.financing?.monthlyPayment ? `<p><strong>Estimated Monthly Payment:</strong> $${parseFloat(body.financing.monthlyPayment).toLocaleString()}</p>` : ''}
+            ${vehicleInfo.condition ? `<p><strong>Condition:</strong> ${vehicleInfo.condition}</p>` : ''}
+            ${vehicleInfo.vin ? `<p><strong>VIN:</strong> ${vehicleInfo.vin}</p>` : ''}
+            ${vehicleInfo.mileage ? `<p><strong>Mileage:</strong> ${vehicleInfo.mileage.toLocaleString()} miles</p>` : ''}
+          </div>
+          ` : ''}
           
           <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="color: #2c3e50; margin-top: 0;">Applicant Information</h3>
@@ -237,9 +293,10 @@ export async function POST(req: NextRequest) {
           </div>
         `,
       })
-        console.log('Credit application email notification sent successfully')
-      } catch (emailError) {
-        console.error('Error sending credit application email notification:', emailError)
+        console.log('✅ Credit application email notification sent successfully:', emailResult)
+      } catch (emailError: any) {
+        console.error('❌ Error sending credit application email notification:', emailError)
+        console.error('Error details:', emailError.message, emailError.stack)
         // Continue even if email fails
       }
     } else {

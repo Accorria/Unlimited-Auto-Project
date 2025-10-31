@@ -37,7 +37,7 @@ export default function Footer() {
               </p>
               <p>
                 📧 <a 
-                  href="mailto:info@unlimitedautorepaircollision.com" 
+                  href="mailto:unlimitedautoredford@gmail.com" 
                   className="hover:text-white transition-colors"
                   onClick={() => {
                     if (typeof window !== 'undefined') {

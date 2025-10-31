@@ -424,6 +424,7 @@ export default function CreditApplicationForm() {
     if (!data.financing.vehicleId) e.push("Please select a vehicle from inventory.");
     // Condition is auto-populated from vehicle selection
     if (!data.financing.salesPrice) e.push("Sales price is required.");
+    if (!data.financing.downPayment || data.financing.downPayment === "") e.push("Down payment selection is required. Please select a down payment option.");
     console.log('🔍 SIGNATURE VALIDATION:', {
       applicantSignature: data.applicantSignature,
       applicantSignatureName: data.applicantSignatureName,
@@ -822,12 +823,25 @@ export default function CreditApplicationForm() {
                       </option>
                     ))}
                   </select>
-                  {data.applicant.employerName === "Other" && (
+                  {(data.applicant.employerName === "Other" || 
+                    (data.applicant.employerName && 
+                     !commonEmployers.includes(data.applicant.employerName))) && (
                     <input
                       type="text"
+                      value={data.applicant.employerName === "Other" ? "" : data.applicant.employerName}
                       placeholder="Enter employer name"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md mt-2"
-                      onChange={(e) => set("applicant", { ...data.applicant, employerName: e.target.value })}
+                      onChange={(e) => {
+                        // Keep the custom employer name even when typing
+                        set("applicant", { ...data.applicant, employerName: e.target.value });
+                      }}
+                      onFocus={(e) => {
+                        // If "Other" is selected, clear it so they can type freely
+                        if (data.applicant.employerName === "Other") {
+                          set("applicant", { ...data.applicant, employerName: "" });
+                        }
+                      }}
+                      autoFocus={data.applicant.employerName === "Other"}
                     />
                   )}
                 </div>
@@ -1175,12 +1189,25 @@ export default function CreditApplicationForm() {
                         </option>
                       ))}
                     </select>
-                    {data.jointApplicant.employerName === "Other" && (
+                    {(data.jointApplicant.employerName === "Other" || 
+                      (data.jointApplicant.employerName && 
+                       !commonEmployers.includes(data.jointApplicant.employerName))) && (
                       <input
                         type="text"
+                        value={data.jointApplicant.employerName === "Other" ? "" : data.jointApplicant.employerName}
                         placeholder="Enter employer name"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md mt-2"
-                        onChange={(e) => set("jointApplicant", { ...data.jointApplicant, employerName: e.target.value })}
+                        onChange={(e) => {
+                          // Keep the custom employer name even when typing
+                          set("jointApplicant", { ...data.jointApplicant, employerName: e.target.value });
+                        }}
+                        onFocus={(e) => {
+                          // If "Other" is selected, clear it so they can type freely
+                          if (data.jointApplicant.employerName === "Other") {
+                            set("jointApplicant", { ...data.jointApplicant, employerName: "" });
+                          }
+                        }}
+                        autoFocus={data.jointApplicant.employerName === "Other"}
                       />
                     )}
                   </div>
@@ -1325,17 +1352,27 @@ export default function CreditApplicationForm() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">DOWN PAYMENT $</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                DOWN PAYMENT $ <span className="text-red-500">*</span>
+              </label>
               <select
                 value={data.financing.downPayment}
                 onChange={(e) => set("financing", { ...data.financing, downPayment: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                className={`w-full px-3 py-2 border rounded-md ${
+                  !data.financing.downPayment && errors.some(e => e.includes('Down payment')) 
+                    ? 'border-red-500 bg-red-50' 
+                    : 'border-gray-300'
+                }`}
+                required
               >
-                <option value="">Select Down Payment</option>
+                <option value="">Select Down Payment *</option>
                 {downPaymentOptions.map((amount) => (
                   <option key={amount} value={amount}>{amount}</option>
                 ))}
               </select>
+              {errors.some(e => e.includes('Down payment')) && (
+                <p className="text-red-500 text-xs mt-1">Please select a down payment option</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">NET TRADE $</label>

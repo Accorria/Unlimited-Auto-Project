@@ -23,7 +23,16 @@ const dummyClient = {
         }) 
       }) 
     }) 
-  })
+  }),
+  storage: {
+    from: () => ({
+      upload: () => Promise.resolve({ data: null, error: { message: 'Storage not configured', statusCode: '500' } }),
+      getPublicUrl: () => ({ data: { publicUrl: '' } }),
+      remove: () => Promise.resolve({ data: null, error: null }),
+      list: () => Promise.resolve({ data: [], error: null })
+    }),
+    listBuckets: () => Promise.resolve({ data: [], error: null })
+  }
 };
 
 export const supabase = isBuildTime 

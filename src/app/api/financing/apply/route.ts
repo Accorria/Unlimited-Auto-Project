@@ -84,10 +84,11 @@ export async function POST(req: NextRequest) {
         // Send email notification to dealer
         if (resend) {
           try {
-            await resend.emails.send({
-        from: 'Unlimited Auto <onboarding@resend.dev>',
-        to: 'unlimitedautoredford@gmail.com',
-        subject: `New Credit Application from ${lead.name} - Unlimited Auto`,
+            console.log('Attempting to send financing application email via Resend...')
+            const emailResult = await resend.emails.send({
+              from: 'Unlimited Auto <onboarding@resend.dev>',
+              to: 'unlimitedautoredford@gmail.com',
+              subject: `New Credit Application from ${lead.name} - Unlimited Auto`,
         html: `
           <h2>New Credit Application Received!</h2>
           <p><strong>Name:</strong> ${lead.name}</p>
@@ -107,13 +108,15 @@ export async function POST(req: NextRequest) {
           <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
         `,
       })
-          console.log('Credit application email notification sent successfully')
-        } catch (emailError) {
-          console.error('Error sending credit application email notification:', emailError)
-          // Continue even if email fails
-        }
+            console.log('✅ Email notification sent successfully:', emailResult)
+          } catch (emailError: any) {
+            console.error('❌ Error sending credit application email notification:', emailError)
+            console.error('Error details:', emailError.message, emailError.stack)
+            // Continue even if email fails
+          }
         } else {
-          console.log('Resend API key not configured - skipping email notification')
+          console.warn('⚠️ Resend API key not configured - RESEND_API_KEY missing or invalid')
+          console.warn('Current RESEND_API_KEY status:', process.env.RESEND_API_KEY ? 'Set (but Resend not initialized)' : 'Not set')
         }
 
     return NextResponse.json({ 

@@ -230,12 +230,12 @@ export default function Contact() {
                         onClick={() => {
                           if (typeof window !== 'undefined') {
                             import('@/lib/tracking').then(({ trackEmailClick }) => {
-                              trackEmailClick('unlimitedautoredford@gmail.com', 'contact_section')
+                              trackEmailClick('info@unlimitedautorepaircollision.com', 'contact_section')
                             })
                           }
                         }}
                       >
-                        unlimitedautoredford@gmail.com
+                        info@unlimitedautorepaircollision.com
                       </a>
                     </p>
                   </div>

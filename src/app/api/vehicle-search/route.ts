@@ -102,7 +102,13 @@ function getSuggestedSpecs(make: string, model: string, trim: string | null) {
       'Cruze': ['1.4L Turbo 4-Cylinder', '1.8L 4-Cylinder', '1.6L Turbo Diesel'],
       'Malibu': ['1.5L Turbo 4-Cylinder', '2.0L Turbo 4-Cylinder'],
       'Camaro': ['2.0L Turbo 4-Cylinder', '3.6L V6', '6.2L V8'],
-      'Equinox': ['1.5L Turbo 4-Cylinder', '2.0L Turbo 4-Cylinder']
+      'Equinox': ['1.5L Turbo 4-Cylinder', '2.0L Turbo 4-Cylinder'],
+      'Silverado 1500': ['2.7L Turbo 4-Cylinder', '3.0L Turbo Diesel V6', '5.3L V8', '6.2L V8']
+    },
+    'GMC': {
+      'Sierra 1500': ['2.7L Turbo 4-Cylinder', '3.0L Turbo Diesel V6', '5.3L V8', '6.2L V8'],
+      'Sierra 2500 HD': ['6.6L V8', '6.6L Turbo Diesel V8', '6.6L Turbo Diesel V8 (High Output)'],
+      'Sierra 3500 HD': ['6.6L V8', '6.6L Turbo Diesel V8', '6.6L Turbo Diesel V8 (High Output)']
     },
     'Honda': {
       'Civic': ['2.0L 4-Cylinder', '1.5L Turbo 4-Cylinder'],
@@ -120,7 +126,13 @@ function getSuggestedSpecs(make: string, model: string, trim: string | null) {
       'Cruze': '28 City / 40 Highway',
       'Malibu': '29 City / 36 Highway',
       'Camaro': '20 City / 30 Highway',
-      'Equinox': '26 City / 31 Highway'
+      'Equinox': '26 City / 31 Highway',
+      'Silverado 1500': '16 City / 21 Highway'
+    },
+    'GMC': {
+      'Sierra 1500': '16 City / 21 Highway',
+      'Sierra 2500 HD': '13 City / 18 Highway',
+      'Sierra 3500 HD': '13 City / 18 Highway'
     },
     'Honda': {
       'Civic': '32 City / 42 Highway',

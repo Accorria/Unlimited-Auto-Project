@@ -204,32 +204,35 @@ export async function POST(req: NextRequest) {
         // Send email notification to dealer
         if (resend) {
           try {
-            await resend.emails.send({
-        from: 'Unlimited Auto <onboarding@resend.dev>',
-        to: 'unlimitedautoredford@gmail.com',
-        subject: `New Lead from ${lead.name} - Unlimited Auto`,
-        html: `
-          <h2>New Lead Received!</h2>
-          <p><strong>Name:</strong> ${lead.name}</p>
-          <p><strong>Email:</strong> ${lead.email}</p>
-          <p><strong>Phone:</strong> ${lead.phone}</p>
-          <p><strong>Message:</strong> ${lead.message || 'N/A'}</p>
-          <p><strong>Service:</strong> ${body.service || 'N/A'}</p>
-          <p><strong>Vehicle Interest:</strong> ${body.vehicleInterest || 'N/A'}</p>
-          <p><strong>Vehicle ID:</strong> ${body.vehicleId || 'N/A'}</p>
-          <p><strong>Source:</strong> ${body.source === 'vehicle_page' ? '🚗 Vehicle Page (Website)' : body.source === 'contact_form' ? '📝 Contact Form (Website)' : '🌐 Website'}</p>
-          <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
-          <hr>
-          <p><em>This lead came from the website, not Google search.</em></p>
-        `,
-      })
-          console.log('Email notification sent successfully')
-        } catch (emailError) {
-          console.error('Error sending email notification:', emailError)
-          // Continue even if email fails
-        }
+            console.log('Attempting to send email notification via Resend...')
+            const emailResult = await resend.emails.send({
+              from: 'Unlimited Auto <onboarding@resend.dev>',
+              to: 'unlimitedautoredford@gmail.com',
+              subject: `New Lead from ${lead.name} - Unlimited Auto`,
+              html: `
+                <h2>New Lead Received!</h2>
+                <p><strong>Name:</strong> ${lead.name}</p>
+                <p><strong>Email:</strong> ${lead.email}</p>
+                <p><strong>Phone:</strong> ${lead.phone}</p>
+                <p><strong>Message:</strong> ${lead.message || 'N/A'}</p>
+                <p><strong>Service:</strong> ${body.service || 'N/A'}</p>
+                <p><strong>Vehicle Interest:</strong> ${body.vehicleInterest || 'N/A'}</p>
+                <p><strong>Vehicle ID:</strong> ${body.vehicleId || 'N/A'}</p>
+                <p><strong>Source:</strong> ${body.source === 'vehicle_page' ? '🚗 Vehicle Page (Website)' : body.source === 'contact_form' ? '📝 Contact Form (Website)' : '🌐 Website'}</p>
+                <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
+                <hr>
+                <p><em>This lead came from the website, not Google search.</em></p>
+              `,
+            })
+            console.log('✅ Email notification sent successfully:', emailResult)
+          } catch (emailError: any) {
+            console.error('❌ Error sending email notification:', emailError)
+            console.error('Error details:', emailError.message, emailError.stack)
+            // Continue even if email fails
+          }
         } else {
-          console.log('Resend API key not configured - skipping email notification')
+          console.warn('⚠️ Resend API key not configured - RESEND_API_KEY missing or invalid')
+          console.warn('Current RESEND_API_KEY status:', process.env.RESEND_API_KEY ? 'Set (but Resend not initialized)' : 'Not set')
         }
 
     return NextResponse.json({ 

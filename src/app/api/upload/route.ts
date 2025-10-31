@@ -25,6 +25,16 @@ export async function POST(req: NextRequest) {
     // Upload to Supabase Storage
     const supabase = createServerClient()
     
+    // Check if Supabase is properly configured
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE) {
+      console.error('Supabase not configured - missing environment variables')
+      return NextResponse.json({ 
+        error: 'Storage not configured',
+        details: 'Supabase environment variables are missing',
+        hint: 'Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE in your environment variables'
+      }, { status: 500 })
+    }
+    
     // Check if bucket exists first
     const { data: buckets, error: listError } = await supabase.storage.listBuckets()
     
@@ -32,8 +42,8 @@ export async function POST(req: NextRequest) {
       console.error('Error listing buckets:', listError)
       return NextResponse.json({ 
         error: 'Failed to access storage',
-        details: listError.message,
-        hint: 'Check if Supabase Storage is properly configured'
+        details: listError.message || 'Unable to list storage buckets',
+        hint: 'Check if Supabase Storage is properly configured and the storage bucket exists'
       }, { status: 500 })
     }
 
