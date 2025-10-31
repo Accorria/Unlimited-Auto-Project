@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Ensure Next.js uses this project directory as the root for tracing/build
+  outputFileTracingRoot: __dirname,
   images: {
     domains: ['images.unsplash.com', 'caieldvdbpkrhgjmylve.supabase.co'],
     remotePatterns: [

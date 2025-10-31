@@ -59,7 +59,20 @@ export default function PhotoUpload({ onPhotosChange, vehicleData }: PhotoUpload
       
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || 'Upload failed')
+        const errorMessage = error.error || 'Upload failed'
+        const errorDetails = error.details || error.message || ''
+        const errorHint = error.hint || ''
+        
+        // Create a more informative error message
+        let fullErrorMessage = errorMessage
+        if (errorDetails) {
+          fullErrorMessage += `: ${errorDetails}`
+        }
+        if (errorHint) {
+          fullErrorMessage += `\n💡 ${errorHint}`
+        }
+        
+        throw new Error(fullErrorMessage)
       }
       
       const result = await response.json()

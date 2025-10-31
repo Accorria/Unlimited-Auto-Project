@@ -344,6 +344,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../src/app/api/feeds/westlake/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/feeds/westlake">> = Specific
+  const handler = {} as typeof import("../../src/app/api/feeds/westlake/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../src/app/api/financing/apply/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/financing/apply">> = Specific
@@ -456,6 +465,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/upload">> = Specific
   const handler = {} as typeof import("../../src/app/api/upload/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/api/vehicle-search/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/vehicle-search">> = Specific
+  const handler = {} as typeof import("../../src/app/api/vehicle-search/route.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check
