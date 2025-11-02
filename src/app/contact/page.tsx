@@ -59,6 +59,37 @@ export default function ContactPage() {
     fetchVehicles()
   }, [])
 
+  // Track incomplete leads when user enters email
+  const trackIncompleteLead = async () => {
+    const name = formData.name || ''
+    const phone = formData.phone || ''
+    const email = formData.email || ''
+    
+    if (name || phone || email) {
+      try {
+        // Split name into first and last if it contains a space
+        const nameParts = name.trim().split(' ')
+        const firstName = nameParts[0] || ''
+        const lastName = nameParts.slice(1).join(' ') || ''
+        
+        await fetch('/api/leads/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            firstName: firstName,
+            lastName: lastName,
+            phone: phone,
+            email: email,
+            formStep: 'contact_form',
+            source: source || 'contact_page'
+          })
+        })
+      } catch (error) {
+        console.error('Error tracking incomplete lead:', error)
+      }
+    }
+  }
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     let formattedValue = value
@@ -241,6 +272,15 @@ export default function ContactPage() {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
+                  onBlur={(e) => {
+                    // Track when email is entered (capture full name + email)
+                    const currentEmail = e.target.value;
+                    if (currentEmail && currentEmail.includes('@')) {
+                      setTimeout(() => {
+                        trackIncompleteLead();
+                      }, 100);
+                    }
+                  }}
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />

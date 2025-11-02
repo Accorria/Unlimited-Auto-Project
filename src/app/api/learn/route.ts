@@ -6,7 +6,8 @@ let learnedEntries = {
   trims: new Set<string>(),
   engines: new Set<string>(),
   colors: new Set<string>(),
-  features: new Set<string>()
+  features: new Set<string>(),
+  employers: new Set<string>()
 }
 
 export async function POST(req: NextRequest) {

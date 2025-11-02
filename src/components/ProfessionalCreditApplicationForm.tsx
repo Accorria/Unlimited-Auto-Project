@@ -242,7 +242,7 @@ export default function ProfessionalCreditApplicationForm() {
       {/* Header */}
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-black">Credit Application</h1>
+          <h1 className="text-2xl font-bold text-black">Pre-approval</h1>
         </div>
         <div className="text-right">
           <div className="text-lg font-semibold text-black">Unlimited Auto Repair & Collision LLC</div>

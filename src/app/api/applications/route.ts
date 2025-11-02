@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
       notes: JSON.stringify({
         // Applicant details
         applicant: {
+          email: body.applicant?.email,
           dob: body.applicant?.dob,
           ssn: body.applicant?.ssn,
           housingStatus: body.applicant?.housingStatus,
@@ -75,9 +76,6 @@ export async function POST(req: NextRequest) {
           position: body.applicant?.position,
           workPhone: body.applicant?.workPhone,
           incomeType: body.applicant?.incomeType,
-          otherIncomeSource: body.applicant?.otherIncomeSource,
-          previousEmployerOrSchool: body.applicant?.previousEmployerOrSchool,
-          previousHowLong: body.applicant?.previousHowLong,
           employerAddress: body.applicant?.employerAddress
         },
         
@@ -204,9 +202,9 @@ export async function POST(req: NextRequest) {
         const emailResult = await resend.emails.send({
           from: 'Unlimited Auto <onboarding@resend.dev>',
         to: 'unlimitedautoredford@gmail.com',
-        subject: `New Credit Application from ${lead?.name || body.applicant?.firstName || 'Applicant'}${vehicleInfo.year && vehicleInfo.make && vehicleInfo.model ? ` - ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}` : ''} - Unlimited Auto`,
+        subject: `New Pre-approval Application from ${lead?.name || body.applicant?.firstName || 'Applicant'}${vehicleInfo.year && vehicleInfo.make && vehicleInfo.model ? ` - ${vehicleInfo.year} ${vehicleInfo.make} ${vehicleInfo.model}` : ''} - Unlimited Auto`,
         html: `
-          <h2>New Credit Application Received!</h2>
+          <h2>New Pre-approval Application Received!</h2>
           
           ${body.financing?.vehicleId || vehicleInfo.year || vehicleInfo.make || vehicleInfo.model ? `
           <div style="background: #fff4e6; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ff9800;">
@@ -234,8 +232,21 @@ export async function POST(req: NextRequest) {
             <p><strong>Phone:</strong> ${body.applicant?.homePhone || 'N/A'}</p>
             <p><strong>Address:</strong> ${body.applicant?.streetAddress || 'N/A'} ${body.applicant?.aptNumber ? `Apt ${body.applicant.aptNumber}` : ''}</p>
             <p><strong>City, State, ZIP:</strong> ${body.applicant?.city || 'N/A'}, ${body.applicant?.state || 'N/A'} ${body.applicant?.zip || 'N/A'}</p>
-            <p><strong>Date of Birth:</strong> ${body.applicant?.dateOfBirthMonth || ''}/${body.applicant?.dateOfBirthDay || ''}/${body.applicant?.dateOfBirthYear || ''}</p>
-            <p><strong>Age:</strong> ${body.applicant?.age || 'N/A'}</p>
+            <p><strong>Date of Birth:</strong> ${body.applicant?.dateOfBirth ? new Date(body.applicant.dateOfBirth + 'T00:00:00').toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'N/A'}</p>
+            <p><strong>Age:</strong> ${body.applicant?.age || (body.applicant?.dateOfBirth ? (() => {
+              try {
+                const birthDate = new Date(body.applicant.dateOfBirth + 'T00:00:00');
+                const today = new Date();
+                let age = today.getFullYear() - birthDate.getFullYear();
+                const monthDiff = today.getMonth() - birthDate.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                  age--;
+                }
+                return age > 0 ? age : 'N/A';
+              } catch {
+                return 'N/A';
+              }
+            })() : 'N/A')}</p>
             <p><strong>SSN (Last 4):</strong> ${body.applicant?.socialSecurityNumber ? `****-****-${body.applicant.socialSecurityNumber}` : 'N/A'}</p>
             <p><strong>Housing Status:</strong> ${body.applicant?.housingStatus || 'N/A'}</p>
             <p><strong>Monthly Payment:</strong> ${body.applicant?.monthlyPayment || 'N/A'}</p>
@@ -248,11 +259,8 @@ export async function POST(req: NextRequest) {
             <p><strong>Position:</strong> ${body.applicant?.positionTitle || 'N/A'}</p>
             <p><strong>Work Phone:</strong> ${body.applicant?.workPhone || 'N/A'}</p>
             <p><strong>Employer Address:</strong> ${body.applicant?.employerAddress || 'N/A'}</p>
-            <p><strong>How Long Employed:</strong> ${body.applicant?.employerHowLongYears || '0'} years, ${body.applicant?.employerHowLongMonths || '0'} months</p>
-            <p><strong>Gross Annual Salary:</strong> ${body.applicant?.grossAnnualSalary || 'N/A'}</p>
-            <p><strong>Annual Amount:</strong> ${body.applicant?.annualAmount || 'N/A'}</p>
-            <p><strong>Other Income Source:</strong> ${body.applicant?.otherIncomeSource || 'N/A'}</p>
-            <p><strong>Previous Employer/School:</strong> ${body.applicant?.previousEmployerOrSchool || 'N/A'}</p>
+            <p><strong>How Long Employed:</strong> ${body.applicant?.employerHowLongDuration || (body.applicant?.employerHowLongYears || body.applicant?.employerHowLongMonths ? `${body.applicant.employerHowLongYears || '0'} years, ${body.applicant.employerHowLongMonths || '0'} months` : 'N/A')}</p>
+            <p><strong>Annual Amount:</strong> ${body.applicant?.annualAmount ? `$${parseFloat(String(body.applicant.annualAmount).replace(/[^0-9.]/g, '')).toLocaleString()}` : 'N/A'}</p>
           </div>
           
           ${body.jointApplicantEnabled ? `
@@ -263,14 +271,27 @@ export async function POST(req: NextRequest) {
             <p><strong>Phone:</strong> ${body.jointApplicant?.homePhone || 'N/A'}</p>
             <p><strong>Address:</strong> ${body.jointApplicant?.streetAddress || 'N/A'} ${body.jointApplicant?.aptNumber ? `Apt ${body.jointApplicant.aptNumber}` : ''}</p>
             <p><strong>City, State, ZIP:</strong> ${body.jointApplicant?.city || 'N/A'}, ${body.jointApplicant?.state || 'N/A'} ${body.jointApplicant?.zip || 'N/A'}</p>
-            <p><strong>Date of Birth:</strong> ${body.jointApplicant?.dateOfBirthMonth || ''}/${body.jointApplicant?.dateOfBirthDay || ''}/${body.jointApplicant?.dateOfBirthYear || ''}</p>
-            <p><strong>Age:</strong> ${body.jointApplicant?.age || 'N/A'}</p>
+            <p><strong>Date of Birth:</strong> ${body.jointApplicant?.dateOfBirth ? new Date(body.jointApplicant.dateOfBirth + 'T00:00:00').toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'N/A'}</p>
+            <p><strong>Age:</strong> ${body.jointApplicant?.age || (body.jointApplicant?.dateOfBirth ? (() => {
+              try {
+                const birthDate = new Date(body.jointApplicant.dateOfBirth + 'T00:00:00');
+                const today = new Date();
+                let age = today.getFullYear() - birthDate.getFullYear();
+                const monthDiff = today.getMonth() - birthDate.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                  age--;
+                }
+                return age > 0 ? age : 'N/A';
+              } catch {
+                return 'N/A';
+              }
+            })() : 'N/A')}</p>
             <p><strong>SSN:</strong> ${body.jointApplicant?.socialSecurityNumber || 'N/A'}</p>
             <p><strong>Housing Status:</strong> ${body.jointApplicant?.housingStatus || 'N/A'}</p>
             <p><strong>Monthly Payment:</strong> ${body.jointApplicant?.monthlyPayment || 'N/A'}</p>
             <p><strong>Employer:</strong> ${body.jointApplicant?.employerName || 'N/A'}</p>
             <p><strong>Position:</strong> ${body.jointApplicant?.positionTitle || 'N/A'}</p>
-            <p><strong>Gross Annual Salary:</strong> ${body.jointApplicant?.grossAnnualSalary || 'N/A'}</p>
+            <p><strong>Annual Amount:</strong> ${body.jointApplicant?.annualAmount ? `$${parseFloat(String(body.jointApplicant.annualAmount).replace(/[^0-9.]/g, '')).toLocaleString()}` : 'N/A'}</p>
           </div>
           ` : ''}
           

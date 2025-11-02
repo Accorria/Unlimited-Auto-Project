@@ -62,6 +62,33 @@ export default function FinancingPage() {
     fetchVehicles()
   }, [])
 
+  // Track incomplete leads when user enters email
+  const trackIncompleteLead = async () => {
+    const firstName = formData.firstName || ''
+    const lastName = formData.lastName || ''
+    const phone = formData.phone || ''
+    const email = formData.email || ''
+    
+    if (firstName || phone || email) {
+      try {
+        await fetch('/api/leads/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            firstName: firstName,
+            lastName: lastName,
+            phone: phone,
+            email: email,
+            formStep: 'financing_form',
+            source: 'financing_page'
+          })
+        })
+      } catch (error) {
+        console.error('Error tracking incomplete lead:', error)
+      }
+    }
+  }
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     let formattedValue = value
@@ -284,6 +311,15 @@ export default function FinancingPage() {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
+                    onBlur={(e) => {
+                      // Track when email is entered (capture full name + email)
+                      const currentEmail = e.target.value;
+                      if (currentEmail && currentEmail.includes('@')) {
+                        setTimeout(() => {
+                          trackIncompleteLead();
+                        }, 100);
+                      }
+                    }}
                     required
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                   />

@@ -17,6 +17,7 @@ type Applicant = {
   city: string;
   zip: string;
   homePhone: string;
+  email: string;
   monthlyPayment: string;
   housingStatus: "own" | "rent" | "relative" | "other" | "";
   howLongYears: string;
@@ -112,6 +113,7 @@ const emptyApplicant: Applicant = {
   city: "",
   zip: "",
   homePhone: "",
+  email: "",
   monthlyPayment: "",
   housingStatus: "",
   howLongYears: "",
@@ -168,28 +170,6 @@ export default function CreditApplicationForm() {
     }
     fetchVehicles()
   }, [])
-
-  // Track incomplete leads when user starts filling out form
-  const trackIncompleteLead = async (formStep: string) => {
-    if (data.applicant.firstName || data.applicant.homePhone || data.applicant.email) {
-      try {
-        await fetch('/api/leads/track', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            firstName: data.applicant.firstName,
-            lastName: data.applicant.lastName,
-            phone: data.applicant.homePhone,
-            email: data.applicant.email,
-            formStep: formStep,
-            source: 'credit_application'
-          })
-        })
-      } catch (error) {
-        console.error('Error tracking incomplete lead:', error)
-      }
-    }
-  }
 
   // Phone number formatting function
   const formatPhoneNumber = (value: string) => {
@@ -323,7 +303,7 @@ export default function CreditApplicationForm() {
   }
 
   // Common employers in Michigan area
-  const commonEmployers = [
+  const [commonEmployers, setCommonEmployers] = useState<string[]>([
     "Ford Motor Company", "General Motors", "Chrysler/Stellantis", "Amazon",
     "Walmart", "Target", "Kroger", "Meijer", "Home Depot", "Lowes",
     "McDonald's", "Subway", "Starbucks", "FedEx", "UPS", "USPS",
@@ -331,15 +311,72 @@ export default function CreditApplicationForm() {
     "Henry Ford Health System", "Beaumont Health", "Ascension Health",
     "DTE Energy", "Consumers Energy", "Comcast", "AT&T", "Verizon",
     "Bank of America", "Chase", "Wells Fargo", "PNC Bank", "Other"
-  ]
+  ])
+
+  // Load learned employers on component mount
+  useEffect(() => {
+    fetch('/api/learn?type=employers')
+      .then(res => res.json())
+      .then(data => {
+        if (data.entries && data.entries.length > 0) {
+          setCommonEmployers(prev => [...new Set([...prev, ...data.entries])])
+        }
+      })
+      .catch(console.error)
+  }, [])
 
   // State to cities mapping (major cities for each state)
   const stateCities: { [key: string]: string[] } = {
-    "MI": ["Detroit", "Grand Rapids", "Warren", "Sterling Heights", "Lansing", "Ann Arbor", "Livonia", "Dearborn", "Westland", "Troy", "Farmington Hills", "Kalamazoo", "Wyoming", "Southfield", "Rochester Hills", "Taylor", "Pontiac", "St. Clair Shores", "Royal Oak", "Novi", "Dearborn Heights", "Battle Creek", "Saginaw", "Kentwood", "East Lansing", "Roseville", "Portage", "Midland", "Lincoln Park", "Bay City", "Other"],
+    "AL": ["Birmingham", "Montgomery", "Mobile", "Huntsville", "Tuscaloosa", "Hoover", "Auburn", "Dothan", "Decatur", "Madison", "Other"],
+    "AK": ["Anchorage", "Fairbanks", "Juneau", "Sitka", "Ketchikan", "Wasilla", "Kenai", "Kodiak", "Bethel", "Palmer", "Other"],
+    "AZ": ["Phoenix", "Tucson", "Mesa", "Chandler", "Scottsdale", "Glendale", "Gilbert", "Tempe", "Peoria", "Surprise", "Other"],
+    "AR": ["Little Rock", "Fort Smith", "Fayetteville", "Springdale", "Jonesboro", "North Little Rock", "Conway", "Rogers", "Pine Bluff", "Bentonville", "Other"],
     "CA": ["Los Angeles", "San Diego", "San Jose", "San Francisco", "Fresno", "Sacramento", "Long Beach", "Oakland", "Bakersfield", "Anaheim", "Santa Ana", "Riverside", "Stockton", "Irvine", "Chula Vista", "Fremont", "San Bernardino", "Modesto", "Fontana", "Oxnard", "Moreno Valley", "Huntington Beach", "Glendale", "Santa Clarita", "Garden Grove", "Oceanside", "Rancho Cucamonga", "Santa Rosa", "Ontario", "Lancaster", "Other"],
-    "TX": ["Houston", "San Antonio", "Dallas", "Austin", "Fort Worth", "El Paso", "Arlington", "Corpus Christi", "Plano", "Laredo", "Lubbock", "Garland", "Irving", "Amarillo", "Grand Prairie", "Brownsville", "Pasadena", "Mesquite", "McKinney", "McAllen", "Killeen", "Frisco", "Waco", "Carrollton", "Pearland", "Denton", "Midland", "Abilene", "Round Rock", "Richardson", "Other"],
+    "CO": ["Denver", "Colorado Springs", "Aurora", "Fort Collins", "Lakewood", "Thornton", "Arvada", "Westminster", "Pueblo", "Greeley", "Other"],
+    "CT": ["Bridgeport", "New Haven", "Hartford", "Stamford", "Waterbury", "Norwalk", "Danbury", "New Britain", "West Hartford", "Greenwich", "Other"],
+    "DE": ["Wilmington", "Dover", "Newark", "Middletown", "Smyrna", "Milford", "Seaford", "Georgetown", "Elsmere", "Laurel", "Other"],
     "FL": ["Jacksonville", "Miami", "Tampa", "Orlando", "St. Petersburg", "Hialeah", "Tallahassee", "Fort Lauderdale", "Port St. Lucie", "Cape Coral", "Pembroke Pines", "Hollywood", "Miramar", "Gainesville", "Coral Springs", "Miami Gardens", "Clearwater", "Palm Bay", "West Palm Beach", "Pompano Beach", "Lakeland", "Davie", "Miami Beach", "Sunrise", "Plantation", "Boca Raton", "Deltona", "Largo", "Deerfield Beach", "Boynton Beach", "Other"],
-    "NY": ["New York City", "Buffalo", "Rochester", "Yonkers", "Syracuse", "Albany", "New Rochelle", "Mount Vernon", "Schenectady", "Utica", "White Plains", "Hempstead", "Troy", "Niagara Falls", "Binghamton", "Freeport", "Valley Stream", "Long Beach", "Rome", "Ithaca", "Poughkeepsie", "Watertown", "Elmira", "Middletown", "Auburn", "Oswego", "Kingston", "Batavia", "Glens Falls", "Plattsburgh", "Other"]
+    "GA": ["Atlanta", "Augusta", "Columbus", "Savannah", "Athens", "Sandy Springs", "Roswell", "Macon", "Johns Creek", "Albany", "Other"],
+    "HI": ["Honolulu", "Hilo", "Kailua", "Kaneohe", "Pearl City", "Waipahu", "Kahului", "Ewa Beach", "Mililani", "Kihei", "Other"],
+    "ID": ["Boise", "Nampa", "Meridian", "Idaho Falls", "Pocatello", "Caldwell", "Coeur d'Alene", "Twin Falls", "Lewiston", "Post Falls", "Other"],
+    "IL": ["Chicago", "Aurora", "Rockford", "Joliet", "Naperville", "Springfield", "Peoria", "Elgin", "Waukegan", "Cicero", "Other"],
+    "IN": ["Indianapolis", "Fort Wayne", "Evansville", "South Bend", "Carmel", "Fishers", "Bloomington", "Hammond", "Gary", "Muncie", "Other"],
+    "IA": ["Des Moines", "Cedar Rapids", "Davenport", "Sioux City", "Iowa City", "Waterloo", "Council Bluffs", "Ames", "West Des Moines", "Dubuque", "Other"],
+    "KS": ["Wichita", "Overland Park", "Kansas City", "Olathe", "Topeka", "Lawrence", "Shawnee", "Manhattan", "Lenexa", "Salina", "Other"],
+    "KY": ["Louisville", "Lexington", "Bowling Green", "Owensboro", "Covington", "Hopkinsville", "Richmond", "Florence", "Georgetown", "Henderson", "Other"],
+    "LA": ["New Orleans", "Baton Rouge", "Shreveport", "Lafayette", "Lake Charles", "Kenner", "Bossier City", "Monroe", "Alexandria", "Houma", "Other"],
+    "ME": ["Portland", "Lewiston", "Bangor", "South Portland", "Auburn", "Biddeford", "Sanford", "Saco", "Augusta", "Waterville", "Other"],
+    "MD": ["Baltimore", "Frederick", "Rockville", "Gaithersburg", "Bowie", "Annapolis", "College Park", "Salisbury", "Laurel", "Greenbelt", "Other"],
+    "MA": ["Boston", "Worcester", "Springfield", "Lowell", "Cambridge", "New Bedford", "Brockton", "Quincy", "Lynn", "Fall River", "Other"],
+    "MI": ["Detroit", "Grand Rapids", "Warren", "Sterling Heights", "Lansing", "Ann Arbor", "Livonia", "Dearborn", "Westland", "Troy", "Farmington Hills", "Kalamazoo", "Wyoming", "Southfield", "Rochester Hills", "Taylor", "Pontiac", "St. Clair Shores", "Royal Oak", "Novi", "Dearborn Heights", "Battle Creek", "Saginaw", "Kentwood", "East Lansing", "Roseville", "Portage", "Midland", "Lincoln Park", "Bay City", "Other"],
+    "MN": ["Minneapolis", "St. Paul", "Rochester", "Duluth", "Bloomington", "Brooklyn Park", "Plymouth", "St. Cloud", "Eagan", "Woodbury", "Other"],
+    "MS": ["Jackson", "Gulfport", "Southaven", "Hattiesburg", "Biloxi", "Meridian", "Tupelo", "Greenville", "Olive Branch", "Horn Lake", "Other"],
+    "MO": ["Kansas City", "St. Louis", "Springfield", "Columbia", "Independence", "Lee's Summit", "O'Fallon", "St. Joseph", "St. Charles", "St. Peters", "Other"],
+    "MT": ["Billings", "Missoula", "Great Falls", "Bozeman", "Butte", "Helena", "Kalispell", "Havre", "Anaconda", "Miles City", "Other"],
+    "NE": ["Omaha", "Lincoln", "Bellevue", "Grand Island", "Kearney", "Fremont", "Hastings", "North Platte", "Norfolk", "Columbus", "Other"],
+    "NV": ["Las Vegas", "Henderson", "Reno", "North Las Vegas", "Sparks", "Carson City", "Fernley", "Elko", "Mesquite", "Boulder City", "Other"],
+    "NH": ["Manchester", "Nashua", "Concord", "Derry", "Rochester", "Dover", "Salem", "Merrimack", "Londonderry", "Hudson", "Other"],
+    "NJ": ["Newark", "Jersey City", "Paterson", "Elizabeth", "Edison", "Woodbridge", "Lakewood", "Toms River", "Hamilton", "Trenton", "Other"],
+    "NM": ["Albuquerque", "Las Cruces", "Rio Rancho", "Santa Fe", "Roswell", "Farmington", "Clovis", "Hobbs", "Alamogordo", "Carlsbad", "Other"],
+    "NY": ["New York City", "Buffalo", "Rochester", "Yonkers", "Syracuse", "Albany", "New Rochelle", "Mount Vernon", "Schenectady", "Utica", "White Plains", "Hempstead", "Troy", "Niagara Falls", "Binghamton", "Freeport", "Valley Stream", "Long Beach", "Rome", "Ithaca", "Poughkeepsie", "Watertown", "Elmira", "Middletown", "Auburn", "Oswego", "Kingston", "Batavia", "Glens Falls", "Plattsburgh", "Other"],
+    "NC": ["Charlotte", "Raleigh", "Greensboro", "Durham", "Winston-Salem", "Fayetteville", "Cary", "Wilmington", "High Point", "Concord", "Other"],
+    "ND": ["Fargo", "Bismarck", "Grand Forks", "Minot", "West Fargo", "Williston", "Dickinson", "Mandan", "Jamestown", "Wahpeton", "Other"],
+    "OH": ["Columbus", "Cleveland", "Cincinnati", "Toledo", "Akron", "Dayton", "Parma", "Canton", "Youngstown", "Lorain", "Other"],
+    "OK": ["Oklahoma City", "Tulsa", "Norman", "Broken Arrow", "Lawton", "Edmond", "Moore", "Midwest City", "Enid", "Stillwater", "Other"],
+    "OR": ["Portland", "Eugene", "Salem", "Gresham", "Hillsboro", "Bend", "Beaverton", "Medford", "Springfield", "Corvallis", "Other"],
+    "PA": ["Philadelphia", "Pittsburgh", "Allentown", "Erie", "Reading", "Scranton", "Bethlehem", "Lancaster", "Harrisburg", "Altoona", "Other"],
+    "RI": ["Providence", "Warwick", "Cranston", "Pawtucket", "East Providence", "Woonsocket", "Newport", "Central Falls", "Westerly", "Cumberland", "Other"],
+    "SC": ["Charleston", "Columbia", "North Charleston", "Mount Pleasant", "Rock Hill", "Greenville", "Summerville", "Sumter", "Hilton Head Island", "Florence", "Other"],
+    "SD": ["Sioux Falls", "Rapid City", "Aberdeen", "Brookings", "Watertown", "Mitchell", "Yankton", "Pierre", "Huron", "Vermillion", "Other"],
+    "TN": ["Nashville", "Memphis", "Knoxville", "Chattanooga", "Clarksville", "Murfreesboro", "Franklin", "Jackson", "Johnson City", "Bartlett", "Other"],
+    "TX": ["Houston", "San Antonio", "Dallas", "Austin", "Fort Worth", "El Paso", "Arlington", "Corpus Christi", "Plano", "Laredo", "Lubbock", "Garland", "Irving", "Amarillo", "Grand Prairie", "Brownsville", "Pasadena", "Mesquite", "McKinney", "McAllen", "Killeen", "Frisco", "Waco", "Carrollton", "Pearland", "Denton", "Midland", "Abilene", "Round Rock", "Richardson", "Other"],
+    "UT": ["Salt Lake City", "West Valley City", "Provo", "West Jordan", "Orem", "Sandy", "Ogden", "St. George", "Layton", "Taylorsville", "Other"],
+    "VT": ["Burlington", "Essex", "South Burlington", "Colchester", "Rutland", "Montpelier", "Barre", "St. Albans", "Brattleboro", "Milton", "Other"],
+    "VA": ["Virginia Beach", "Norfolk", "Richmond", "Chesapeake", "Newport News", "Alexandria", "Hampton", "Portsmouth", "Suffolk", "Roanoke", "Other"],
+    "WA": ["Seattle", "Spokane", "Tacoma", "Vancouver", "Bellevue", "Kent", "Everett", "Renton", "Yakima", "Federal Way", "Other"],
+    "WV": ["Charleston", "Huntington", "Parkersburg", "Morgantown", "Wheeling", "Martinsburg", "Fairmont", "Beckley", "Clarksburg", "South Charleston", "Other"],
+    "WI": ["Milwaukee", "Madison", "Green Bay", "Kenosha", "Racine", "Appleton", "Waukesha", "Oshkosh", "Eau Claire", "Janesville", "Other"],
+    "WY": ["Cheyenne", "Casper", "Laramie", "Gillette", "Rock Springs", "Sheridan", "Green River", "Evanston", "Riverton", "Jackson", "Other"]
   }
 
   // Helper function to get cities for a state
@@ -407,6 +444,50 @@ export default function CreditApplicationForm() {
       
       return newData;
     });
+  }
+
+  // Track incomplete leads when user starts filling out form
+  // Defined after data is initialized
+  const trackIncompleteLead = async (formStep: string, overrideData?: { firstName?: string; lastName?: string; email?: string; phone?: string }) => {
+    // Use override data if provided, otherwise use current state
+    const firstName = overrideData?.firstName ?? data?.applicant?.firstName ?? ''
+    const lastName = overrideData?.lastName ?? data?.applicant?.lastName ?? ''
+    const phone = overrideData?.phone ?? data?.applicant?.homePhone ?? ''
+    const email = overrideData?.email ?? data?.applicant?.email ?? ''
+    
+    console.log('📝 trackIncompleteLead called:', { formStep, firstName, lastName, email, phone })
+    
+    if (firstName || phone || email) {
+      const trackingData = {
+        firstName: firstName,
+        lastName: lastName,
+        phone: phone,
+        email: email,
+        formStep: formStep,
+        source: 'credit_application'
+      }
+      
+      console.log('📤 Sending tracking data:', trackingData)
+      
+      try {
+        const response = await fetch('/api/leads/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(trackingData)
+        })
+        
+        const result = await response.json()
+        console.log('✅ Tracking response:', result)
+        
+        if (!response.ok) {
+          console.error('❌ Tracking failed:', result)
+        }
+      } catch (error) {
+        console.error('❌ Error tracking incomplete lead:', error)
+      }
+    } else {
+      console.log('⚠️ No contact info to track')
+    }
   }
 
   function validate(): string[] {
@@ -559,7 +640,7 @@ export default function CreditApplicationForm() {
         }
       `}</style>
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Credit Application</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Pre-approval</h1>
         <p className="text-gray-600">Unlimited Auto Repair & Collision LLC</p>
         <p className="text-sm text-gray-500">24645 Plymouth Rd Unit A, Redford Township, MI 48239 | (313) 766-4475</p>
       </div>
@@ -598,7 +679,6 @@ export default function CreditApplicationForm() {
           <h2 className="text-xl font-bold text-gray-900 mb-4">APPLICANT INFORMATION</h2>
           
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">APPLICANT (PRINCIPAL DRIVER OF VEHICLE)</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
@@ -608,8 +688,19 @@ export default function CreditApplicationForm() {
                       type="text"
                       value={data.applicant.firstName}
                       onChange={(e) => {
-                        set("applicant", { ...data.applicant, firstName: e.target.value });
-                        trackIncompleteLead('applicant_name');
+                        const newValue = e.target.value;
+                        set("applicant", { ...data.applicant, firstName: newValue });
+                      }}
+                      onBlur={() => {
+                        // Track when user leaves name field if we have email or phone
+                        if (data.applicant.email || data.applicant.homePhone) {
+                          trackIncompleteLead('applicant_name', { 
+                            firstName: data.applicant.firstName, 
+                            lastName: data.applicant.lastName, 
+                            email: data.applicant.email, 
+                            phone: data.applicant.homePhone 
+                          });
+                        }
                       }}
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
                       placeholder="First Name"
@@ -627,13 +718,60 @@ export default function CreditApplicationForm() {
                   <input
                     type="text"
                     value={data.applicant.lastName}
-                    onChange={(e) => set("applicant", { ...data.applicant, lastName: e.target.value })}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      set("applicant", { ...data.applicant, lastName: newValue });
+                    }}
+                    onBlur={() => {
+                      // Track when user leaves name field if we have email or phone
+                      if (data.applicant.email || data.applicant.homePhone) {
+                        trackIncompleteLead('applicant_name', { 
+                          firstName: data.applicant.firstName, 
+                          lastName: data.applicant.lastName, 
+                          email: data.applicant.email, 
+                          phone: data.applicant.homePhone 
+                        });
+                      }
+                    }}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
                     placeholder="Last Name"
                     autoComplete="family-name"
                     required
                   />
                 </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">EMAIL ADDRESS</label>
+                <input
+                  type="email"
+                  value={data.applicant.email || ''}
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    set("applicant", { ...data.applicant, email: newValue });
+                  }}
+                  onBlur={(e) => {
+                    // ALWAYS track when email is entered (user specifically requested this)
+                    // Use the event target value to get current value (not state which might be stale)
+                    const currentEmail = e.target.value;
+                    if (currentEmail && currentEmail.includes('@')) {
+                      // Use setTimeout to ensure state is updated, but pass the current values directly
+                      setTimeout(() => {
+                        trackIncompleteLead('applicant_email', { 
+                          firstName: data.applicant.firstName, 
+                          lastName: data.applicant.lastName, 
+                          email: currentEmail, // Use the event value, not state
+                          phone: data.applicant.homePhone 
+                        });
+                      }, 100);
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  placeholder="your.email@example.com"
+                  autoComplete="email"
+                />
               </div>
             </div>
 
@@ -728,8 +866,12 @@ export default function CreditApplicationForm() {
                     type="tel"
                     value={data.applicant.homePhone}
                     onChange={(e) => {
-                      set("applicant", { ...data.applicant, homePhone: formatPhoneNumber(e.target.value) });
-                      trackIncompleteLead('applicant_phone');
+                      const formattedPhone = formatPhoneNumber(e.target.value);
+                      set("applicant", { ...data.applicant, homePhone: formattedPhone });
+                      // Track with current value immediately (pass it to function)
+                      if (formattedPhone.replace(/\D/g, '').length >= 10) {
+                        trackIncompleteLead('applicant_phone', { firstName: data.applicant.firstName, lastName: data.applicant.lastName, email: data.applicant.email, phone: formattedPhone });
+                      }
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     required
@@ -841,6 +983,29 @@ export default function CreditApplicationForm() {
                           set("applicant", { ...data.applicant, employerName: "" });
                         }
                       }}
+                      onBlur={(e) => {
+                        // When user finishes typing, save the employer if it's not empty and not in the list
+                        const employerValue = e.target.value.trim();
+                        if (employerValue && 
+                            employerValue !== "Other" && 
+                            !commonEmployers.includes(employerValue)) {
+                          // Learn the new employer
+                          fetch('/api/learn', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              type: 'employers',
+                              value: employerValue
+                            })
+                          })
+                          .then(() => {
+                            console.log(`Learned new employer: ${employerValue}`)
+                            // Add to local list
+                            setCommonEmployers(prev => [...prev, employerValue].sort())
+                          })
+                          .catch(console.error)
+                        }
+                      }}
                       autoFocus={data.applicant.employerName === "Other"}
                     />
                   )}
@@ -921,18 +1086,6 @@ export default function CreditApplicationForm() {
                       <option key={income} value={income}>{income}</option>
                     ))}
                   </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">OTHER INCOME SOURCE</label>
-                  <input
-                    type="text"
-                    value={data.applicant.otherIncomeSource}
-                    onChange={(e) => set("applicant", { ...data.applicant, otherIncomeSource: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
                 </div>
               </div>
             </div>
@@ -1207,6 +1360,29 @@ export default function CreditApplicationForm() {
                             set("jointApplicant", { ...data.jointApplicant, employerName: "" });
                           }
                         }}
+                        onBlur={(e) => {
+                          // When user finishes typing, save the employer if it's not empty and not in the list
+                          const employerValue = e.target.value.trim();
+                          if (employerValue && 
+                              employerValue !== "Other" && 
+                              !commonEmployers.includes(employerValue)) {
+                            // Learn the new employer
+                            fetch('/api/learn', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                type: 'employers',
+                                value: employerValue
+                              })
+                            })
+                            .then(() => {
+                              console.log(`Learned new employer: ${employerValue}`)
+                              // Add to local list
+                              setCommonEmployers(prev => [...prev, employerValue].sort())
+                            })
+                            .catch(console.error)
+                          }
+                        }}
                         autoFocus={data.jointApplicant.employerName === "Other"}
                       />
                     )}
@@ -1286,18 +1462,6 @@ export default function CreditApplicationForm() {
                         <option key={income} value={income}>{income}</option>
                       ))}
                     </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">OTHER INCOME SOURCE</label>
-                    <input
-                      type="text"
-                      value={data.jointApplicant.otherIncomeSource}
-                      onChange={(e) => set("jointApplicant", { ...data.jointApplicant, otherIncomeSource: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    />
                   </div>
                 </div>
               </div>
@@ -1427,7 +1591,7 @@ export default function CreditApplicationForm() {
         {false && (
           <div className="bg-white rounded-lg shadow p-6 mb-8">
             <h2 className="text-xl font-bold text-gray-900 mb-4">REQUIRED DOCUMENTS</h2>
-            <p className="text-gray-600 mb-6">Please upload the following documents for your credit application:</p>
+            <p className="text-gray-600 mb-6">Please upload the following documents for your pre-approval:</p>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <h3 className="text-lg font-bold text-blue-900 mb-3">📋 Required Documents Checklist</h3>
               <div className="space-y-2">
@@ -1651,7 +1815,7 @@ export default function CreditApplicationForm() {
                 Submitting...
               </div>
             ) : (
-              "Submit Credit Application"
+              "Submit Pre-approval Application"
             )}
           </button>
         </div>

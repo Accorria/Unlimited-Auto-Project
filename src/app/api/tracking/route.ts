@@ -77,6 +77,13 @@ async function sendTrackingNotification(trackingData: any, dealer: any) {
   try {
     // Import Resend for email sending
     const { Resend } = await import('resend')
+    
+    // Check if API key is available
+    if (!process.env.RESEND_API_KEY) {
+      console.warn('⚠️ RESEND_API_KEY not configured - skipping tracking email notification')
+      return
+    }
+    
     const resend = new Resend(process.env.RESEND_API_KEY)
 
     const eventTypeLabels = {

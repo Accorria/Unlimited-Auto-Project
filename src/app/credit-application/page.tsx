@@ -13,10 +13,10 @@ export default function CreditApplicationPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              Credit Application
+              Get Pre-Approved Today
             </h1>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-              Get pre-approved for your next vehicle with our comprehensive credit application. 
+              Get pre-approved for your next vehicle with our comprehensive pre-approval form. 
               We work with multiple lenders to find the best rates for your situation.
             </p>
           </div>
