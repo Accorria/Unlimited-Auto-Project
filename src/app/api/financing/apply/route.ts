@@ -80,6 +80,41 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('Financing application submitted successfully:', lead)
+
+    // Create appointment if date/time provided
+    if (body.appointmentDate && body.appointmentTime) {
+      try {
+        const appointmentDateTime = new Date(`${body.appointmentDate}T${body.appointmentTime}`)
+        const endDateTime = new Date(appointmentDateTime.getTime() + 60 * 60 * 1000) // 1 hour duration
+
+        const appointmentData = {
+          dealer_id: dealer.id,
+          lead_id: lead.id,
+          vehicle_id: body.vehicleInterest || null,
+          type: 'test_drive',
+          start_at: appointmentDateTime.toISOString(),
+          end_at: endDateTime.toISOString(),
+          status: 'scheduled',
+          location: '24645 Plymouth Rd Unit A, Redford Township, MI 48239',
+          notes: JSON.stringify({
+            vehicleInterest: body.vehicleInterest
+          })
+        }
+
+        const { data: appointment, error: appointmentError } = await supabase
+          .from('appointments')
+          .insert(appointmentData)
+          .select()
+          .single()
+
+        if (!appointmentError && appointment) {
+          console.log('Appointment created successfully:', appointment.id)
+        }
+      } catch (appointmentErr) {
+        console.error('Error creating appointment:', appointmentErr)
+        // Don't fail the application submission if appointment creation fails
+      }
+    }
     
         // Send email notification to dealer
         if (resend) {
@@ -104,6 +139,13 @@ export async function POST(req: NextRequest) {
           <p><strong>Down Payment:</strong> ${body.downPayment || (lead.down_payment ? `$${lead.down_payment.toLocaleString()}` : 'N/A')}</p>
           <p><strong>Credit Score:</strong> ${body.creditScore || lead.credit_score || 'N/A'}</p>
           <p><strong>Vehicle of Interest:</strong> ${body.vehicleInterest || lead.message || 'N/A'}</p>
+          ${body.appointmentDate && body.appointmentTime ? `
+          <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #4caf50;">
+            <h3 style="margin-top: 0; color: #155724;">📅 Test Drive Appointment Requested</h3>
+            <p><strong>Date:</strong> ${new Date(body.appointmentDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            <p><strong>Time:</strong> ${new Date(`2000-01-01T${body.appointmentTime}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</p>
+          </div>
+          ` : ''}
           <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
         `,
       })

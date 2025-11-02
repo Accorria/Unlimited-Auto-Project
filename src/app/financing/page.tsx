@@ -28,7 +28,9 @@ export default function FinancingPage() {
     income: '',
     downPayment: '',
     creditScore: '',
-    vehicleInterest: ''
+    vehicleInterest: '',
+    appointmentDate: '',
+    appointmentTime: ''
   })
 
   const [showCalculator, setShowCalculator] = useState(false)
@@ -160,7 +162,9 @@ export default function FinancingPage() {
           income: '',
           downPayment: '',
           creditScore: '',
-          vehicleInterest: ''
+          vehicleInterest: '',
+          appointmentDate: '',
+          appointmentTime: ''
         })
       } else {
         setSubmitStatus('error')
@@ -539,6 +543,38 @@ export default function FinancingPage() {
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
                   <p className="font-semibold">Error</p>
                   <p>{submitMessage}</p>
+                </div>
+              )}
+
+              {formData.vehicleInterest && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Date for Test Drive</label>
+                    <input
+                      type="date"
+                      name="appointmentDate"
+                      value={formData.appointmentDate}
+                      onChange={handleInputChange}
+                      min={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Time</label>
+                    <select
+                      name="appointmentTime"
+                      value={formData.appointmentTime}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                    >
+                      <option value="">Select a time</option>
+                      {['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'].map((time) => (
+                        <option key={time} value={time}>
+                          {new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               )}
 

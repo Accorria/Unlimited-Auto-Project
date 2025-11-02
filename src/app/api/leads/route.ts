@@ -200,6 +200,43 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('Lead submitted successfully:', lead.id)
+
+    // Create appointment if date/time provided
+    if (body.appointmentDate && body.appointmentTime) {
+      try {
+        const appointmentDateTime = new Date(`${body.appointmentDate}T${body.appointmentTime}`)
+        const endDateTime = new Date(appointmentDateTime.getTime() + 60 * 60 * 1000) // 1 hour duration
+
+        const appointmentData = {
+          dealer_id: dealer.id,
+          lead_id: lead.id,
+          vehicle_id: body.vehicleId || null,
+          type: body.service === 'test_drive' ? 'test_drive' : 'service',
+          start_at: appointmentDateTime.toISOString(),
+          end_at: endDateTime.toISOString(),
+          status: 'scheduled',
+          location: '24645 Plymouth Rd Unit A, Redford Township, MI 48239',
+          notes: JSON.stringify({
+            service: body.service,
+            vehicleInterest: body.vehicleInterest,
+            message: body.message
+          })
+        }
+
+        const { data: appointment, error: appointmentError } = await supabase
+          .from('appointments')
+          .insert(appointmentData)
+          .select()
+          .single()
+
+        if (!appointmentError && appointment) {
+          console.log('Appointment created successfully:', appointment.id)
+        }
+      } catch (appointmentErr) {
+        console.error('Error creating appointment:', appointmentErr)
+        // Don't fail the lead submission if appointment creation fails
+      }
+    }
     
         // Send email notification to dealer
         if (resend) {
@@ -218,6 +255,13 @@ export async function POST(req: NextRequest) {
                 <p><strong>Service:</strong> ${body.service || 'N/A'}</p>
                 <p><strong>Vehicle Interest:</strong> ${body.vehicleInterest || 'N/A'}</p>
                 <p><strong>Vehicle ID:</strong> ${body.vehicleId || 'N/A'}</p>
+                ${body.appointmentDate && body.appointmentTime ? `
+                <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #4caf50;">
+                  <h3 style="margin-top: 0; color: #155724;">📅 Appointment Requested</h3>
+                  <p><strong>Date:</strong> ${new Date(body.appointmentDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                  <p><strong>Time:</strong> ${new Date(`2000-01-01T${body.appointmentTime}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</p>
+                </div>
+                ` : ''}
                 <p><strong>Source:</strong> ${body.source === 'vehicle_page' ? '🚗 Vehicle Page (Website)' : body.source === 'contact_form' ? '📝 Contact Form (Website)' : '🌐 Website'}</p>
                 <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
                 <hr>

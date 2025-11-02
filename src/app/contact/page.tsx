@@ -21,7 +21,9 @@ export default function ContactPage() {
     phone: '',
     service: '',
     message: '',
-    vehicleInterest: ''
+    vehicleInterest: '',
+    appointmentDate: '',
+    appointmentTime: ''
   })
   const [source, setSource] = useState('contact_form')
   const [vehicleId, setVehicleId] = useState('')
@@ -142,6 +144,8 @@ export default function ContactPage() {
           service: formData.service,
           vehicleInterest: vehicleInterestName,
           vehicleId: vehicleId,
+          appointmentDate: formData.appointmentDate,
+          appointmentTime: formData.appointmentTime,
           consent: true
         }),
       })
@@ -155,7 +159,9 @@ export default function ContactPage() {
           phone: '',
           service: '',
           message: '',
-          vehicleInterest: ''
+          vehicleInterest: '',
+          appointmentDate: '',
+          appointmentTime: ''
         })
       } else {
         setError('There was an error submitting your message. Please try again or call us directly at (313) 766-4475.')
@@ -317,6 +323,38 @@ export default function ContactPage() {
                   ))}
                 </select>
               </div>
+
+              {formData.service && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Date</label>
+                    <input
+                      type="date"
+                      name="appointmentDate"
+                      value={formData.appointmentDate}
+                      onChange={handleInputChange}
+                      min={new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Time</label>
+                    <select
+                      name="appointmentTime"
+                      value={formData.appointmentTime}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                    >
+                      <option value="">Select a time</option>
+                      {['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'].map((time) => (
+                        <option key={time} value={time}>
+                          {new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">How can we help you?</label>
