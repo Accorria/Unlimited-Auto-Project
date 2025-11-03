@@ -514,7 +514,7 @@ export default function InventoryPage() {
                         href="/credit-application"
                         className="w-full bg-green-600 text-white text-center py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold block"
                       >
-                        💳 Get Pre-Approved
+                        🚗 Drive Today
                       </Link>
                     </div>
                   </div>

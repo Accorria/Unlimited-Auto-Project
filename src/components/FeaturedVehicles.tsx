@@ -171,18 +171,26 @@ export default function FeaturedVehicles() {
                   )}
                 </div>
 
-                <div className="flex gap-3">
+                <div className="space-y-3">
+                  <div className="flex gap-3">
+                    <Link
+                      href={`/inventory/${vehicle.id}`}
+                      className="flex-1 bg-blue-600 text-white text-center py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                    >
+                      View Details
+                    </Link>
+                    <Link
+                      href={`/contact?vehicle=${vehicle.id}`}
+                      className="flex-1 border-2 border-blue-600 text-blue-600 text-center py-3 rounded-lg hover:bg-blue-600 hover:text-white transition-colors font-semibold"
+                    >
+                      Schedule Drive
+                    </Link>
+                  </div>
                   <Link
-                    href={`/inventory/${vehicle.id}`}
-                    className="flex-1 bg-blue-600 text-white text-center py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                    href="/credit-application"
+                    className="w-full bg-green-600 text-white text-center py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold block"
                   >
-                    View Details
-                  </Link>
-                  <Link
-                    href={`/contact?vehicle=${vehicle.id}`}
-                    className="flex-1 border-2 border-blue-600 text-blue-600 text-center py-3 rounded-lg hover:bg-blue-600 hover:text-white transition-colors font-semibold"
-                  >
-                    Schedule Drive
+                    🚗 Drive Today
                   </Link>
                 </div>
               </div>
