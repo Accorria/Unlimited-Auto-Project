@@ -38,6 +38,7 @@ interface Vehicle {
   title_status?: string
   downPayment?: number
   assigned_to?: string
+  display_order?: number
   created_at?: string
   updated_at?: string
   vehicle_photos?: Array<{
@@ -49,118 +50,6 @@ interface Vehicle {
 }
 
 // We'll fetch vehicles from the API instead of using static data
-
-// Fallback vehicle data (keep as backup)
-const fallbackVehicles = [
-  {
-    id: '1',
-    year: 2020,
-    make: 'Honda',
-    model: 'Civic',
-    trim: 'LX',
-    price: 18995,
-    miles: 45000,
-    coverPhoto: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop',
-    features: ['Automatic', 'Bluetooth', 'Backup Camera', 'Cruise Control'],
-    condition: 'Excellent',
-    fuelType: 'Gas',
-    transmission: 'Automatic',
-    drivetrain: 'FWD',
-    color: 'Silver',
-    vin: '1HGCV1F3XLA123456',
-    status: 'available'
-  },
-  {
-    id: '2',
-    year: 2019,
-    make: 'Toyota',
-    model: 'Camry',
-    trim: 'LE',
-    price: 21995,
-    miles: 38000,
-    coverPhoto: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=500&h=300&fit=crop',
-    features: ['Automatic', 'Lane Assist', 'Cruise Control', 'Heated Seats'],
-    condition: 'Very Good',
-    fuelType: 'Gas',
-    transmission: 'Automatic',
-    drivetrain: 'FWD',
-    color: 'White',
-    vin: '4T1C11AK5KU123456',
-    status: 'available'
-  },
-  {
-    id: '3',
-    year: 2021,
-    make: 'Nissan',
-    model: 'Altima',
-    trim: 'SV',
-    price: 23995,
-    miles: 25000,
-    coverPhoto: 'https://images.unsplash.com/photo-1549317336-206569e8475c?w=500&h=300&fit=crop',
-    features: ['CVT', 'Apple CarPlay', 'Heated Seats', 'Sunroof'],
-    condition: 'Like New',
-    fuelType: 'Gas',
-    transmission: 'CVT',
-    drivetrain: 'FWD',
-    color: 'Black',
-    vin: '1N4BL4BV5MN123456',
-    status: 'available'
-  },
-  {
-    id: '4',
-    year: 2018,
-    make: 'Ford',
-    model: 'F-150',
-    trim: 'XLT',
-    price: 32995,
-    miles: 52000,
-    coverPhoto: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=500&h=300&fit=crop',
-    features: ['4WD', 'Towing Package', 'Bed Liner', 'Backup Camera'],
-    condition: 'Good',
-    fuelType: 'Gas',
-    transmission: 'Automatic',
-    drivetrain: '4WD',
-    color: 'Blue',
-    vin: '1FTFW1ET5DFC12345',
-    status: 'available'
-  },
-  {
-    id: '5',
-    year: 2020,
-    make: 'Chevrolet',
-    model: 'Equinox',
-    trim: 'LT',
-    price: 24995,
-    miles: 41000,
-    coverPhoto: 'https://images.unsplash.com/photo-1619767886558-efdc259cde1a?w=500&h=300&fit=crop',
-    features: ['AWD', 'Leather Seats', 'Navigation', 'Heated Seats'],
-    condition: 'Very Good',
-    fuelType: 'Gas',
-    transmission: 'Automatic',
-    drivetrain: 'AWD',
-    color: 'Red',
-    vin: '2GNAXUEV5L6123456',
-    status: 'available'
-  },
-  {
-    id: '6',
-    year: 2019,
-    make: 'Hyundai',
-    model: 'Elantra',
-    trim: 'SE',
-    price: 16995,
-    miles: 48000,
-    coverPhoto: 'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=500&h=300&fit=crop',
-    features: ['Automatic', 'Bluetooth', 'Backup Camera', 'Remote Start'],
-    condition: 'Good',
-    fuelType: 'Gas',
-    transmission: 'Automatic',
-    drivetrain: 'FWD',
-    color: 'Gray',
-    vin: '5NPE34AF5KH123456',
-    status: 'available'
-  }
-]
 
 export default function InventoryPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
@@ -222,7 +111,7 @@ export default function InventoryPage() {
 
   // Filter and sort vehicles
   const filteredVehicles = useMemo(() => {
-    let filtered = vehicles.filter(vehicle => {
+    const filtered = vehicles.filter(vehicle => {
       // Search filter - be more permissive
       const matchesSearch = !searchTerm || 
                            vehicle.make?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -255,8 +144,16 @@ export default function InventoryPage() {
       return matchesSearch && matchesMake && matchesYear && matchesPrice && matchesMileage
     })
 
-    // Sort vehicles
+    // Sort vehicles - first by display_order (admin-controlled order), then by user selection
     filtered.sort((a, b) => {
+      // First, sort by display_order if available (respects admin drag-and-drop order)
+      const aOrder = a.display_order ?? 999
+      const bOrder = b.display_order ?? 999
+      if (aOrder !== bOrder) {
+        return aOrder - bOrder
+      }
+      
+      // Then apply user-selected sort
       switch (sortBy) {
         case 'price-low':
           return (a.price || 0) - (b.price || 0)
@@ -430,10 +327,10 @@ export default function InventoryPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredVehicles.map((vehicle) => (
-                <div key={vehicle.id} className={`bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 border border-gray-100 ${
+                <div key={vehicle.id} className={`bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 border-2 ${
                   vehicle.status === 'sold' 
-                    ? 'opacity-75 grayscale' 
-                    : 'hover:shadow-2xl hover:-translate-y-2'
+                    ? 'opacity-80 grayscale border-red-300' 
+                    : 'border-gray-100 hover:shadow-2xl hover:-translate-y-2'
                 }`}>
                   <div className="relative h-64">
                     <Image
@@ -444,16 +341,22 @@ export default function InventoryPage() {
                     />
                     {/* Dynamic down payment badge - only show if not sold */}
                     {vehicle.status !== 'sold' && (
-                      <div className="absolute top-2 left-2 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-bold shadow-lg">
+                      <div className="absolute top-2 left-2 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-bold shadow-lg z-10">
                         ${vehicle.downPayment || 999} Down
                       </div>
                     )}
                     
-                    {/* SOLD banner - only show if sold */}
+                    {/* SOLD banner - more prominent */}
                     {vehicle.status === 'sold' && (
-                      <div className="absolute top-0 left-0 right-0 bg-red-600 text-white text-center py-2 text-lg font-bold shadow-lg transform -rotate-2">
-                        SOLD
-                      </div>
+                      <>
+                        <div className="absolute inset-0 bg-black bg-opacity-40 z-10"></div>
+                        <div className="absolute top-4 left-0 right-0 bg-red-600 text-white text-center py-3 text-xl font-extrabold shadow-2xl transform -rotate-2 z-20 border-4 border-white">
+                          SOLD
+                        </div>
+                        <div className="absolute bottom-4 right-4 bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg z-20 border-2 border-white">
+                          SOLD
+                        </div>
+                      </>
                     )}
                   </div>
 
@@ -496,26 +399,35 @@ export default function InventoryPage() {
                     </div>
 
                     <div className="space-y-3">
-                      <div className="flex gap-3">
-                        <Link
-                          href={`/inventory/${vehicle.id}`}
-                          className="flex-1 bg-blue-600 text-white text-center py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-                        >
-                          View Details
-                        </Link>
-                        <Link
-                          href={`/contact?vehicle=${vehicle.id}`}
-                          className="flex-1 border-2 border-blue-600 text-blue-600 text-center py-3 rounded-lg hover:bg-blue-600 hover:text-white transition-colors font-semibold"
-                        >
-                          Schedule Drive
-                        </Link>
-                      </div>
-                      <Link
-                        href="/credit-application"
-                        className="w-full bg-green-600 text-white text-center py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold block"
-                      >
-                        🚗 Drive Today
-                      </Link>
+                      {vehicle.status === 'sold' ? (
+                        <div className="bg-gray-100 border-2 border-gray-300 rounded-lg p-4 text-center">
+                          <p className="text-gray-700 font-semibold text-lg mb-2">This vehicle has been sold</p>
+                          <p className="text-sm text-gray-600">Check out our other available vehicles!</p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex gap-3">
+                            <Link
+                              href={`/inventory/${vehicle.id}`}
+                              className="flex-1 bg-blue-600 text-white text-center py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                            >
+                              View Details
+                            </Link>
+                            <Link
+                              href={`/contact?vehicle=${vehicle.id}`}
+                              className="flex-1 border-2 border-blue-600 text-blue-600 text-center py-3 rounded-lg hover:bg-blue-600 hover:text-white transition-colors font-semibold"
+                            >
+                              Schedule Drive
+                            </Link>
+                          </div>
+                          <Link
+                            href="/credit-application"
+                            className="w-full bg-green-600 text-white text-center py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold block"
+                          >
+                            🚗 Drive Today
+                          </Link>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

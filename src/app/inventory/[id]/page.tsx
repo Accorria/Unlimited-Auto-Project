@@ -153,9 +153,20 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
                 src={vehicleImages[selectedImageIndex] || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop'}
                 alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
                 fill
-                className="object-cover"
+                className={`object-cover ${vehicle.status === 'sold' ? 'opacity-80 grayscale' : ''}`}
                 priority
               />
+              {vehicle.status === 'sold' && (
+                <>
+                  <div className="absolute inset-0 bg-black bg-opacity-40 z-10"></div>
+                  <div className="absolute top-6 left-0 right-0 bg-red-600 text-white text-center py-4 text-3xl font-extrabold shadow-2xl transform -rotate-2 z-20 border-4 border-white">
+                    SOLD
+                  </div>
+                  <div className="absolute bottom-6 right-6 bg-red-600 text-white px-6 py-3 rounded-lg text-lg font-bold shadow-lg z-20 border-2 border-white">
+                    SOLD
+                  </div>
+                </>
+              )}
             </div>
             
             {/* Thumbnail Gallery */}
@@ -187,11 +198,19 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim}
               </h1>
+              {vehicle.status === 'sold' && (
+                <div className="mb-4 bg-red-600 text-white text-center py-4 px-6 rounded-lg shadow-lg border-4 border-white transform -rotate-1">
+                  <p className="text-2xl font-extrabold">SOLD</p>
+                  <p className="text-sm mt-1">This vehicle has been sold</p>
+                </div>
+              )}
               <div className="flex items-center space-x-4 text-gray-600 mb-4">
-                <span className="text-2xl font-bold text-blue-600">$999 Down</span>
+                {vehicle.status !== 'sold' && (
+                  <span className="text-2xl font-bold text-blue-600">$999 Down</span>
+                )}
                 {vehicle.miles && (
                   <>
-                    <span>•</span>
+                    {vehicle.status !== 'sold' && <span>•</span>}
                     <span>{vehicle.miles.toLocaleString()} miles</span>
                   </>
                 )}
@@ -203,8 +222,16 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
                 )}
               </div>
               <div className="flex items-center space-x-4 mb-4">
-                <span className="bg-green-500 text-white px-3 py-1 rounded-lg text-sm font-semibold">
-                  {vehicle.condition || vehicle.status || 'Available'}
+                <span className={`px-3 py-1 rounded-lg text-sm font-semibold ${
+                  vehicle.status === 'sold' 
+                    ? 'bg-red-600 text-white' 
+                    : vehicle.status === 'available' || vehicle.status === 'active'
+                    ? 'bg-green-500 text-white'
+                    : 'bg-gray-500 text-white'
+                }`}>
+                  {vehicle.status === 'sold' 
+                    ? 'SOLD' 
+                    : vehicle.condition || vehicle.status || 'Available'}
                 </span>
               </div>
             </div>
@@ -315,34 +342,49 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
 
             {/* Action Buttons */}
             <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Link
-                  href={`/contact?vehicle=${vehicle.id}`}
-                  className="bg-blue-600 text-white text-center py-4 rounded-lg hover:bg-blue-700 transition-colors font-semibold text-lg"
-                >
-                  Schedule Test Drive
-                </Link>
-                <Link
-                  href="/credit-application"
-                  className="border-2 border-blue-600 text-blue-600 text-center py-4 rounded-lg hover:bg-blue-600 hover:text-white transition-colors font-semibold text-lg"
-                >
-                  Get Pre-Approved
-                </Link>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Link
-                  href="/contact"
-                  className="bg-gray-600 text-white text-center py-3 rounded-lg hover:bg-gray-700 transition-colors font-semibold"
-                >
-                  Contact Us
-                </Link>
-                <button 
-                  onClick={() => window.print()}
-                  className="border-2 border-gray-600 text-gray-600 text-center py-3 rounded-lg hover:bg-gray-600 hover:text-white transition-colors font-semibold"
-                >
-                  Print Details
-                </button>
-              </div>
+              {vehicle.status === 'sold' ? (
+                <div className="bg-gray-100 border-2 border-gray-300 rounded-lg p-6 text-center">
+                  <p className="text-gray-800 font-semibold text-xl mb-2">This vehicle has been sold</p>
+                  <p className="text-gray-600 mb-4">Check out our other available vehicles!</p>
+                  <Link
+                    href="/inventory"
+                    className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                  >
+                    View Other Vehicles
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Link
+                      href={`/contact?vehicle=${vehicle.id}`}
+                      className="bg-blue-600 text-white text-center py-4 rounded-lg hover:bg-blue-700 transition-colors font-semibold text-lg"
+                    >
+                      Schedule Test Drive
+                    </Link>
+                    <Link
+                      href="/credit-application"
+                      className="border-2 border-blue-600 text-blue-600 text-center py-4 rounded-lg hover:bg-blue-600 hover:text-white transition-colors font-semibold text-lg"
+                    >
+                      Get Pre-Approved
+                    </Link>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Link
+                      href="/contact"
+                      className="bg-gray-600 text-white text-center py-3 rounded-lg hover:bg-gray-700 transition-colors font-semibold"
+                    >
+                      Contact Us
+                    </Link>
+                    <button 
+                      onClick={() => window.print()}
+                      className="border-2 border-gray-600 text-gray-600 text-center py-3 rounded-lg hover:bg-gray-600 hover:text-white transition-colors font-semibold"
+                    >
+                      Print Details
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
