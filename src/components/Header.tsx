@@ -11,15 +11,23 @@ export default function Header() {
       {/* Top Bar */}
       <div className="bg-blue-900 text-white py-2">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center text-sm">
-            <div className="flex items-center space-x-6">
+          <div className="flex flex-col md:flex-row justify-between items-center md:items-center text-xs md:text-sm gap-2 md:gap-4">
+            {/* Left: Business Info */}
+            <div className="flex flex-col md:flex-row items-center md:items-center space-y-1 md:space-y-0 md:space-x-6 gap-2 md:gap-x-6">
               <div className="flex items-center space-x-2">
                 <span>📍</span>
-                <span>24645 Plymouth Rd Unit A, Redford Township, MI 48239</span>
+                <span className="whitespace-nowrap">24645 Plymouth Rd, Redford, MI 48239</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span>🕒</span>
+                <span className="whitespace-nowrap">Mon-Fri: 9AM-7PM | Sat: 9AM-6PM | Sun: 12PM-5PM</span>
               </div>
             </div>
-            <div className="hidden md:flex items-center space-x-4">
-              <span>🕒 Mon-Fri: 9AM-7PM | Sat: 9AM-6PM | Sun: 12PM-5PM</span>
+            {/* Right: Value Props */}
+            <div className="flex items-center space-x-4 md:space-x-6 flex-wrap justify-center gap-x-4 md:gap-x-6">
+              <span className="font-semibold whitespace-nowrap">🚗 Drive Today</span>
+              <span className="font-semibold whitespace-nowrap">⚡ Fast Approval</span>
+              <span className="font-semibold whitespace-nowrap">✅ All Credit Welcome</span>
             </div>
           </div>
         </div>

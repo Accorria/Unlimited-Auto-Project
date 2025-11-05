@@ -1,126 +1,139 @@
-# Unlimited Auto Website - Implementation Summary
+# Lead Ops & Inventory System - Implementation Summary
 
-## ✅ **Completed Tasks**
+## ✅ COMPLETED FEATURES
 
-### 1. **Admin Login System Fixed** ✅
-- **Issue**: Admin login was trying to connect to Supabase server base
-- **Solution**: Created simple localStorage-based authentication system
-- **Access**: 
-  - URL: `/admin/login`
-  - Email: `admin@unlimitedauto.com`
-  - Password: `unlimited2024`
-- **Features**: 
-  - Direct login without server connection issues
-  - Persistent session management
-  - Automatic redirect to dashboard after login
+### 1. Header & UI
+- ✅ **Business hours and address** added back to header (mobile-friendly)
+- ✅ Responsive design with proper spacing
 
-### 2. **Pricing Display Updated** ✅
-- **Change**: Updated vehicle pricing display as requested
-- **Before**: Full price in blue bubble (e.g., "$18,995")
-- **After**: 
-  - Blue bubble shows "$999 Down"
-  - Full price displayed next to vehicle name
-- **Applied to**: Featured Vehicles section and Inventory page
+### 2. Database Schema
+- ✅ **Lead SLA columns**: `first_response_at`, `response_time_minutes`, `next_action_due_at`, `priority`
+- ✅ **Lead tasks table**: `lead_tasks` with title, due_at, owner_id, status, notes
+- ✅ **Price change log table**: `price_change_log` with old_price, new_price, changed_by, changed_at
+- ✅ **Tracking events table**: `tracking_events` for click-to-call, email clicks, etc.
+- ✅ **Reply macros table**: `reply_macros` for saved email/SMS templates
+- ✅ **Accorria hooks columns**: 
+  - Leads: `fb_user_id`, `accorria_score`, `accorria_tags`, `lender_ref`, `lender_status`
+  - Vehicles: `accorria_status`, `accorria_post_ids`, `first_listed_at`, `days_on_lot` (computed)
 
-### 3. **Services Section Cleaned Up** ✅
-- **Change**: Removed emojis from Vehicle Sales, Auto Repair, and Collision Repair
-- **Kept**: Detailing service emoji (✨) as requested
-- **Result**: Cleaner, more professional appearance
+### 3. Database Functions & Triggers
+- ✅ **Auto-calculate response time** when `first_response_at` is set
+- ✅ **Auto-log price changes** when vehicle price is updated
+- ✅ **Auto-set first_listed_at** when vehicle status changes to 'available' or 'active'
+- ✅ **Pipeline rules**:
+  - Auto-set lead status to 'set' when appointment is scheduled
+  - Auto-set lead status to 'show' when appointment is marked attended
+  - Auto-set lead status to 'close' when `close_date` is set
+  - Auto-set `first_response_at` when lead status changes from 'new'
 
-### 4. **Database Integration** ✅
-- **Featured Vehicles**: Now fetches from `/api/vehicles` endpoint
-- **Inventory Page**: Connected to database with fallback to hardcoded data
-- **Features**:
-  - Shows 3 most expensive vehicles in featured section
-  - Supports 40+ vehicles in inventory
-  - Loading states and error handling
-  - Automatic sorting by price (highest first for featured)
+### 4. API Endpoints
 
-### 5. **Admin Dashboard Enhanced** ✅
-- **Features**:
-  - Overview statistics
-  - Quick action buttons
-  - Recent vehicles table
-  - User management access
-- **Navigation**: Easy access to all admin functions
-- **User Management**: Added "Manage Users" quick action
+#### Lead Operations
+- ✅ `GET /api/leads/tasks?leadId=xxx` - Get tasks for a lead
+- ✅ `POST /api/leads/tasks` - Create a new task
+- ✅ `PATCH /api/leads/tasks` - Update a task
+- ✅ `DELETE /api/leads/tasks?taskId=xxx` - Delete a task
+- ✅ `POST /api/leads/bulk` - Bulk actions (assign, change_status, set_priority, set_next_action, send_template)
 
-### 6. **User Management System** ✅
-- **New Page**: `/admin/users`
-- **Features**:
-  - Add new users with roles (Admin, Sales Manager, Sales Rep)
-  - View all users in table format
-  - Activate/deactivate users
-  - Role-based permissions display
-- **Form**: Complete user creation form with validation
+#### Tracking
+- ✅ `POST /api/tracking/events` - Track click-to-call, email clicks, etc.
+- ✅ `GET /api/tracking/events?leadId=xxx` - Get tracking events for a lead/vehicle
 
-## 🔧 **Technical Improvements**
+#### Reply Macros
+- ✅ `GET /api/reply-macros?dealerId=xxx&category=xxx` - Get reply macros
+- ✅ `POST /api/reply-macros` - Create a new macro
+- ✅ `PATCH /api/reply-macros` - Update a macro
+- ✅ `DELETE /api/reply-macros?macroId=xxx` - Delete a macro
 
-### **Authentication System**
-- Replaced complex Supabase auth with simple localStorage system
-- Eliminated server connection issues
-- Maintained security for admin access
+#### Analytics
+- ✅ `GET /api/analytics/scoreboard?dealerId=xxx` - User scoreboard (Set/Show/Close/Conv%/Avg response time)
+- ✅ `GET /api/analytics/lead-source-roi?dealerId=xxx` - Lead source ROI dashboard
 
-### **Data Management**
-- API-first approach with fallback data
-- Proper error handling and loading states
-- Dynamic vehicle fetching and display
+#### Inventory
+- ✅ `GET /api/inventory/aging?dealerId=xxx` - Aging inventory report (0-15/16-30/31-60/60+ days)
+- ✅ `POST /api/inventory/import-csv` - CSV importer for vehicles
+- ✅ `GET /api/inventory/import-csv/template` - Download CSV template
 
-### **UI/UX Enhancements**
-- Consistent pricing display across all pages
-- Professional appearance with reduced emojis
-- Responsive design maintained
-- Loading indicators for better user experience
+### 5. TypeScript Types
+- ✅ Updated `Lead` interface with SLA fields and Accorria hooks
+- ✅ Updated `Vehicle` interface with Accorria hooks and `days_on_lot`
+- ✅ Added `LeadTask`, `PriceChangeLog`, `TrackingEvent`, `ReplyMacro` interfaces
 
-## 📊 **Current Status**
+## 📋 REMAINING FEATURES
 
-### **Working Features**
-- ✅ Admin login and dashboard access
-- ✅ Vehicle inventory display (40+ vehicles supported)
-- ✅ Featured vehicles with proper pricing
-- ✅ User management system
-- ✅ Database integration with API endpoints
-- ✅ Responsive design and mobile optimization
+### 1. Calendar View (Pending)
+- [ ] Build calendar view for appointments (day/week) in admin
+- [ ] Integration with existing appointments API
+- [ ] UI component for calendar display
 
-### **Ready for Testing**
-- Admin login: `admin@unlimitedauto.com` / `unlimited2024`
-- User management: Add/edit users through admin panel
-- Vehicle display: Shows "$999 Down" and full price correctly
-- Inventory: Supports large number of vehicles
+### 2. Appointment Emails (Pending)
+- [ ] Add iCal attachments to appointment confirmation emails
+- [ ] Integration with Resend email service
 
-## 🚀 **Next Steps**
+### 3. Auto Reminders (Pending)
+- [ ] Implement auto reminder system (T-24h, T-2h) for appointments
+- [ ] Background job or Supabase Edge Function
+- [ ] Email/SMS integration
 
-### **Remaining Task**
-- **Photo Upload System**: Implement proper photo upload to Supabase storage
-  - This will allow uploading vehicle photos through admin panel
-  - Photos will be stored in database and displayed on website
-  - Support for multiple photos per vehicle
+### 4. Global Search (Pending)
+- [ ] Create global search (Cmd/Ctrl+K) for leads and vehicles
+- [ ] Keyboard shortcut handler
+- [ ] Search UI component
 
-### **Testing Recommendations**
-1. **Admin Access**: Test login with provided credentials
-2. **User Management**: Add a new user and verify functionality
-3. **Vehicle Display**: Check pricing format on homepage and inventory
-4. **Database Connection**: Verify vehicles load from API (if Supabase is configured)
+## 📁 FILES CREATED/MODIFIED
 
-## 📝 **Notes**
+### Database Migrations
+- `supabase/migrations/add-lead-ops-features.sql` - Lead ops tables and columns
+- `supabase/migrations/add-pipeline-rules.sql` - Auto status update triggers
 
-- **Fallback System**: All components have fallback data if API fails
-- **Scalability**: System supports 40+ vehicles as requested
-- **Professional Appearance**: Reduced emojis for cleaner look
-- **Pricing Format**: "$999 Down" in blue bubble, full price next to name
-- **Admin System**: Simple but effective user management
+### API Routes
+- `src/app/api/leads/tasks/route.ts` - Lead tasks CRUD
+- `src/app/api/leads/bulk/route.ts` - Bulk lead actions
+- `src/app/api/tracking/events/route.ts` - Tracking events
+- `src/app/api/reply-macros/route.ts` - Reply macros CRUD
+- `src/app/api/analytics/scoreboard/route.ts` - User scoreboard
+- `src/app/api/analytics/lead-source-roi/route.ts` - Lead source ROI
+- `src/app/api/inventory/aging/route.ts` - Aging inventory report
+- `src/app/api/inventory/import-csv/route.ts` - CSV importer
 
-## 🎯 **Success Metrics**
+### Frontend Components
+- `src/components/Header.tsx` - Updated with business hours and address
 
-- ✅ Admin login works without server connection issues
-- ✅ Pricing display matches requirements exactly
-- ✅ Services section looks more professional
-- ✅ Database integration with proper fallbacks
-- ✅ User management system functional
-- ✅ Inventory supports 40+ vehicles
-- ✅ Featured vehicles show most expensive first
+### Type Definitions
+- `src/lib/types.ts` - Updated with new interfaces
 
-**Status**: Ready for testing and photo upload implementation
-**Admin Access**: Working and functional
-**Database**: Integrated with fallback system
-**UI/UX**: Updated per requirements
+## 🚀 NEXT STEPS
+
+1. **Run Database Migrations**
+   ```bash
+   # Apply migrations to Supabase
+   supabase db push
+   # Or manually run SQL files in Supabase dashboard
+   ```
+
+2. **Test API Endpoints**
+   - Test lead tasks API
+   - Test bulk actions
+   - Test analytics endpoints
+   - Test CSV importer
+
+3. **Build Admin UI Components**
+   - Lead tasks UI in admin leads page
+   - Reply macros management page
+   - Analytics dashboard pages
+   - Aging inventory report page
+   - CSV import UI
+
+4. **Complete Remaining Features**
+   - Calendar view for appointments
+   - iCal email attachments
+   - Auto reminder system
+   - Global search
+
+## 📝 NOTES
+
+- Photo angle categorization is **skipped** (as requested) - will use VIN numbers later
+- All database changes include proper RLS policies
+- All API endpoints use service role client for now (may need auth middleware)
+- Pipeline rules are implemented as database triggers for performance
+- Accorria hooks are ready for future AI integration

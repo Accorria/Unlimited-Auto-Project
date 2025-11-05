@@ -56,8 +56,15 @@ export interface Vehicle {
   assigned_to?: string;
   created_at: string;
   updated_at: string;
+  // Accorria hooks
+  accorria_status?: string;
+  accorria_post_ids?: Record<string, any>;
+  first_listed_at?: string;
+  days_on_lot?: number;
+  // Relations
   photos?: VehiclePhoto[];
   assigned_user?: User;
+  price_history?: PriceChangeLog[];
 }
 
 export interface VehiclePhoto {
@@ -98,9 +105,22 @@ export interface Lead {
   created_at: string;
   updated_at: string;
   status_updated_at: string;
+  // SLA fields
+  first_response_at?: string;
+  response_time_minutes?: number;
+  next_action_due_at?: string;
+  priority?: 'low' | 'normal' | 'high' | 'urgent';
+  // Accorria hooks
+  fb_user_id?: string;
+  accorria_score?: number;
+  accorria_tags?: string[];
+  lender_ref?: string;
+  lender_status?: string;
+  // Relations
   vehicle?: Vehicle;
   assigned_user?: User;
   status_history?: LeadStatusHistory[];
+  tasks?: LeadTask[];
 }
 
 export interface LeadStatusHistory {
@@ -192,6 +212,65 @@ export interface UTMParams {
   utm_campaign?: string;
   gclid?: string;
   agent?: string;
+}
+
+// Lead Task
+export interface LeadTask {
+  id: string;
+  lead_id: string;
+  dealer_id: string;
+  title: string;
+  due_at?: string;
+  owner_id?: string;
+  status: 'open' | 'done' | 'cancelled';
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: string;
+  owner?: User;
+  created_by_user?: User;
+}
+
+// Price Change Log
+export interface PriceChangeLog {
+  id: string;
+  vehicle_id: string;
+  dealer_id: string;
+  old_price?: number;
+  new_price: number;
+  changed_by?: string;
+  changed_at: string;
+  notes?: string;
+  changed_by_user?: User;
+}
+
+// Tracking Event
+export interface TrackingEvent {
+  id: string;
+  dealer_id: string;
+  lead_id?: string;
+  vehicle_id?: string;
+  event_type: 'click_to_call' | 'email_click' | 'sms_click' | 'cta_click' | 'form_submit' | 'page_view';
+  event_data?: Record<string, any>;
+  ip_address?: string;
+  user_agent?: string;
+  created_at: string;
+}
+
+// Reply Macro
+export interface ReplyMacro {
+  id: string;
+  dealer_id: string;
+  name: string;
+  subject?: string;
+  body: string;
+  channel: 'email' | 'sms';
+  category?: string;
+  is_active: boolean;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+  created_by_user?: User;
 }
 
 // Model code mappings

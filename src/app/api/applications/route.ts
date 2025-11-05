@@ -146,6 +146,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Insert the credit application as a lead
+    console.log('📝 Attempting to insert complete credit application into database:', {
+      name: leadData.name,
+      email: leadData.email,
+      phone: leadData.phone,
+      source: leadData.source,
+      dealer_id: leadData.dealer_id
+    })
+
     const { data: lead, error: leadError } = await supabase
       .from('leads')
       .insert(leadData)
@@ -155,7 +163,28 @@ export async function POST(req: NextRequest) {
     // If DB insert fails (e.g., RLS or env misconfig in prod), don't block the user.
     // We'll still send the notification email so the dealership receives the application.
     if (leadError) {
-      console.error('Error inserting lead (non-blocking):', leadError)
+      console.error('❌ ERROR inserting complete credit application lead:', {
+        error: leadError,
+        message: leadError.message,
+        details: leadError.details,
+        hint: leadError.hint,
+        code: leadError.code,
+        leadData: {
+          name: leadData.name,
+          email: leadData.email,
+          phone: leadData.phone,
+          dealer_id: leadData.dealer_id
+        }
+      })
+      // Log this as a critical error but continue so email still sends
+    } else {
+      console.log('✅ Successfully inserted complete credit application lead into database:', {
+        leadId: lead?.id,
+        name: lead?.name,
+        email: lead?.email,
+        phone: lead?.phone,
+        source: lead?.source
+      })
     }
 
     console.log('Credit application submitted successfully:', lead?.id || 'No lead ID (DB insert may have failed)')
@@ -216,8 +245,17 @@ export async function POST(req: NextRequest) {
             ${vehicleInfo.price ? `<p><strong>Price:</strong> $${parseFloat(String(vehicleInfo.price || '0')).toLocaleString()}</p>` : ''}
             ${body.financing?.salesPrice ? `<p><strong>Sales Price:</strong> $${parseFloat(String(body.financing.salesPrice || '0').replace(/[^0-9.]/g, '')).toLocaleString()}</p>` : ''}
             ${body.financing?.downPayment && body.financing.downPayment !== "" ? `<p><strong>Down Payment:</strong> $${parseFloat(String(body.financing.downPayment || '0').replace(/[^0-9.]/g, '')).toLocaleString()}</p>` : '<p><strong>Down Payment:</strong> Not selected</p>'}
-            ${body.financing?.tradeInValue ? `<p><strong>Trade-In Value:</strong> $${parseFloat(body.financing.tradeInValue).toLocaleString()}</p>` : ''}
+            ${body.financing?.netTrade ? `<p><strong>Net Trade Value:</strong> $${parseFloat(String(body.financing.netTrade).replace(/[^0-9.]/g, '')).toLocaleString()}</p>` : ''}
             ${body.financing?.loanAmount ? `<p><strong>Loan Amount:</strong> $${parseFloat(body.financing.loanAmount).toLocaleString()}</p>` : ''}
+            ${body.financing?.hasTradeIn && (body.financing?.tradeMake || body.financing?.tradeModel || body.financing?.tradeMileage) ? `
+            <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #2196f3;">
+              <h4 style="color: #1976d2; margin-top: 0; margin-bottom: 10px;">🔄 Trade-In Vehicle Information</h4>
+              ${body.financing?.tradeMake ? `<p><strong>Trade-In Make:</strong> ${body.financing.tradeMake}</p>` : ''}
+              ${body.financing?.tradeModel ? `<p><strong>Trade-In Model:</strong> ${body.financing.tradeModel}</p>` : ''}
+              ${body.financing?.tradeMileage ? `<p><strong>Trade-In Mileage:</strong> ${body.financing.tradeMileage.replace(/,/g, '')} miles</p>` : ''}
+              ${body.financing?.tradeYear ? `<p><strong>Trade-In Year:</strong> ${body.financing.tradeYear}</p>` : ''}
+            </div>
+            ` : ''}
             ${body.financing?.termMonths ? `<p><strong>Loan Term:</strong> ${body.financing.termMonths} months</p>` : ''}
             ${body.financing?.monthlyPayment ? `<p><strong>Estimated Monthly Payment:</strong> $${parseFloat(body.financing.monthlyPayment).toLocaleString()}</p>` : ''}
             ${vehicleInfo.condition ? `<p><strong>Condition:</strong> ${vehicleInfo.condition}</p>` : ''}
@@ -255,6 +293,7 @@ export async function POST(req: NextRequest) {
           
           <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="color: #2c3e50; margin-top: 0;">Employment Information</h3>
+            <p><strong>Employment Status:</strong> ${body.applicant?.employmentStatus ? body.applicant.employmentStatus.charAt(0).toUpperCase() + body.applicant.employmentStatus.slice(1).replace('-', '-') : 'N/A'}</p>
             <p><strong>Employer:</strong> ${body.applicant?.employerName || 'N/A'}</p>
             <p><strong>Position:</strong> ${body.applicant?.positionTitle || 'N/A'}</p>
             <p><strong>Work Phone:</strong> ${body.applicant?.workPhone || 'N/A'}</p>
