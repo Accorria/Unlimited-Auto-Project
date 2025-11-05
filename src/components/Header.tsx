@@ -15,10 +15,6 @@ export default function Header() {
             {/* Left: Business Info */}
             <div className="flex flex-col md:flex-row items-center md:items-center space-y-1 md:space-y-0 md:space-x-6 gap-2 md:gap-x-6">
               <div className="flex items-center space-x-2">
-                <span>📍</span>
-                <span className="whitespace-nowrap">24645 Plymouth Rd, Redford, MI 48239</span>
-              </div>
-              <div className="flex items-center space-x-2">
                 <span>🕒</span>
                 <span className="whitespace-nowrap">Mon-Fri: 9AM-7PM | Sat: 9AM-6PM | Sun: 12PM-5PM</span>
               </div>
