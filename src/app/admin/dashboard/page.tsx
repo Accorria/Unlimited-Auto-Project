@@ -239,6 +239,15 @@ export default function AdminDashboard() {
                 </Link>
                 
                 <Link
+                  href="/admin/leads"
+                  className="bg-teal-600 text-white p-4 rounded-lg hover:bg-teal-700 transition-colors text-center"
+                >
+                  <div className="text-2xl mb-2">📞</div>
+                  <div className="font-semibold">Manage Leads</div>
+                  <div className="text-sm opacity-90">View & manage leads</div>
+                </Link>
+                
+                <Link
                   href="/admin/inventory"
                   className="bg-green-600 text-white p-4 rounded-lg hover:bg-green-700 transition-colors text-center"
                 >
@@ -254,6 +263,15 @@ export default function AdminDashboard() {
                   <div className="text-2xl mb-2">📝</div>
                   <div className="font-semibold">Edit Content</div>
                   <div className="text-sm opacity-90">Update descriptions</div>
+                </Link>
+                
+                <Link
+                  href="/admin/hero-slides"
+                  className="bg-indigo-600 text-white p-4 rounded-lg hover:bg-indigo-700 transition-colors text-center"
+                >
+                  <div className="text-2xl mb-2">🎠</div>
+                  <div className="font-semibold">Hero Slides</div>
+                  <div className="text-sm opacity-90">Manage homepage slides</div>
                 </Link>
                 
                 <Link

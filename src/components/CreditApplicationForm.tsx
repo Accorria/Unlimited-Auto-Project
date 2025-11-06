@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import VehicleSelector from "./VehicleSelector";
 import DocumentUpload, { DocumentFile } from "./DocumentUpload";
 import ClientOnly from "./ClientOnly";
+import DatePicker from "./DatePicker";
 
 type Applicant = {
   fullName: string;
@@ -22,6 +23,7 @@ type Applicant = {
   housingStatus: "own" | "rent" | "relative" | "other" | "";
   howLongYears: string;
   howLongMonths: string;
+  employmentStatus: "employed" | "unemployed" | "disability" | "retired" | "self-employed" | "student" | "";
   employerName: string;
   employerHowLongYears: string;
   employerHowLongMonths: string;
@@ -67,6 +69,8 @@ type Financing = {
   tradeYear: string;
   tradeMake: string;
   tradeModel: string;
+  tradeMileage: string;
+  hasTradeIn: boolean;
 };
 
 type Reference = {
@@ -118,6 +122,7 @@ const emptyApplicant: Applicant = {
   housingStatus: "",
   howLongYears: "",
   howLongMonths: "",
+  employmentStatus: "",
   employerName: "",
   employerHowLongYears: "",
   employerHowLongMonths: "",
@@ -190,6 +195,56 @@ export default function CreditApplicationForm() {
     'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
     'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
   ]
+
+  // Vehicle Makes array
+  const vehicleMakes = [
+    'Acura', 'Audi', 'BMW', 'Buick', 'Cadillac', 'Chevrolet', 'Chrysler', 'Dodge', 'Ford', 'GMC',
+    'Honda', 'Hyundai', 'Infiniti', 'Jeep', 'Kia', 'Lexus', 'Lincoln', 'Mazda', 'Mercedes-Benz', 'Mitsubishi',
+    'Nissan', 'Ram', 'Subaru', 'Toyota', 'Volkswagen', 'Volvo'
+  ].sort()
+
+  // Vehicle Models by Make
+  const vehicleModels: Record<string, string[]> = {
+    'Acura': ['ILX', 'TLX', 'RLX', 'RDX', 'MDX', 'ZDX', 'NSX'],
+    'Audi': ['A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'Q3', 'Q5', 'Q7', 'Q8', 'e-tron', 'TT'],
+    'BMW': ['2 Series', '3 Series', '4 Series', '5 Series', '6 Series', '7 Series', 'X1', 'X2', 'X3', 'X4', 'X5', 'X6', 'X7', 'Z4'],
+    'Buick': ['Encore', 'Envision', 'Enclave', 'LaCrosse', 'Regal', 'Cascada'],
+    'Cadillac': ['ATS', 'CT4', 'CT5', 'CT6', 'Escalade', 'XT4', 'XT5', 'XT6', 'XTS'],
+    'Chevrolet': ['Blazer', 'Camaro', 'Colorado', 'Corvette', 'Cruze', 'Equinox', 'Impala', 'Malibu', 'Silverado', 'Suburban', 'Tahoe', 'Traverse', 'Trax', 'Volt'],
+    'Chrysler': ['300', 'Pacifica', 'Voyager'],
+    'Dodge': ['Challenger', 'Charger', 'Durango', 'Grand Caravan', 'Journey', 'Ram Pickup'],
+    'Ford': ['Bronco', 'Edge', 'Escape', 'Expedition', 'Explorer', 'F-150', 'F-250', 'F-350', 'Fiesta', 'Focus', 'Fusion', 'Mustang', 'Ranger', 'Taurus'],
+    'GMC': ['Acadia', 'Canyon', 'Sierra', 'Terrain', 'Yukon'],
+    'Honda': ['Accord', 'Civic', 'Clarity', 'CR-V', 'HR-V', 'Insight', 'Odyssey', 'Passport', 'Pilot', 'Ridgeline'],
+    'Hyundai': ['Accent', 'Elantra', 'Ioniq', 'Kona', 'Palisade', 'Santa Fe', 'Sonata', 'Tucson', 'Veloster', 'Venue'],
+    'Infiniti': ['Q50', 'Q60', 'Q70', 'QX30', 'QX50', 'QX60', 'QX80'],
+    'Jeep': ['Cherokee', 'Compass', 'Grand Cherokee', 'Renegade', 'Wrangler', 'Gladiator', 'Wagoneer'],
+    'Kia': ['Forte', 'K5', 'Niro', 'Optima', 'Rio', 'Sedona', 'Sorento', 'Soul', 'Sportage', 'Telluride'],
+    'Lexus': ['ES', 'GS', 'GX', 'IS', 'LC', 'LS', 'LX', 'NX', 'RC', 'RX', 'UX'],
+    'Lincoln': ['Aviator', 'Continental', 'Corsair', 'MKZ', 'Nautilus', 'Navigator'],
+    'Mazda': ['CX-3', 'CX-30', 'CX-5', 'CX-9', 'Mazda3', 'Mazda6', 'MX-5 Miata'],
+    'Mercedes-Benz': ['A-Class', 'C-Class', 'E-Class', 'S-Class', 'GLA', 'GLB', 'GLC', 'GLE', 'GLS', 'CLA', 'CLS', 'G-Class'],
+    'Mitsubishi': ['Eclipse Cross', 'Mirage', 'Outlander', 'Outlander Sport'],
+    'Nissan': ['Altima', 'Armada', 'Frontier', 'Kicks', 'Leaf', 'Maxima', 'Murano', 'Pathfinder', 'Rogue', 'Sentra', 'Titan', 'Versa'],
+    'Ram': ['1500', '2500', '3500', 'ProMaster', 'ProMaster City'],
+    'Subaru': ['Ascent', 'Crosstrek', 'Forester', 'Impreza', 'Legacy', 'Outback', 'WRX'],
+    'Toyota': ['4Runner', 'Avalon', 'Camry', 'C-HR', 'Corolla', 'Highlander', 'Land Cruiser', 'Prius', 'RAV4', 'Sequoia', 'Sienna', 'Tacoma', 'Tundra', 'Venza', 'Yaris'],
+    'Volkswagen': ['Arteon', 'Atlas', 'Jetta', 'Passat', 'Tiguan', 'Golf', 'Beetle'],
+    'Volvo': ['S60', 'S90', 'V60', 'V90', 'XC40', 'XC60', 'XC90']
+  }
+
+  // Get models for selected make
+  const getModelsForMake = (make: string): string[] => {
+    return vehicleModels[make] || []
+  }
+
+  // Format mileage with commas
+  const formatMileage = (value: string): string => {
+    // Remove all non-numeric characters
+    const numbers = value.replace(/\D/g, '')
+    // Add commas for thousands
+    return numbers.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  }
 
   // Years at address options
   const yearsAtAddress = Array.from({ length: 51 }, (_, i) => i)
@@ -415,6 +470,8 @@ export default function CreditApplicationForm() {
       tradeYear: "",
       tradeMake: "",
       tradeModel: "",
+      tradeMileage: "",
+      hasTradeIn: false,
     },
     autoCreditReference: { ...emptyReference },
     otherCreditReference: { ...emptyReference },
@@ -847,16 +904,13 @@ export default function CreditApplicationForm() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">DATE OF BIRTH</label>
-                <input
-                  type="date"
+                <DatePicker
+                  label="DATE OF BIRTH"
                   value={data.applicant.dateOfBirth}
-                  max={new Date().toISOString().split('T')[0]}
-                  onChange={(e) => {
-                    const birthDate = e.target.value;
+                  maxDate={new Date().toISOString().split('T')[0]}
+                  onChange={(birthDate) => {
                     set("applicant", { ...data.applicant, dateOfBirth: birthDate });
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   required
                 />
               </div>
@@ -941,6 +995,26 @@ export default function CreditApplicationForm() {
 
             <div className="mb-4">
               <h4 className="text-md font-semibold text-gray-800 mb-3">EMPLOYMENT</h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">EMPLOYMENT STATUS <span className="text-red-500">*</span></label>
+                  <select
+                    value={data.applicant.employmentStatus}
+                    onChange={(e) => set("applicant", { ...data.applicant, employmentStatus: e.target.value as any })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    required
+                  >
+                    <option value="">Select Status</option>
+                    <option value="employed">Employed</option>
+                    <option value="unemployed">Unemployed</option>
+                    <option value="disability">Disability</option>
+                    <option value="retired">Retired</option>
+                    <option value="self-employed">Self-Employed</option>
+                    <option value="student">Student</option>
+                  </select>
+                </div>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
@@ -1066,7 +1140,7 @@ export default function CreditApplicationForm() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">WORK PHONE</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">WORK PHONE (Optional)</label>
                   <input
                     type="tel"
                     value={data.applicant.workPhone}
@@ -1246,16 +1320,13 @@ export default function CreditApplicationForm() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">DATE OF BIRTH</label>
-                  <input
-                    type="date"
+                  <DatePicker
+                    label="DATE OF BIRTH"
                     value={data.jointApplicant.dateOfBirth}
-                    max={new Date().toISOString().split('T')[0]}
-                    onChange={(e) => {
-                      const birthDate = e.target.value;
+                    maxDate={new Date().toISOString().split('T')[0]}
+                    onChange={(birthDate) => {
                       set("jointApplicant", { ...data.jointApplicant, dateOfBirth: birthDate });
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   />
                 </div>
                 <div>
@@ -1548,6 +1619,181 @@ export default function CreditApplicationForm() {
                 placeholder="Trade-in value"
               />
             </div>
+          </div>
+
+          {/* Trade-In Vehicle Information */}
+          <div className="mb-4">
+            <div className="flex items-center mb-4">
+              <input
+                type="checkbox"
+                id="hasTradeIn"
+                checked={data.financing.hasTradeIn}
+                onChange={(e) => {
+                  const hasTradeIn = e.target.checked
+                  set("financing", {
+                    ...data.financing,
+                    hasTradeIn: hasTradeIn,
+                    // Clear trade-in fields if unchecked
+                    tradeMake: hasTradeIn ? data.financing.tradeMake : "",
+                    tradeModel: hasTradeIn ? data.financing.tradeModel : "",
+                    tradeMileage: hasTradeIn ? data.financing.tradeMileage : "",
+                    tradeYear: hasTradeIn ? data.financing.tradeYear : "",
+                  })
+                }}
+                className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="hasTradeIn" className="ml-3 text-sm font-medium text-gray-700 cursor-pointer">
+                Yes, I have a vehicle to trade in
+              </label>
+            </div>
+
+            {data.financing.hasTradeIn && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                <h3 className="text-sm font-bold text-gray-900 mb-3">Trade-In Vehicle Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Trade-In Make <span className="text-red-500">*</span>
+                    </label>
+                    {!data.financing.tradeMake || vehicleMakes.includes(data.financing.tradeMake) || data.financing.tradeMake === 'Other' ? (
+                      <select
+                        value={vehicleMakes.includes(data.financing.tradeMake) ? data.financing.tradeMake : 'Other'}
+                        onChange={(e) => {
+                          const make = e.target.value
+                          if (make === 'Other') {
+                            set("financing", {
+                              ...data.financing,
+                              tradeMake: 'Other',
+                              tradeModel: "", // Clear model when make changes
+                            })
+                          } else {
+                            set("financing", {
+                              ...data.financing,
+                              tradeMake: make,
+                              tradeModel: "", // Clear model when make changes
+                            })
+                          }
+                        }}
+                        className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                          !data.financing.tradeMake && data.financing.hasTradeIn
+                            ? 'border-gray-300'
+                            : 'border-gray-300'
+                        }`}
+                        required={data.financing.hasTradeIn}
+                      >
+                        <option value="">Select Make</option>
+                        {vehicleMakes.map((make) => (
+                          <option key={make} value={make}>
+                            {make}
+                          </option>
+                        ))}
+                        <option value="Other">Other</option>
+                      </select>
+                    ) : null}
+                    {(data.financing.tradeMake === 'Other' || (data.financing.tradeMake && !vehicleMakes.includes(data.financing.tradeMake))) && (
+                      <input
+                        type="text"
+                        value={data.financing.tradeMake === 'Other' ? '' : data.financing.tradeMake}
+                        onChange={(e) => {
+                          set("financing", {
+                            ...data.financing,
+                            tradeMake: e.target.value,
+                            tradeModel: "", // Clear model when make changes
+                          })
+                        }}
+                        placeholder="Enter vehicle make"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent mt-2"
+                        required={data.financing.hasTradeIn}
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Trade-In Model <span className="text-red-500">*</span>
+                    </label>
+                    {data.financing.tradeMake && 
+                     data.financing.tradeMake !== 'Other' && 
+                     vehicleMakes.includes(data.financing.tradeMake) && (
+                      <>
+                        {!data.financing.tradeModel || 
+                         getModelsForMake(data.financing.tradeMake).includes(data.financing.tradeModel) || 
+                         data.financing.tradeModel === 'Other' ? (
+                          <select
+                            value={data.financing.tradeModel && getModelsForMake(data.financing.tradeMake).includes(data.financing.tradeModel) 
+                              ? data.financing.tradeModel 
+                              : data.financing.tradeModel === 'Other' ? 'Other' : ''}
+                            onChange={(e) => {
+                              const model = e.target.value
+                              set("financing", { ...data.financing, tradeModel: model })
+                            }}
+                            className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent border-gray-300`}
+                            required={data.financing.hasTradeIn}
+                          >
+                            <option value="">Select Model</option>
+                            {getModelsForMake(data.financing.tradeMake).map((model) => (
+                              <option key={model} value={model}>
+                                {model}
+                              </option>
+                            ))}
+                            <option value="Other">Other</option>
+                          </select>
+                        ) : null}
+                        {(data.financing.tradeModel === 'Other' || 
+                          (data.financing.tradeModel && 
+                           !getModelsForMake(data.financing.tradeMake).includes(data.financing.tradeModel) &&
+                           data.financing.tradeModel !== 'Other')) && (
+                          <input
+                            type="text"
+                            value={data.financing.tradeModel === 'Other' ? '' : data.financing.tradeModel}
+                            onChange={(e) => {
+                              set("financing", { ...data.financing, tradeModel: e.target.value })
+                            }}
+                            placeholder="Enter vehicle model"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent mt-2"
+                            required={data.financing.hasTradeIn}
+                          />
+                        )}
+                      </>
+                    )}
+                    {(data.financing.tradeMake === 'Other' || 
+                      (data.financing.tradeMake && !vehicleMakes.includes(data.financing.tradeMake))) && (
+                      <input
+                        type="text"
+                        value={data.financing.tradeModel || ''}
+                        onChange={(e) => {
+                          set("financing", { ...data.financing, tradeModel: e.target.value })
+                        }}
+                        placeholder="Enter vehicle model"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required={data.financing.hasTradeIn}
+                      />
+                    )}
+                    {!data.financing.tradeMake && (
+                      <p className="text-xs text-gray-500 mt-1">Please select a make first</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Trade-In Mileage <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={data.financing.tradeMileage}
+                      onChange={(e) => {
+                        const formatted = formatMileage(e.target.value)
+                        set("financing", { ...data.financing, tradeMileage: formatted })
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="e.g., 50,000"
+                      required={data.financing.hasTradeIn}
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-3">
+                  * Required fields. We'll use this information to evaluate your trade-in value.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">

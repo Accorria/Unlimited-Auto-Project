@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import DatePicker from "./DatePicker";
 
 type Applicant = {
   firstName: string;
@@ -438,12 +439,12 @@ export default function ProfessionalCreditApplicationForm() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-black mb-1">DATE OF BIRTH</label>
-                  <input
-                    type="date"
+                  <DatePicker
+                    label="DATE OF BIRTH"
                     value={applicant.dateOfBirth}
-                    onChange={(e) => setApplicant("dateOfBirth", e.target.value)}
-                    className="w-full border border-gray-400 px-2 py-1 bg-white text-black"
+                    maxDate={new Date().toISOString().split('T')[0]}
+                    onChange={(date) => setApplicant("dateOfBirth", date)}
+                    className="w-full"
                   />
                 </div>
                 <div>
@@ -658,12 +659,12 @@ export default function ProfessionalCreditApplicationForm() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-black mb-1">DATE OF BIRTH</label>
-                  <input
-                    type="date"
+                  <DatePicker
+                    label="DATE OF BIRTH"
                     value={joint.dateOfBirth}
-                    onChange={(e) => setJointApplicant("dateOfBirth", e.target.value)}
-                    className="w-full border border-gray-400 px-2 py-1 bg-white text-black"
+                    maxDate={new Date().toISOString().split('T')[0]}
+                    onChange={(date) => setJointApplicant("dateOfBirth", date)}
+                    className="w-full"
                   />
                 </div>
                 <div>

@@ -7,10 +7,9 @@ import Image from 'next/image'
 export default function Hero() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
-
-  const slides = [
+  const [slides, setSlides] = useState([
     {
-      image: '/Dealership_Photos/Unlimited_Auto_Front.png',
+      image: '/Dealership_Photos/Screenshot_2025-11-05_at_6.07.19_PM.png',
       title: 'REDFORD\'S EASIEST CREDIT APPROVAL',
       subtitle: 'Best Used Car Deals • All Credit Types Welcome',
       description: 'Quality used cars with guaranteed financing. Bad credit? No credit? No problem! Drive home today.',
@@ -33,7 +32,46 @@ export default function Hero() {
       ctaText: 'Our Services',
       ctaLink: '/services',
     },
-  ]
+  ])
+
+  // Load slides from localStorage on mount and when storage changes
+  useEffect(() => {
+    const loadSlides = () => {
+      const savedSlides = localStorage.getItem('heroSlides')
+      if (savedSlides) {
+        try {
+          const parsed = JSON.parse(savedSlides)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setSlides(parsed)
+          }
+        } catch (error) {
+          console.error('Error loading hero slides:', error)
+        }
+      }
+    }
+
+    // Load on mount
+    loadSlides()
+
+    // Listen for storage changes (when admin saves slides)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'heroSlides') {
+        loadSlides()
+      }
+    }
+    window.addEventListener('storage', handleStorageChange)
+
+    // Also listen for custom event (for same-tab updates)
+    const handleCustomStorageChange = () => {
+      loadSlides()
+    }
+    window.addEventListener('heroSlidesUpdated', handleCustomStorageChange)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('heroSlidesUpdated', handleCustomStorageChange)
+    }
+  }, [])
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1))
@@ -69,19 +107,23 @@ export default function Hero() {
             fill
             priority={index === 0}
             className="object-cover"
+            unoptimized
+            onError={(e) => {
+              console.error('Image failed to load:', slide.image);
+            }}
           />
-          <div className="absolute inset-0 bg-black/20" />
+          <div className="absolute inset-0 bg-black/30" />
           
           <div className="absolute inset-0 flex items-center">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-              <div className="max-w-3xl text-white">
-                <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 leading-tight">
+              <div className="max-w-3xl">
+                <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold mb-4 leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
                   {slide.title}
                 </h1>
-                <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold mb-6 text-blue-300">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold mb-6 text-yellow-300 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
                   {slide.subtitle}
                 </h2>
-                <p className="text-base sm:text-lg md:text-xl mb-8 text-gray-200">
+                <p className="text-base sm:text-lg md:text-xl mb-8 text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">
                   {slide.description}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
