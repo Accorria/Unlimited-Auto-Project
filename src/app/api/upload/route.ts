@@ -26,17 +26,33 @@ export async function POST(req: NextRequest) {
     const supabase = createServerClient()
     
     // Check if Supabase is properly configured
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE) {
-      console.error('Supabase not configured - missing environment variables')
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      console.error('Supabase not configured - missing NEXT_PUBLIC_SUPABASE_URL')
       return NextResponse.json({ 
         error: 'Storage not configured',
-        details: 'Supabase environment variables are missing',
-        hint: 'Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE in your environment variables'
+        details: 'NEXT_PUBLIC_SUPABASE_URL environment variable is missing',
+        hint: 'Please set NEXT_PUBLIC_SUPABASE_URL in your environment variables'
       }, { status: 500 })
     }
     
+    if (!process.env.SUPABASE_SERVICE_ROLE) {
+      console.warn('SUPABASE_SERVICE_ROLE not set - using regular client (may have permission issues)')
+    }
+    
     // Check if bucket exists first
-    const { data: buckets, error: listError } = await supabase.storage.listBuckets()
+    let buckets, listError
+    try {
+      const bucketResult = await supabase.storage.listBuckets()
+      buckets = bucketResult.data
+      listError = bucketResult.error
+    } catch (storageError: any) {
+      console.error('Error accessing Supabase storage:', storageError)
+      return NextResponse.json({ 
+        error: 'Failed to access storage',
+        details: storageError.message || 'Unable to connect to Supabase storage',
+        hint: 'Check if Supabase Storage is enabled and accessible. Verify your Supabase URL and keys are correct.'
+      }, { status: 500 })
+    }
     
     if (listError) {
       console.error('Error listing buckets:', listError)
@@ -117,8 +133,30 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('Upload error:', error)
+    console.error('Error stack:', error.stack)
+    console.error('Error name:', error.name)
+    
+    // Provide more specific error information
+    let errorMessage = 'Upload failed'
+    let errorDetails = error.message || 'Unknown error occurred'
+    let errorHint = 'Check server logs for more details'
+    
+    if (error.message?.includes('fetch')) {
+      errorMessage = 'Failed to connect to storage'
+      errorDetails = 'Unable to reach Supabase storage service'
+      errorHint = 'Check if Supabase is accessible and environment variables are set correctly'
+    } else if (error.message?.includes('network') || error.message?.includes('ECONNREFUSED')) {
+      errorMessage = 'Network error'
+      errorDetails = 'Cannot connect to Supabase services'
+      errorHint = 'Check your internet connection and Supabase service status'
+    }
+    
     return NextResponse.json(
-      { error: error.message || 'Upload failed' }, 
+      { 
+        error: errorMessage,
+        details: errorDetails,
+        hint: errorHint
+      }, 
       { status: 500 }
     )
   }

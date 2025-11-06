@@ -54,10 +54,22 @@ export default function PhotoUpload({ onPhotosChange, vehicleData }: PhotoUpload
       try {
         response = await fetch('/api/upload', {
           method: 'POST',
-          body: formData
+          body: formData,
+          // Don't set Content-Type header - browser will set it with boundary for FormData
         })
       } catch (fetchError: any) {
         console.error('Network error during upload:', fetchError)
+        console.error('Fetch error details:', {
+          name: fetchError.name,
+          message: fetchError.message,
+          stack: fetchError.stack
+        })
+        
+        // Check if it's a network error or CORS issue
+        if (fetchError.name === 'TypeError' && fetchError.message.includes('fetch')) {
+          throw new Error(`Failed to connect to upload server\n💡 Make sure the development server is running and the /api/upload route is accessible`)
+        }
+        
         throw new Error(`Network error: ${fetchError.message || 'Failed to connect to server'}\n💡 Check your internet connection and make sure the server is running`)
       }
       
