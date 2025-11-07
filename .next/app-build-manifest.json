@@ -11,65 +11,70 @@
       "static/chunks/main-app.js",
       "static/chunks/app/page.js"
     ],
+    "/api/tracking/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/tracking/route.js"
+    ],
     "/api/vehicles/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/vehicles/route.js"
     ],
-    "/credit-application/page": [
+    "/admin/login/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/credit-application/page.js"
+      "static/chunks/app/admin/login/page.js"
     ],
-    "/api/learn/route": [
+    "/admin/dashboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/learn/route.js"
+      "static/chunks/app/admin/dashboard/page.js"
     ],
-    "/api/leads/track/route": [
+    "/api/analytics/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/leads/track/route.js"
+      "static/chunks/app/api/analytics/route.js"
     ],
-    "/contact/page": [
+    "/admin/leads/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/contact/page.js"
-    ],
-    "/inventory/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/inventory/page.js"
-    ],
-    "/inventory/[id]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/inventory/[id]/page.js"
+      "static/chunks/app/admin/leads/page.js"
     ],
     "/api/leads/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/leads/route.js"
     ],
-    "/financing/page": [
+    "/admin/inventory/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/financing/page.js"
+      "static/chunks/app/admin/inventory/page.js"
     ],
-    "/api/financing/apply/route": [
+    "/admin/inventory/add/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/financing/apply/route.js"
+      "static/chunks/app/admin/inventory/add/page.js"
     ],
-    "/services/tinting/page": [
+    "/api/learn/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/services/tinting/page.js"
+      "static/chunks/app/api/learn/route.js"
     ],
-    "/_not-found/page": [
+    "/api/vehicle-search/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/_not-found/page.js"
+      "static/chunks/app/api/vehicle-search/route.js"
+    ],
+    "/api/upload/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/upload/route.js"
+    ],
+    "/api/chat/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/chat/route.js"
     ]
   }
 }

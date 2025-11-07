@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ErrorBoundary from '@/components/ErrorBoundary';
 import ClickTracker from '@/components/ClickTracker';
-import ChatBot from '@/components/ChatBot';
+// import ChatBot from '@/components/ChatBot'; // Temporarily disabled for testing
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,7 +41,7 @@ export default function RootLayout({
           >
             <ErrorBoundary>
               <ClickTracker />
-              <ChatBot />
+              {/* <ChatBot /> Temporarily disabled for testing */}
               <div suppressHydrationWarning>
                 {children}
               </div>

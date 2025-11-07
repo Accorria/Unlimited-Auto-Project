@@ -1,5 +1,5 @@
 {
-  "/api/leads/route": "app/api/leads/route.js",
-  "/services/tinting/page": "app/services/tinting/page.js",
-  "/contact/page": "app/contact/page.js"
+  "/api/vehicles/route": "app/api/vehicles/route.js",
+  "/page": "app/page.js",
+  "/admin/dashboard/page": "app/admin/dashboard/page.js"
 }
