@@ -54,6 +54,12 @@ const navigationItems: NavItem[] = [
     roles: ['super_admin', 'dealer_admin']
   },
   {
+    label: 'Services',
+    href: '/admin/services',
+    icon: '🔧',
+    roles: ['super_admin', 'dealer_admin']
+  },
+  {
     label: 'Settings',
     href: '/admin/settings',
     icon: '⚙️',

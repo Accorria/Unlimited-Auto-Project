@@ -47,16 +47,30 @@ export default function FeaturedVehicles() {
             'Pragma': 'no-cache',
             'Expires': '0'
           }
+        }).catch((fetchError) => {
+          // Handle network errors silently - server might not be running
+          console.warn('Could not fetch vehicles (server may not be running):', fetchError.message)
+          return null
         })
         
-        if (response.ok) {
+        if (!response || !response.ok) {
+          setVehicles([])
+          setLoading(false)
+          return
+        }
+        
+        try {
           const data = await response.json()
           const apiVehicles = data.vehicles || []
           
           if (apiVehicles.length > 0) {
             // Show 6 featured vehicles from API
+            // Filter by available status (not 'sold')
             const featuredVehicles = apiVehicles
-              .filter(vehicle => vehicle.status === 'active' && vehicle.price && vehicle.price > 0)
+              .filter((vehicle: Vehicle) => {
+                const status = (vehicle.status || '').toLowerCase()
+                return status !== 'sold' && vehicle.price && vehicle.price > 0
+              })
               .sort((a: Vehicle, b: Vehicle) => {
                 // Sort by display_order first (admin-controlled order)
                 const aOrder = (a as any).display_order || 999
@@ -71,18 +85,20 @@ export default function FeaturedVehicles() {
               })
               .slice(0, 6) // Show 6 vehicles instead of 3
             
-            console.log('Featured vehicles found:', featuredVehicles.length, featuredVehicles)
             setVehicles(featuredVehicles)
             setLoading(false)
             return
           }
+        } catch (parseError) {
+          console.warn('Error parsing vehicle data:', parseError)
         }
         
-        // No fallback - if API has no vehicles, show empty state
-        console.log('No vehicles found in API')
+        // No vehicles found or error parsing
         setVehicles([])
-      } catch (error) {
-        console.error('Error loading vehicles:', error)
+      } catch (error: any) {
+        // Silently handle all errors - don't crash the component
+        console.warn('Error loading vehicles:', error?.message || error)
+        setVehicles([])
       } finally {
         setLoading(false)
       }
@@ -90,9 +106,40 @@ export default function FeaturedVehicles() {
 
     loadFeaturedVehicles()
     
-    // Refresh every 10 seconds to catch reordering
-    const interval = setInterval(loadFeaturedVehicles, 10000)
-    return () => clearInterval(interval)
+    // Refresh every 60 seconds to catch reordering (only when page is visible)
+    let interval: NodeJS.Timeout | null = null
+    const startPolling = () => {
+      if (document.visibilityState === 'visible') {
+        interval = setInterval(loadFeaturedVehicles, 60000) // 60 seconds instead of 10
+      }
+    }
+    const stopPolling = () => {
+      if (interval) {
+        clearInterval(interval)
+        interval = null
+      }
+    }
+    
+    // Only poll when page is visible
+    if (document.visibilityState === 'visible') {
+      startPolling()
+    }
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadFeaturedVehicles() // Refresh immediately when page becomes visible
+        startPolling()
+      } else {
+        stopPolling()
+      }
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    return () => {
+      stopPolling()
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [])
   return (
     <section className="py-20 bg-white">

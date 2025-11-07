@@ -52,25 +52,53 @@ export default function PhotoUpload({ onPhotosChange, vehicleData }: PhotoUpload
       
       let response
       try {
-        response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-          // Don't set Content-Type header - browser will set it with boundary for FormData
-        })
+        // Check if we're in a browser environment
+        if (typeof window === 'undefined') {
+          throw new Error('Upload can only be performed in browser environment')
+        }
+
+        // Verify the API route exists by checking if we can reach it
+        const apiUrl = '/api/upload'
+        console.log('Attempting to upload to:', apiUrl)
+        
+        // Create abort controller for timeout
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout
+        
+        try {
+          response = await fetch(apiUrl, {
+            method: 'POST',
+            body: formData,
+            signal: controller.signal,
+            // Don't set Content-Type header - browser will set it with boundary for FormData
+          })
+        } finally {
+          clearTimeout(timeoutId)
+        }
       } catch (fetchError: any) {
         console.error('Network error during upload:', fetchError)
         console.error('Fetch error details:', {
           name: fetchError.name,
           message: fetchError.message,
-          stack: fetchError.stack
+          stack: fetchError.stack,
+          cause: fetchError.cause
         })
         
-        // Check if it's a network error or CORS issue
-        if (fetchError.name === 'TypeError' && fetchError.message.includes('fetch')) {
-          throw new Error(`Failed to connect to upload server\n💡 Make sure the development server is running and the /api/upload route is accessible`)
+        // Check for specific error types
+        if (fetchError.name === 'AbortError' || fetchError.message?.includes('timeout')) {
+          throw new Error(`Upload timeout: The request took too long\n💡 Check your internet connection and try again`)
         }
         
-        throw new Error(`Network error: ${fetchError.message || 'Failed to connect to server'}\n💡 Check your internet connection and make sure the server is running`)
+        if (fetchError.name === 'TypeError' && fetchError.message.includes('fetch')) {
+          // This usually means the server isn't running or the route doesn't exist
+          throw new Error(`Failed to connect to upload server\n💡 Make sure:\n   - The development server is running (npm run dev)\n   - The /api/upload route is accessible\n   - Check browser console for CORS errors`)
+        }
+        
+        if (fetchError.message?.includes('Failed to fetch') || fetchError.message?.includes('NetworkError')) {
+          throw new Error(`Network error: Unable to reach the server\n💡 Check:\n   - Is the dev server running? (npm run dev)\n   - Is the server accessible at http://localhost:3000?\n   - Check browser console for detailed error messages`)
+        }
+        
+        throw new Error(`Upload failed: ${fetchError.message || 'Unknown network error'}\n💡 Check your internet connection and make sure the server is running`)
       }
       
       setUploadProgress(prev => ({ ...prev, [index]: 75 }))

@@ -65,17 +65,22 @@ export default function InventoryPage() {
   useEffect(() => {
     const fetchVehicles = async () => {
       try {
-        // First try to load from API (this will include the Mini Cooper)
-        const response = await fetch(`/api/vehicles?dealer=unlimited-auto`, {
+        // Add timestamp to prevent caching
+        const timestamp = new Date().getTime()
+        const response = await fetch(`/api/vehicles?dealer=unlimited-auto&_t=${timestamp}`, {
           cache: 'no-store',
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
             'Expires': '0'
           }
+        }).catch((error) => {
+          // Handle network errors gracefully
+          console.warn('Network error fetching vehicles (server may be down):', error)
+          return null
         })
         
-        if (response.ok) {
+        if (response && response.ok) {
           const data = await response.json()
           const apiVehicles = data.vehicles || []
           
@@ -88,10 +93,17 @@ export default function InventoryPage() {
         }
         
         // No fallback - if API has no vehicles, show empty state
-        console.log('No vehicles found in API')
+        if (response) {
+          console.log('No vehicles found in API')
+        }
         setVehicles([])
       } catch (error) {
-        console.error('Error fetching vehicles:', error)
+        // Only log if it's not a network error
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+          console.warn('Server may be down - cannot fetch vehicles')
+        } else {
+          console.error('Error fetching vehicles:', error)
+        }
         setVehicles([])
       } finally {
         setLoading(false)
@@ -100,9 +112,40 @@ export default function InventoryPage() {
 
     fetchVehicles()
     
-    // Refresh every 10 seconds to catch reordering
-    const interval = setInterval(fetchVehicles, 10000)
-    return () => clearInterval(interval)
+    // Refresh every 60 seconds to catch reordering and status changes (only when page is visible)
+    let interval: NodeJS.Timeout | null = null
+    const startPolling = () => {
+      if (document.visibilityState === 'visible') {
+        interval = setInterval(fetchVehicles, 60000) // 60 seconds instead of 10
+      }
+    }
+    const stopPolling = () => {
+      if (interval) {
+        clearInterval(interval)
+        interval = null
+      }
+    }
+    
+    // Only poll when page is visible
+    if (document.visibilityState === 'visible') {
+      startPolling()
+    }
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchVehicles() // Refresh immediately when page becomes visible
+        startPolling()
+      } else {
+        stopPolling()
+      }
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    return () => {
+      stopPolling()
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [])
 
   // Get unique makes and years for filters
@@ -326,9 +369,14 @@ export default function InventoryPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredVehicles.map((vehicle) => (
+              {filteredVehicles.map((vehicle) => {
+                // Normalize status to lowercase for comparison
+                const normalizedStatus = vehicle.status?.toLowerCase() || 'available'
+                const isSold = normalizedStatus === 'sold'
+                
+                return (
                 <div key={vehicle.id} className={`bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 border-2 ${
-                  vehicle.status === 'sold' 
+                  isSold
                     ? 'opacity-80 grayscale border-red-300' 
                     : 'border-gray-100 hover:shadow-2xl hover:-translate-y-2'
                 }`}>
@@ -340,14 +388,14 @@ export default function InventoryPage() {
                       className="object-cover"
                     />
                     {/* Dynamic down payment badge - only show if not sold */}
-                    {vehicle.status !== 'sold' && (
+                    {!isSold && (
                       <div className="absolute top-2 left-2 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-bold shadow-lg z-10">
                         ${vehicle.downPayment || 999} Down
                       </div>
                     )}
                     
                     {/* SOLD banner - more prominent */}
-                    {vehicle.status === 'sold' && (
+                    {isSold && (
                       <>
                         <div className="absolute inset-0 bg-black bg-opacity-40 z-10"></div>
                         <div className="absolute top-4 left-0 right-0 bg-red-600 text-white text-center py-3 text-xl font-extrabold shadow-2xl transform -rotate-2 z-20 border-4 border-white">
@@ -399,7 +447,7 @@ export default function InventoryPage() {
                     </div>
 
                     <div className="space-y-3">
-                      {vehicle.status === 'sold' ? (
+                      {isSold ? (
                         <div className="bg-gray-100 border-2 border-gray-300 rounded-lg p-4 text-center">
                           <p className="text-gray-700 font-semibold text-lg mb-2">This vehicle has been sold</p>
                           <p className="text-sm text-gray-600">Check out our other available vehicles!</p>
@@ -431,7 +479,7 @@ export default function InventoryPage() {
                     </div>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           )}
             </>

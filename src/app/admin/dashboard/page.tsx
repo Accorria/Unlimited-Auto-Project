@@ -230,14 +230,14 @@ export default function AdminDashboard() {
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Link
-                  href="/admin/inventory/add"
-                  className="bg-blue-600 text-white p-4 rounded-lg hover:bg-blue-700 transition-colors text-center"
+                  href="/admin/analytics"
+                  className="bg-red-600 text-white p-4 rounded-lg hover:bg-red-700 transition-colors text-center"
                 >
-                  <div className="text-2xl mb-2">🚗</div>
-                  <div className="font-semibold">Add Vehicle</div>
-                  <div className="text-sm opacity-90">Add new inventory</div>
+                  <div className="text-2xl mb-2">📊</div>
+                  <div className="font-semibold">Analytics</div>
+                  <div className="text-sm opacity-90">View clicks & tracking</div>
                 </Link>
-                
+
                 <Link
                   href="/admin/leads"
                   className="bg-teal-600 text-white p-4 rounded-lg hover:bg-teal-700 transition-colors text-center"
@@ -245,6 +245,15 @@ export default function AdminDashboard() {
                   <div className="text-2xl mb-2">📞</div>
                   <div className="font-semibold">Manage Leads</div>
                   <div className="text-sm opacity-90">View & manage leads</div>
+                </Link>
+                
+                <Link
+                  href="/admin/inventory/add"
+                  className="bg-blue-600 text-white p-4 rounded-lg hover:bg-blue-700 transition-colors text-center"
+                >
+                  <div className="text-2xl mb-2">🚗</div>
+                  <div className="font-semibold">Add Vehicle</div>
+                  <div className="text-sm opacity-90">Add new inventory</div>
                 </Link>
                 
                 <Link

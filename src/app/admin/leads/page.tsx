@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import AdminLayout from '@/components/AdminLayout'
 import { Lead, LeadStatus } from '@/lib/types'
 
@@ -92,6 +93,13 @@ export default function LeadsManagement() {
   const [loading, setLoading] = useState(true)
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set())
   const [deleting, setDeleting] = useState(false)
+  const [showSMSModal, setShowSMSModal] = useState(false)
+  const [smsPhoneNumber, setSmsPhoneNumber] = useState('')
+  const [smsManualPhone, setSmsManualPhone] = useState('')
+  const [smsReassignLead, setSmsReassignLead] = useState(false)
+  const [sendingSMS, setSendingSMS] = useState(false)
+  const [smsStatus, setSmsStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [smsMessage, setSmsMessage] = useState('')
   const router = useRouter()
 
   // Check admin authentication
@@ -148,6 +156,33 @@ export default function LeadsManagement() {
     localStorage.removeItem('adminAuth')
     localStorage.removeItem('adminUser')
     router.push('/admin/login')
+  }
+
+  const handleExportLeads = async () => {
+    try {
+      const response = await fetch('/api/leads/export?format=csv')
+      if (!response.ok) {
+        throw new Error('Failed to export leads')
+      }
+      
+      // Get the blob from the response
+      const blob = await response.blob()
+      
+      // Create a download link
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `leads-export-${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(a)
+      a.click()
+      
+      // Cleanup
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (error) {
+      console.error('Error exporting leads:', error)
+      alert('Failed to export leads. Please try again.')
+    }
   }
 
   const handleStatusChange = (leadId: string, newStatus: LeadStatus) => {
@@ -353,6 +388,19 @@ export default function LeadsManagement() {
                 <p className="text-gray-600">Manage customer leads and track progress</p>
               </div>
               <div className="flex items-center space-x-4">
+                <button
+                  onClick={handleExportLeads}
+                  className="bg-teal-600 text-white px-4 py-2 rounded-md hover:bg-teal-700 transition-colors flex items-center space-x-2"
+                >
+                  <span>📥</span>
+                  <span>Export CSV</span>
+                </button>
+                <Link
+                  href="/admin/dashboard"
+                  className="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+                >
+                  Back
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
@@ -584,7 +632,16 @@ export default function LeadsManagement() {
                   <div className="space-y-6">
                     {/* Basic Contact Information */}
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h4>
+                      <div className="flex justify-between items-center mb-4">
+                        <h4 className="text-lg font-semibold text-gray-900">Contact Information</h4>
+                        <button
+                          onClick={() => setShowSMSModal(true)}
+                          className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center space-x-2"
+                        >
+                          <span>📱</span>
+                          <span>Send via SMS</span>
+                        </button>
+                      </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700">Name</label>
@@ -915,6 +972,181 @@ export default function LeadsManagement() {
                         </div>
                       </div>
                     )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SMS Send Modal */}
+          {showSMSModal && selectedLead && (
+            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+              <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 lg:w-1/3 shadow-lg rounded-md bg-white">
+                <div className="mt-3">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-medium text-gray-900">Send via SMS</h3>
+                    <button
+                      onClick={() => {
+                        setShowSMSModal(false)
+                        setSmsPhoneNumber('')
+                        setSmsManualPhone('')
+                        setSmsReassignLead(false)
+                        setSmsStatus('idle')
+                        setSmsMessage('')
+                      }}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <span className="sr-only">Close</span>
+                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  {smsStatus === 'success' && (
+                    <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+                      {smsMessage || 'SMS sent successfully!'}
+                    </div>
+                  )}
+
+                  {smsStatus === 'error' && (
+                    <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                      {smsMessage || 'Failed to send SMS. Please try again.'}
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Phone Number
+                      </label>
+                      <select
+                        value={smsPhoneNumber}
+                        onChange={(e) => {
+                          setSmsPhoneNumber(e.target.value)
+                          setSmsManualPhone('')
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">Select a phone number...</option>
+                        <option value="+13137664475">+1 (313) 766-4475</option>
+                        {/* Add more phone numbers from database here */}
+                      </select>
+                    </div>
+
+                    <div className="text-center text-gray-500">OR</div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Enter Phone Number Manually
+                      </label>
+                      <input
+                        type="tel"
+                        value={smsManualPhone}
+                        onChange={(e) => {
+                          setSmsManualPhone(e.target.value)
+                          setSmsPhoneNumber('')
+                        }}
+                        placeholder="+13137664475"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        Format: +1XXXXXXXXXX (E.164 format)
+                      </p>
+                    </div>
+
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="reassignLead"
+                        checked={smsReassignLead}
+                        onChange={(e) => setSmsReassignLead(e.target.checked)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="reassignLead" className="ml-2 block text-sm text-gray-700">
+                        Reassign lead to this rep
+                      </label>
+                    </div>
+
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={async () => {
+                          const phoneToUse = smsPhoneNumber || smsManualPhone
+                          if (!phoneToUse) {
+                            setSmsStatus('error')
+                            setSmsMessage('Please select or enter a phone number')
+                            return
+                          }
+
+                          // Validate phone number format
+                          const phoneRegex = /^\+[1-9]\d{1,14}$/
+                          if (!phoneRegex.test(phoneToUse)) {
+                            setSmsStatus('error')
+                            setSmsMessage('Invalid phone number format. Must be in E.164 format (e.g., +13137664475)')
+                            return
+                          }
+
+                          setSendingSMS(true)
+                          setSmsStatus('idle')
+                          setSmsMessage('')
+
+                          try {
+                            const response = await fetch('/api/sms/send', {
+                              method: 'POST',
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                              body: JSON.stringify({
+                                to: phoneToUse,
+                                leadId: selectedLead.id,
+                                reassignLead: smsReassignLead
+                              }),
+                            })
+
+                            const result = await response.json()
+
+                            if (response.ok && result.success) {
+                              setSmsStatus('success')
+                              setSmsMessage('SMS sent successfully!')
+                              setTimeout(() => {
+                                setShowSMSModal(false)
+                                setSmsPhoneNumber('')
+                                setSmsManualPhone('')
+                                setSmsReassignLead(false)
+                                setSmsStatus('idle')
+                                setSmsMessage('')
+                              }, 2000)
+                            } else {
+                              setSmsStatus('error')
+                              setSmsMessage(result.error || 'Failed to send SMS')
+                            }
+                          } catch (error: any) {
+                            console.error('Error sending SMS:', error)
+                            setSmsStatus('error')
+                            setSmsMessage('Network error. Please try again.')
+                          } finally {
+                            setSendingSMS(false)
+                          }
+                        }}
+                        disabled={sendingSMS}
+                        className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {sendingSMS ? 'Sending...' : 'Send SMS'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowSMSModal(false)
+                          setSmsPhoneNumber('')
+                          setSmsManualPhone('')
+                          setSmsReassignLead(false)
+                          setSmsStatus('idle')
+                          setSmsMessage('')
+                        }}
+                        className="flex-1 bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

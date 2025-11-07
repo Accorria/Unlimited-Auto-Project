@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import TalkToSalesAgent from '@/components/TalkToSalesAgent'
 import vehicleData from '@/data/vehicle-data.json'
 
 interface Vehicle {
@@ -41,6 +42,8 @@ interface Vehicle {
   fuel_type?: string
   exterior_color?: string
   interior_color?: string
+  downPayment?: number
+  down_payment?: number
 }
 
 export default function VehicleDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -48,13 +51,22 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
   const [showAllFeatures, setShowAllFeatures] = useState(false)
   const [vehicle, setVehicle] = useState<Vehicle | null>(null)
   const [loading, setLoading] = useState(true)
+  const [showTalkToSalesAgent, setShowTalkToSalesAgent] = useState(false)
   const resolvedParams = use(params)
 
   useEffect(() => {
     const fetchVehicle = async () => {
       try {
-        // First try to fetch from API (this will include the Mini Cooper)
-        const response = await fetch(`/api/vehicles?dealer=unlimited-auto`)
+        // Add timestamp to prevent caching
+        const timestamp = new Date().getTime()
+        const response = await fetch(`/api/vehicles?dealer=unlimited-auto&_t=${timestamp}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        })
         
         if (response.ok) {
           const data = await response.json()
@@ -80,6 +92,41 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
     }
 
     fetchVehicle()
+    
+    // Refresh every 60 seconds to catch status and data changes (only when page is visible)
+    let interval: NodeJS.Timeout | null = null
+    const startPolling = () => {
+      if (document.visibilityState === 'visible') {
+        interval = setInterval(fetchVehicle, 60000) // 60 seconds instead of 10
+      }
+    }
+    const stopPolling = () => {
+      if (interval) {
+        clearInterval(interval)
+        interval = null
+      }
+    }
+    
+    // Only poll when page is visible
+    if (document.visibilityState === 'visible') {
+      startPolling()
+    }
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchVehicle() // Refresh immediately when page becomes visible
+        startPolling()
+      } else {
+        stopPolling()
+      }
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    return () => {
+      stopPolling()
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [resolvedParams.id])
 
   
@@ -127,6 +174,10 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
   const displayedFeatures = vehicle.features ? 
     (showAllFeatures ? vehicle.features : vehicle.features.slice(0, 6)) : []
 
+  // Normalize status to lowercase for comparison
+  const normalizedStatus = vehicle.status?.toLowerCase() || 'available'
+  const isSold = normalizedStatus === 'sold'
+
   return (
     <main className="min-h-screen bg-gray-50">
       <Header />
@@ -153,10 +204,10 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
                 src={vehicleImages[selectedImageIndex] || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop'}
                 alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
                 fill
-                className={`object-cover ${vehicle.status === 'sold' ? 'opacity-80 grayscale' : ''}`}
+                className={`object-cover ${isSold ? 'opacity-80 grayscale' : ''}`}
                 priority
               />
-              {vehicle.status === 'sold' && (
+              {isSold && (
                 <>
                   <div className="absolute inset-0 bg-black bg-opacity-40 z-10"></div>
                   <div className="absolute top-6 left-0 right-0 bg-red-600 text-white text-center py-4 text-3xl font-extrabold shadow-2xl transform -rotate-2 z-20 border-4 border-white">
@@ -198,19 +249,21 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim}
               </h1>
-              {vehicle.status === 'sold' && (
+              {isSold && (
                 <div className="mb-4 bg-red-600 text-white text-center py-4 px-6 rounded-lg shadow-lg border-4 border-white transform -rotate-1">
                   <p className="text-2xl font-extrabold">SOLD</p>
                   <p className="text-sm mt-1">This vehicle has been sold</p>
                 </div>
               )}
               <div className="flex items-center space-x-4 text-gray-600 mb-4">
-                {vehicle.status !== 'sold' && (
-                  <span className="text-2xl font-bold text-blue-600">$999 Down</span>
+                {!isSold && (
+                  <span className="text-2xl font-bold text-blue-600">
+                    ${((vehicle.downPayment || vehicle.down_payment || 999)).toLocaleString()} Down
+                  </span>
                 )}
                 {vehicle.miles && (
                   <>
-                    {vehicle.status !== 'sold' && <span>•</span>}
+                    {!isSold && <span>•</span>}
                     <span>{vehicle.miles.toLocaleString()} miles</span>
                   </>
                 )}
@@ -223,13 +276,13 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
               </div>
               <div className="flex items-center space-x-4 mb-4">
                 <span className={`px-3 py-1 rounded-lg text-sm font-semibold ${
-                  vehicle.status === 'sold' 
+                  isSold 
                     ? 'bg-red-600 text-white' 
-                    : vehicle.status === 'available' || vehicle.status === 'active'
+                    : normalizedStatus === 'available' || normalizedStatus === 'active'
                     ? 'bg-green-500 text-white'
                     : 'bg-gray-500 text-white'
                 }`}>
-                  {vehicle.status === 'sold' 
+                  {isSold 
                     ? 'SOLD' 
                     : vehicle.condition || vehicle.status || 'Available'}
                 </span>
@@ -342,7 +395,7 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
 
             {/* Action Buttons */}
             <div className="space-y-4">
-              {vehicle.status === 'sold' ? (
+              {isSold ? (
                 <div className="bg-gray-100 border-2 border-gray-300 rounded-lg p-6 text-center">
                   <p className="text-gray-800 font-semibold text-xl mb-2">This vehicle has been sold</p>
                   <p className="text-gray-600 mb-4">Check out our other available vehicles!</p>
@@ -355,6 +408,14 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
                 </div>
               ) : (
                 <>
+                  {/* Talk to a Sales Agent Button - Prominent */}
+                  <button
+                    onClick={() => setShowTalkToSalesAgent(true)}
+                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 px-6 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+                  >
+                    💬 Talk to a Sales Agent
+                  </button>
+                  
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Link
                       href={`/contact?vehicle=${vehicle.id}`}
@@ -390,6 +451,14 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
         </div>
 
       </div>
+
+      {/* Talk to Sales Agent Pop-up */}
+      {showTalkToSalesAgent && vehicle && (
+        <TalkToSalesAgent
+          vehicle={vehicle}
+          onClose={() => setShowTalkToSalesAgent(false)}
+        />
+      )}
 
       <Footer />
     </main>

@@ -213,7 +213,7 @@ export default function CreditApplicationForm() {
     'Chevrolet': ['Blazer', 'Camaro', 'Colorado', 'Corvette', 'Cruze', 'Equinox', 'Impala', 'Malibu', 'Silverado', 'Suburban', 'Tahoe', 'Traverse', 'Trax', 'Volt'],
     'Chrysler': ['300', 'Pacifica', 'Voyager'],
     'Dodge': ['Challenger', 'Charger', 'Durango', 'Grand Caravan', 'Journey', 'Ram Pickup'],
-    'Ford': ['Bronco', 'Edge', 'Escape', 'Expedition', 'Explorer', 'F-150', 'F-250', 'F-350', 'Fiesta', 'Focus', 'Fusion', 'Mustang', 'Ranger', 'Taurus'],
+    'Ford': ['Bronco', 'Edge', 'EcoSport', 'Escape', 'Expedition', 'Explorer', 'F-150', 'F-250', 'F-350', 'Fiesta', 'Focus', 'Fusion', 'Mustang', 'Ranger', 'Taurus'],
     'GMC': ['Acadia', 'Canyon', 'Sierra', 'Terrain', 'Yukon'],
     'Honda': ['Accord', 'Civic', 'Clarity', 'CR-V', 'HR-V', 'Insight', 'Odyssey', 'Passport', 'Pilot', 'Ridgeline'],
     'Hyundai': ['Accent', 'Elantra', 'Ioniq', 'Kona', 'Palisade', 'Santa Fe', 'Sonata', 'Tucson', 'Veloster', 'Venue'],

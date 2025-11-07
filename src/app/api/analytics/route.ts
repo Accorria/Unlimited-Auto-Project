@@ -62,6 +62,108 @@ export async function GET(req: NextRequest) {
     const formSubmissions = trackingEvents?.filter(e => e.event_type === 'form_submit').length || 0
     const pageViews = trackingEvents?.filter(e => e.event_type === 'page_view').length || 0
     const vehicleInterests = trackingEvents?.filter(e => e.event_type === 'vehicle_interest').length || 0
+    const clicks = trackingEvents?.filter(e => e.event_type === 'click').length || 0
+
+    // Click analytics - most clicked elements
+    const clickEvents = trackingEvents?.filter(e => e.event_type === 'click') || []
+    const elementTypeCounts = clickEvents.reduce((acc, event) => {
+      const elementType = event.details?.elementType || 'unknown'
+      acc[elementType] = (acc[elementType] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+
+    // Most clicked elements by text
+    const elementTextCounts = clickEvents.reduce((acc, event) => {
+      const text = event.details?.elementText || ''
+      if (text && text.length > 0) {
+        const key = text.substring(0, 50) // Limit length
+        acc[key] = (acc[key] || 0) + 1
+      }
+      return acc
+    }, {} as Record<string, number>)
+
+    const topClickedElements = Object.entries(elementTextCounts)
+      .map(([text, count]) => ({ text, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10)
+
+    // Clicks by page
+    const clicksByPage = clickEvents.reduce((acc, event) => {
+      const path = event.details?.path || event.url || 'unknown'
+      acc[path] = (acc[path] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+
+    // Page views by page
+    const pageViewEvents = trackingEvents?.filter(e => e.event_type === 'page_view') || []
+    const pageViewsByPage = pageViewEvents.reduce((acc, event) => {
+      const path = event.details?.path || event.url || 'unknown'
+      acc[path] = (acc[path] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+
+    // Top vehicles - need this before vehicle engagement calculation
+    const vehicleCounts = trackingEvents?.reduce((acc, event) => {
+      if (event.vehicle_name) {
+        acc[event.vehicle_name] = (acc[event.vehicle_name] || 0) + 1
+      }
+      return acc
+    }, {} as Record<string, number>) || {}
+
+    // Vehicle-specific tracking - extract vehicle ID from URLs
+    // Track clicks on vehicle pages (e.g., /inventory/[vehicle-id])
+    const vehiclePageClicks = clickEvents.reduce((acc, event) => {
+      const path = event.details?.path || event.url || ''
+      const vehicleMatch = path.match(/\/inventory\/([^\/]+)/)
+      if (vehicleMatch && vehicleMatch[1]) {
+        const vehicleId = vehicleMatch[1]
+        acc[vehicleId] = (acc[vehicleId] || 0) + 1
+      }
+      return acc
+    }, {} as Record<string, number>)
+
+    // Track page views on vehicle pages
+    const vehiclePageViews = pageViewEvents.reduce((acc, event) => {
+      const path = event.details?.path || event.url || ''
+      const vehicleMatch = path.match(/\/inventory\/([^\/]+)/)
+      if (vehicleMatch && vehicleMatch[1]) {
+        const vehicleId = vehicleMatch[1]
+        acc[vehicleId] = (acc[vehicleId] || 0) + 1
+      }
+      return acc
+    }, {} as Record<string, number>)
+
+    // Get vehicle names for vehicle IDs (combine with existing vehicle_name tracking)
+    // This will show both vehicle_name from tracking_events and vehicle IDs from URLs
+    const vehicleEngagement = { ...vehicleCounts }
+    
+    // Add vehicle page clicks to vehicle engagement
+    Object.entries(vehiclePageClicks).forEach(([vehicleId, clicks]) => {
+      // Try to find vehicle name from tracking events
+      const vehicleEvent = trackingEvents?.find(e => 
+        e.vehicle_id === vehicleId || 
+        e.url?.includes(`/inventory/${vehicleId}`) ||
+        e.details?.path === `/inventory/${vehicleId}`
+      )
+      const vehicleName = vehicleEvent?.vehicle_name || `Vehicle ${vehicleId.slice(0, 8)}`
+      vehicleEngagement[vehicleName] = (vehicleEngagement[vehicleName] || 0) + clicks
+    })
+
+    // Add vehicle page views to vehicle engagement
+    Object.entries(vehiclePageViews).forEach(([vehicleId, views]) => {
+      const vehicleEvent = trackingEvents?.find(e => 
+        e.vehicle_id === vehicleId || 
+        e.url?.includes(`/inventory/${vehicleId}`) ||
+        e.details?.path === `/inventory/${vehicleId}`
+      )
+      const vehicleName = vehicleEvent?.vehicle_name || `Vehicle ${vehicleId.slice(0, 8)}`
+      vehicleEngagement[vehicleName] = (vehicleEngagement[vehicleName] || 0) + views
+    })
+
+    const topVehicleEngagement = Object.entries(vehicleEngagement)
+      .map(([vehicle_name, count]) => ({ vehicle_name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10)
 
     // Events by source
     const eventsBySource = trackingEvents?.reduce((acc, event) => {
@@ -76,14 +178,7 @@ export async function GET(req: NextRequest) {
       return acc
     }, {} as Record<string, number>) || {}
 
-    // Top vehicles
-    const vehicleCounts = trackingEvents?.reduce((acc, event) => {
-      if (event.vehicle_name) {
-        acc[event.vehicle_name] = (acc[event.vehicle_name] || 0) + 1
-      }
-      return acc
-    }, {} as Record<string, number>) || {}
-
+    // Top vehicles (using vehicleCounts already defined above)
     const topVehicles = Object.entries(vehicleCounts)
       .map(([vehicle_name, count]) => ({ vehicle_name, count }))
       .sort((a, b) => b.count - a.count)
@@ -216,10 +311,22 @@ export async function GET(req: NextRequest) {
         form_submissions: formSubmissions,
         page_views: pageViews,
         vehicle_interests: vehicleInterests,
+        clicks: clicks,
         events_by_source: eventsBySource,
         events_by_hour: eventsByHour,
         top_vehicles: topVehicles,
         recent_events: recentEvents,
+        
+        // Click Analytics
+        clicks_by_element_type: elementTypeCounts,
+        top_clicked_elements: topClickedElements,
+        clicks_by_page: clicksByPage,
+        page_views_by_page: pageViewsByPage,
+        
+        // Vehicle-Specific Analytics
+        vehicle_page_clicks: vehiclePageClicks,
+        vehicle_page_views: vehiclePageViews,
+        top_vehicle_engagement: topVehicleEngagement,
         
         // Lead Analytics (existing)
         eligible_unique_leads: eligibleUniqueLeads,

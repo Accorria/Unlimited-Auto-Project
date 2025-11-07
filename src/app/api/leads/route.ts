@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/auth'
 import { Resend } from 'resend'
+import { sendSMSNotificationForLead } from '@/lib/sms'
 
 // Initialize Resend only if API key is available
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
@@ -200,6 +201,29 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('Lead submitted successfully:', lead.id)
+
+    // Send SMS notifications to configured phone numbers
+    try {
+      const { data: dealerWithPhones } = await supabase
+        .from('dealers')
+        .select('sms_phone_numbers')
+        .eq('id', dealer.id)
+        .single()
+
+      if (dealerWithPhones?.sms_phone_numbers) {
+        const phoneNumbers = Array.isArray(dealerWithPhones.sms_phone_numbers) 
+          ? dealerWithPhones.sms_phone_numbers 
+          : []
+        
+        if (phoneNumbers.length > 0) {
+          await sendSMSNotificationForLead(lead, phoneNumbers)
+          console.log('✅ SMS notifications sent to', phoneNumbers.length, 'phone number(s)')
+        }
+      }
+    } catch (smsError: any) {
+      console.error('❌ Error sending SMS notifications:', smsError)
+      // Don't fail the request if SMS fails
+    }
 
     // Create appointment if date/time provided
     if (body.appointmentDate && body.appointmentTime) {

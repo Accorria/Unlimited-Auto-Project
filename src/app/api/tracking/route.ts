@@ -45,23 +45,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to track event' }, { status: 500 })
     }
 
-    // Send email notification to unlimitedautosales@gmail.com
-    try {
-      await sendEmail({
-        to: 'unlimitedautoredford@gmail.com',
-        subject: `🚗 New ${body.eventType} from your website`,
-        html: `
-          <h2>New ${body.eventType} from your website</h2>
-          <p><strong>URL:</strong> ${body.url}</p>
-          <p><strong>Referrer:</strong> ${body.referrer || 'Direct'}</p>
-          <p><strong>Details:</strong></p>
-          <pre>${JSON.stringify(body.details || {}, null, 2)}</pre>
-          <p><strong>Timestamp:</strong> ${body.timestamp || new Date().toISOString()}</p>
-        `
-      })
-    } catch (emailError) {
-      console.error('Email sending failed:', emailError)
-      // Don't fail the tracking if email fails
+    // Send email notification only for important events (not for every click or page view)
+    // This prevents email spam from high-frequency events
+    const importantEvents = ['phone_click', 'email_click', 'form_submit', 'vehicle_interest']
+    
+    if (importantEvents.includes(body.eventType)) {
+      try {
+        await sendEmail({
+          to: 'unlimitedautoredford@gmail.com',
+          subject: `🚗 New ${body.eventType} from your website`,
+          html: `
+            <h2>New ${body.eventType} from your website</h2>
+            <p><strong>URL:</strong> ${body.url}</p>
+            <p><strong>Referrer:</strong> ${body.referrer || 'Direct'}</p>
+            <p><strong>Details:</strong></p>
+            <pre>${JSON.stringify(body.details || {}, null, 2)}</pre>
+            <p><strong>Timestamp:</strong> ${body.timestamp || new Date().toISOString()}</p>
+          `
+        })
+      } catch (emailError) {
+        console.error('Email sending failed:', emailError)
+        // Don't fail the tracking if email fails
+      }
     }
 
     console.log('✅ Tracking event recorded:', tracking.id)

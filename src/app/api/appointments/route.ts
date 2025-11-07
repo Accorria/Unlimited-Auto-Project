@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/auth'
 import { sendEmail } from '@/lib/email'
+import { sendSMSNotificationForLead } from '@/lib/sms'
 
 export async function POST(req: NextRequest) {
   try {
@@ -185,6 +186,39 @@ export async function POST(req: NextRequest) {
     } catch (emailError: any) {
       console.error('❌ Error sending appointment emails:', emailError)
       // Don't fail the request if email fails
+    }
+
+    // Send SMS notifications to configured phone numbers
+    if (leadId) {
+      try {
+        const { data: lead } = await supabase
+          .from('leads')
+          .select('*')
+          .eq('id', leadId)
+          .single()
+
+        if (lead) {
+          const { data: dealerWithPhones } = await supabase
+            .from('dealers')
+            .select('sms_phone_numbers')
+            .eq('id', dealer.id)
+            .single()
+
+          if (dealerWithPhones?.sms_phone_numbers) {
+            const phoneNumbers = Array.isArray(dealerWithPhones.sms_phone_numbers) 
+              ? dealerWithPhones.sms_phone_numbers 
+              : []
+            
+            if (phoneNumbers.length > 0) {
+              await sendSMSNotificationForLead(lead, phoneNumbers)
+              console.log('✅ SMS notifications sent to', phoneNumbers.length, 'phone number(s)')
+            }
+          }
+        }
+      } catch (smsError: any) {
+        console.error('❌ Error sending SMS notifications:', smsError)
+        // Don't fail the request if SMS fails
+      }
     }
 
     return NextResponse.json({ 

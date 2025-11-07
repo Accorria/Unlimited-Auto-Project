@@ -65,6 +65,8 @@ export async function GET(req: NextRequest) {
 
       return {
         ...vehicle,
+        // Ensure status is explicitly included
+        status: vehicle.status || 'available',
         coverPhoto: coverPhoto?.public_url || vehicle.photos?.[0] || null,
         photos: vehicle.photos || vehiclePhotos.map(p => p.public_url),
         // Map database fields to expected API response format
