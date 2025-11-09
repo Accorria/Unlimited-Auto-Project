@@ -691,7 +691,7 @@ export default function CreditApplicationForm() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
+    <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8" style={{ position: 'relative', zIndex: 1 }}>
       <style jsx>{`
         input::placeholder,
         select::placeholder {
@@ -701,9 +701,12 @@ export default function CreditApplicationForm() {
         input, select {
           min-width: 0;
           box-sizing: border-box;
+          pointer-events: auto !important;
+          cursor: text !important;
         }
         select {
           color: #000000 !important;
+          cursor: pointer !important;
         }
         select option {
           color: #000000 !important;
@@ -714,6 +717,10 @@ export default function CreditApplicationForm() {
         .flex-1 {
           flex: 1 1 0%;
           min-width: 0;
+        }
+        input:disabled, select:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
       `}</style>
       <div className="text-center mb-8">
@@ -750,7 +757,7 @@ export default function CreditApplicationForm() {
       )}
 
 
-      <form onSubmit={onSubmit} className="space-y-8">
+      <form onSubmit={onSubmit} className="space-y-8" style={{ pointerEvents: loading ? 'none' : 'auto', opacity: loading ? 0.6 : 1 }}>
         {/* APPLICANT INFORMATION */}
         <div className="bg-gray-50 p-6 rounded-lg">
           <h2 className="text-xl font-bold text-gray-900 mb-4">APPLICANT INFORMATION</h2>
@@ -924,13 +931,16 @@ export default function CreditApplicationForm() {
                 />
               </div>
               <div>
-                <DatePicker
-                  label="DATE OF BIRTH"
+                <label className="block text-sm font-medium text-gray-700 mb-1">DATE OF BIRTH <span className="text-red-500">*</span></label>
+                <input
+                  type="date"
                   value={data.applicant.dateOfBirth}
-                  maxDate={new Date().toISOString().split('T')[0]}
-                  onChange={(birthDate) => {
-                    set("applicant", { ...data.applicant, dateOfBirth: birthDate });
+                  onChange={(e) => {
+                    set("applicant", { ...data.applicant, dateOfBirth: e.target.value });
                   }}
+                  max={new Date().toISOString().split('T')[0]}
+                  min="1900-01-01"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
               </div>
@@ -959,7 +969,10 @@ export default function CreditApplicationForm() {
                 <select
                   value={data.applicant.housingStatus}
                   onChange={(e) => set("applicant", { ...data.applicant, housingStatus: e.target.value as any })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={loading}
+                  required
+                  style={{ pointerEvents: 'auto', cursor: 'pointer' }}
                 >
                   <option value="">Select...</option>
                   <option value="own">OWN/BUYING</option>
@@ -994,8 +1007,10 @@ export default function CreditApplicationForm() {
                       howLongMonths: months || ''
                     });
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={loading}
                   required
+                  style={{ pointerEvents: 'auto', cursor: 'pointer' }}
                 >
                   <option value="">Select duration...</option>
                   <option value="0-6">6 months</option>
@@ -1340,13 +1355,16 @@ export default function CreditApplicationForm() {
                   />
                 </div>
                 <div>
-                  <DatePicker
-                    label="DATE OF BIRTH"
+                  <label className="block text-sm font-medium text-gray-700 mb-1">DATE OF BIRTH</label>
+                  <input
+                    type="date"
                     value={data.jointApplicant.dateOfBirth}
-                    maxDate={new Date().toISOString().split('T')[0]}
-                    onChange={(birthDate) => {
-                      set("jointApplicant", { ...data.jointApplicant, dateOfBirth: birthDate });
+                    onChange={(e) => {
+                      set("jointApplicant", { ...data.jointApplicant, dateOfBirth: e.target.value });
                     }}
+                    max={new Date().toISOString().split('T')[0]}
+                    min="1900-01-01"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
                 <div>
@@ -1960,10 +1978,12 @@ export default function CreditApplicationForm() {
                       const value = e.target.value.replace(/\D/g, '').slice(0, 4);
                       set("applicant", { ...data.applicant, socialSecurityNumber: value });
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Last 4 digits of SSN"
                     maxLength={4}
+                    disabled={loading}
                     required
+                    style={{ pointerEvents: 'auto', cursor: 'text' }}
                   />
                   <div className="flex items-center p-3 bg-white border border-gray-300 rounded">
                     <div className="relative">

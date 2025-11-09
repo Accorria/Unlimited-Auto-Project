@@ -289,14 +289,20 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
               </div>
             </div>
 
-            {/* Key Specs */}
+            {/* Key Specs - Only show mileage, condition, transmission, drivetrain */}
             <div className="bg-white rounded-lg p-6 shadow-sm border">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Key Specifications</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Vehicle Details</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="text-gray-600">Engine:</span>
+                  <span className="text-gray-600">Mileage:</span>
                   <span className="ml-2 font-medium text-gray-900">
-                    {vehicle.engine || 'Not Specified'}
+                    {vehicle.miles ? `${vehicle.miles.toLocaleString()} miles` : 'Not Specified'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Condition:</span>
+                  <span className="ml-2 font-medium text-gray-900">
+                    {vehicle.condition || 'Not Specified'}
                   </span>
                 </div>
                 <div>
@@ -311,60 +317,8 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
                     {vehicle.drivetrain || 'Not Specified'}
                   </span>
                 </div>
-                <div>
-                  <span className="text-gray-600">Fuel Type:</span>
-                  <span className="ml-2 font-medium text-gray-900">
-                    {vehicle.fuel_type || 'Not Specified'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-600">MPG:</span>
-                  <span className="ml-2 font-medium text-gray-900">
-                    {vehicle.mpg || 'Not Specified'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Body Style:</span>
-                  <span className="ml-2 font-medium text-gray-900">
-                    {vehicle.body_style || 'Not Specified'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Doors:</span>
-                  <span className="ml-2 font-medium text-gray-900">
-                    {vehicle.doors || 'Not Specified'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Passengers:</span>
-                  <span className="ml-2 font-medium text-gray-900">
-                    {vehicle.passengers || 'Not Specified'}
-                  </span>
-                </div>
               </div>
             </div>
-
-            {/* Features */}
-            {displayedFeatures.length > 0 && (
-              <div className="bg-white rounded-lg p-6 shadow-sm border">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Features & Options</h3>
-                <div className="flex flex-wrap gap-2">
-                  {displayedFeatures.map((feature, index) => (
-                    <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                      {feature}
-                    </span>
-                  ))}
-                </div>
-                {vehicle.features && vehicle.features.length > 6 && (
-                  <button
-                    onClick={() => setShowAllFeatures(!showAllFeatures)}
-                    className="mt-4 text-blue-600 hover:text-blue-800 font-medium"
-                  >
-                    {showAllFeatures ? 'Show Less' : `Show All ${vehicle.features.length} Features`}
-                  </button>
-                )}
-              </div>
-            )}
 
             {/* Guarantees */}
             <div className="bg-white rounded-lg p-6 shadow-sm border">

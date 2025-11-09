@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import vehicleData from '@/data/vehicle-data.json'
+import SalesAgentChat from './SalesAgentChat'
 
 interface Vehicle {
   id: string
@@ -35,6 +36,8 @@ interface Vehicle {
 export default function FeaturedVehicles() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [loading, setLoading] = useState(true)
+  const [salesAgentOpen, setSalesAgentOpen] = useState(false)
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null)
 
   useEffect(() => {
     const loadFeaturedVehicles = async () => {
@@ -196,26 +199,12 @@ export default function FeaturedVehicles() {
                   </span>
                 </div>
 
-                {/* Vehicle details like Twins Auto Sales */}
-                <div className="grid grid-cols-2 gap-2 text-sm text-gray-700 mb-4">
+                {/* Vehicle details - only show mileage, condition, transmission, drivetrain */}
+                <div className="grid grid-cols-2 gap-2 text-sm text-gray-700 mb-6">
                   <p><strong>Mileage:</strong> {vehicle.miles ? `${vehicle.miles.toLocaleString()}` : 'TBD'}</p>
                   <p><strong>Condition:</strong> {vehicle.condition || 'Good'}</p>
                   {vehicle.transmission && <p><strong>Trans:</strong> {vehicle.transmission}</p>}
                   {vehicle.drivetrain && <p><strong>Drive:</strong> {vehicle.drivetrain}</p>}
-                </div>
-
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {vehicle.features && vehicle.features.length > 0 ? (
-                    vehicle.features.map((feature, index) => (
-                      <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                        {feature}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm font-medium">
-                      {vehicle.description || 'No features listed'}
-                    </span>
-                  )}
                 </div>
 
                 <div className="space-y-3">
@@ -239,11 +228,34 @@ export default function FeaturedVehicles() {
                   >
                     🚗 Drive Today
                   </Link>
+                  <button
+                    onClick={() => {
+                      setSelectedVehicle(vehicle)
+                      setSalesAgentOpen(true)
+                    }}
+                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white text-center py-3 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-semibold shadow-md hover:shadow-lg"
+                  >
+                    💬 Talk to Sales Agent
+                  </button>
                 </div>
               </div>
             </div>
           ))}
           </div>
+        )}
+
+        {/* Sales Agent Chat */}
+        {salesAgentOpen && selectedVehicle && (
+          <SalesAgentChat
+            vehicleId={selectedVehicle.id}
+            vehicleName={`${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}${selectedVehicle.trim ? ` ${selectedVehicle.trim}` : ''}`}
+            isOpen={salesAgentOpen}
+            onOpenChange={setSalesAgentOpen}
+            onClose={() => {
+              setSalesAgentOpen(false)
+              setSelectedVehicle(null)
+            }}
+          />
         )}
 
         <div className="text-center mt-16">

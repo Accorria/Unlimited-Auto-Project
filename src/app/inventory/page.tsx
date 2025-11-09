@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import SalesAgentChat from '@/components/SalesAgentChat'
 
 interface Vehicle {
   id: string
@@ -54,6 +55,8 @@ interface Vehicle {
 export default function InventoryPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [loading, setLoading] = useState(true)
+  const [salesAgentOpen, setSalesAgentOpen] = useState(false)
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null)
   
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedMake, setSelectedMake] = useState('')
@@ -474,6 +477,15 @@ export default function InventoryPage() {
                           >
                             🚗 Drive Today
                           </Link>
+                          <button
+                            onClick={() => {
+                              setSelectedVehicle(vehicle)
+                              setSalesAgentOpen(true)
+                            }}
+                            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white text-center py-3 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-semibold shadow-md hover:shadow-lg"
+                          >
+                            💬 Talk to Sales Agent
+                          </button>
                         </>
                       )}
                     </div>
@@ -510,6 +522,20 @@ export default function InventoryPage() {
           </div>
         </div>
       </section>
+
+      {/* Sales Agent Chat */}
+      {salesAgentOpen && selectedVehicle && (
+        <SalesAgentChat
+          vehicleId={selectedVehicle.id}
+          vehicleName={`${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}${selectedVehicle.trim ? ` ${selectedVehicle.trim}` : ''}`}
+          isOpen={salesAgentOpen}
+          onOpenChange={setSalesAgentOpen}
+          onClose={() => {
+            setSalesAgentOpen(false)
+            setSelectedVehicle(null)
+          }}
+        />
+      )}
 
       <Footer />
     </main>

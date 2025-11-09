@@ -144,7 +144,7 @@ const vehicleFeatures = {
 const descriptionTemplates = [
   {
     name: 'Standard',
-    template: 'Great value, perfect for families, financing available'
+    template: ''
   },
   {
     name: 'Premium',

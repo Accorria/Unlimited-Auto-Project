@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import DatePicker from './DatePicker'
 
 interface AppointmentSchedulerProps {
   defaultType?: 'test_drive' | 'service' | 'consultation'
@@ -8,6 +9,7 @@ interface AppointmentSchedulerProps {
   vehicleId?: string
   source?: string
   leadId?: string
+  autoShow?: boolean
 }
 
 export default function AppointmentScheduler({
@@ -15,9 +17,10 @@ export default function AppointmentScheduler({
   vehicleInterest,
   vehicleId,
   source = 'contact_form',
-  leadId
+  leadId,
+  autoShow = false
 }: AppointmentSchedulerProps) {
-  const [showScheduler, setShowScheduler] = useState(false)
+  const [showScheduler, setShowScheduler] = useState(autoShow)
   const [appointmentData, setAppointmentData] = useState({
     appointmentDate: '',
     appointmentTime: '',
@@ -84,7 +87,11 @@ export default function AppointmentScheduler({
         }, 3000)
       } else {
         setSubmitStatus('error')
-        setSubmitMessage(result.error || 'Failed to schedule appointment. Please try again.')
+        const errorMsg = result.details 
+          ? `${result.error || 'Failed to schedule appointment'}: ${result.details}`
+          : result.error || 'Failed to schedule appointment. Please try again.'
+        setSubmitMessage(errorMsg)
+        console.error('Appointment API error:', result)
       }
     } catch (error) {
       console.error('Appointment submission error:', error)
@@ -154,14 +161,13 @@ export default function AppointmentScheduler({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Date *</label>
-            <input
-              type="date"
+            <DatePicker
+              label="Date *"
               value={appointmentData.appointmentDate}
-              onChange={(e) => setAppointmentData({ ...appointmentData, appointmentDate: e.target.value })}
-              min={minDate}
+              onChange={(date) => setAppointmentData({ ...appointmentData, appointmentDate: date })}
+              minDate={minDate}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              className="w-full"
             />
           </div>
 

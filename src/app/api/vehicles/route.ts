@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Keep description short and clean - don't add specifications to description
-    const cleanDescription = body.description || 'Great value, perfect for families, financing available'
+    const cleanDescription = body.description || ''
 
     // Insert the vehicle (only fields that exist in database)
     const vehicleData: any = {

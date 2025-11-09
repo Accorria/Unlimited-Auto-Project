@@ -550,7 +550,7 @@ const descriptionTemplates = [
   },
   {
     name: 'Value',
-    description: 'Great value, perfect for families, financing available'
+    description: ''
   },
   {
     name: 'Urgency',

@@ -177,12 +177,16 @@ export async function POST(req: NextRequest) {
       source: body.source || 'website',
       status: 'new',
       consent: body.consent || false,
+      vehicle_id: body.vehicleId || null,
       notes: JSON.stringify({
         service: body.service,
         vehicleInterest: body.vehicleInterest,
         vehicleId: body.vehicleId,
         source: body.source,
-        submittedAt: new Date().toISOString()
+        submittedAt: new Date().toISOString(),
+        sessionId: body.sessionId || null,
+        userAgent: body.userAgent || null,
+        referrer: body.referrer || null
       }),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()

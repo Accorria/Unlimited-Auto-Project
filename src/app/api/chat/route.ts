@@ -3,6 +3,7 @@ import { openai } from '@ai-sdk/openai'
 import { streamText } from 'ai'
 import { createServerClient } from '@/lib/auth'
 import { sendEmail } from '@/lib/email'
+import { sendSMSNotificationForLead } from '@/lib/sms'
 
 // OpenAI client will automatically use OPENAI_API_KEY from environment
 
@@ -11,7 +12,7 @@ export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages } = await req.json()
+    const { messages, sessionId, vehicleId } = await req.json()
 
     // Get vehicle inventory for context
     const supabase = createServerClient()
@@ -79,7 +80,8 @@ export async function POST(req: NextRequest) {
         })
         
         vehicleContext = `\n\n=== CURRENT VEHICLE INVENTORY (${vehicles.length} available vehicles) ===\n`
-        vehicleContext += `IMPORTANT: For vehicle-specific information (price, mileage, condition, specifications), you MUST ONLY use the data below. Do not use general knowledge about vehicle models or typical pricing.\n\n`
+        vehicleContext += `CRITICAL: You MUST ONLY use the EXACT data below. NEVER guess, estimate, or use general knowledge.\n`
+        vehicleContext += `If a vehicle is NOT in this list, say it's not available. If it IS in the list, use the EXACT price, mileage, and details shown below.\n\n`
         
         // Add quick reference for ambiguous queries
         vehicleContext += `QUICK REFERENCE - Multiple vehicles by category:\n`
@@ -135,12 +137,15 @@ export async function POST(req: NextRequest) {
             v.make // Just make name (e.g., "Jeep", "Dodge", "Chevrolet")
           ].filter((name, index, self) => self.indexOf(name) === index) // Remove duplicates
           
+          // CRITICAL: Use EXACT price from database - no guessing
+          const exactPrice = v.price ? `$${v.price.toLocaleString()}` : 'Call for Price'
+          
           vehicleContext += `Vehicle ID: ${v.id}\n`
           vehicleContext += `Full Name: ${fullName}\n`
           vehicleContext += `Searchable Names: ${searchableNames.join(', ')}\n`
           vehicleContext += `Year: ${v.year} | Make: ${v.make} | Model: ${v.model}${v.trim ? ` | Trim: ${v.trim}` : ''}\n`
           if (v.exterior_color) vehicleContext += `Color: ${v.exterior_color}\n`
-          vehicleContext += `Price: $${v.price?.toLocaleString() || 'Call for Price'}\n`
+          vehicleContext += `Price: ${exactPrice} (EXACT - DO NOT CHANGE THIS)\n`
           vehicleContext += `Mileage: ${v.miles?.toLocaleString() || 'TBD'} miles\n`
           vehicleContext += `Condition: ${v.condition || 'Good'}\n`
           if (v.transmission) vehicleContext += `Transmission: ${v.transmission}\n`
@@ -177,31 +182,46 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const systemPrompt = `You are a friendly, helpful customer service chatbot for Unlimited Auto, a used car dealership. Your role is to:
+    const systemPrompt = `You are a professional sales agent for Unlimited Auto, a used car dealership. Be DIRECT and HELPFUL - get straight to the point.
 
-1. Help customers find vehicles that match their needs through natural conversation
-2. Answer questions about vehicles, pricing, financing, and services
-3. Schedule appointments for test drives
-4. Provide information about the dealership
-5. Capture customer information when they're interested
+YOUR ROLE AS A SALES AGENT:
+1. Answer questions DIRECTLY - don't ask unnecessary questions
+2. If customer asks about a vehicle, provide the EXACT details from inventory immediately
+3. If customer asks about price, give the EXACT price from inventory
+4. If customer provides their info (name, phone, email), acknowledge it and move forward
+5. Only ask questions if you NEED the information to help them
+6. Be helpful and efficient - get to the point fast
 
-YOUR PERSONALITY:
-- Be conversational, friendly, and helpful - like talking to a knowledgeable friend
-- Have a back-and-forth dialogue - ask clarifying questions when needed
-- Use natural language - "Oh, you're talking about the Jeep Wrangler!" or "We have a couple of options for you!"
-- Build on the conversation - reference what the customer said earlier
-- Be enthusiastic but professional
+YOUR PERSONALITY - BE DIRECT AND HELPFUL:
+- Be friendly but get straight to the point
+- Answer questions directly without asking follow-up questions unless necessary
+- If customer says "What's the price on the 2019 Malibu?" → Give them the EXACT price from inventory immediately
+- If customer provides their name/phone/email → Acknowledge it: "Thanks [Name]! I have your info. What can I help you with?"
+- Don't ask "What's your name?" if they already provided it
+- Don't ask "What are you driving now?" unless it's relevant to help them
+- Be conversational but efficient - mobile users want quick answers
+- Show enthusiasm: "Great choice! The [vehicle] is $[EXACT PRICE]..."
+- When you have their info, offer next steps: "I've got your info. Would you like to schedule a test drive or have questions about financing?"
+
+INFORMATION COLLECTION - ONLY WHEN NEEDED:
+- If customer provides name/phone/email in their message, acknowledge it and use it
+- Don't ask for information they already provided
+- Only ask for additional info if it's needed to help them (e.g., scheduling needs date/time)
+- Be efficient - mobile users want to get answers fast
 
 REAL-TIME DATA UPDATES:
 - The inventory and services data below is fetched fresh on every conversation
 - This means you always have the most current information - vehicles added or removed, prices changed, services updated
 - The data is updated in real-time, so you can confidently say "Yes, we have that vehicle" or "Our window tint is currently $80" based on the data below
 
-CRITICAL RULES FOR VEHICLE INFORMATION:
-- For vehicle-specific details (price, mileage, condition, specifications, down payment, color), you MUST ONLY use the inventory data provided below
-- DO NOT use general knowledge about vehicle models, typical pricing, or specifications from your training data
-- DO NOT assume or estimate vehicle details - only use what's explicitly listed in the inventory
-- If a customer asks about a vehicle that is NOT in the inventory list, tell them it's not currently available
+CRITICAL RULES FOR VEHICLE INFORMATION - READ CAREFULLY:
+- For vehicle-specific details (price, mileage, condition, specifications, down payment, color), you MUST ONLY use the EXACT data from the inventory below
+- NEVER guess, estimate, or use general knowledge about vehicle models or typical pricing
+- NEVER round prices or change them - use the EXACT price shown in the inventory
+- If the inventory shows "Price: $15,500" → Say "$15,500" NOT "$20,000" or "$15,000" or any other number
+- If the inventory shows "Price: Call for Price" → Say "Call for Price" NOT a guessed price
+- If a customer asks "What's the price on the 2019 Malibu?" → Find the 2019 Malibu in the inventory and give the EXACT price shown
+- If a vehicle is NOT in the inventory list, say "I don't have that vehicle in our current inventory"
 - If they ask about a make/model that exists in the inventory, use the EXACT details from the inventory (price, mileage, condition, color, etc.)
 - NEVER make up vehicle details, prices, or specifications
 - If the inventory is empty or a vehicle isn't listed, say "I don't have that vehicle in our current inventory"
@@ -281,11 +301,38 @@ SERVICES INFORMATION:
 - If a service is not listed, say "I don't have that service in our current offerings" or "Please call us for pricing on that service"
 - Services pricing can change, so always use the most current data provided below
 
+INFORMATION TO COLLECT (like a dealer service form):
+- Full name (first and last)
+- Phone number
+- Email address
+- Current vehicle (year, make, model)
+- What they're looking for (needs, preferences)
+- Budget/price range
+- Timeline (when looking to buy)
+- Trade-in vehicle (if applicable)
+- Priorities (price, features, reliability, etc.)
+- Vehicle interest (specific vehicle from inventory)
+- Preferred appointment date/time (if scheduling)
+
 When customers want to schedule:
-- Collect: name, phone number, email
+- You should already have their name, phone, and email from earlier in the conversation
 - Ask what vehicle they're interested in (must be from inventory)
 - Ask preferred date/time
 - Confirm the appointment details
+- Offer to have a sales team member call them: "Perfect! I'll have one of our sales team members call you to confirm the appointment. Is [phone number] still the best number to reach you?"
+
+VEHICLE FEATURES - DISCUSS IN DETAIL:
+- When discussing vehicles, mention specific features from the inventory:
+  * Transmission type (automatic, manual, CVT)
+  * Drivetrain (FWD, RWD, AWD, 4x4)
+  * Fuel type (gas, diesel, hybrid, electric)
+  * Exterior color
+  * Condition
+  * Mileage
+  * Down payment options
+  * Any other specifications listed
+- Talk about features like a salesperson: "This one has all-wheel drive, which is great for Michigan winters!"
+- Compare vehicles when relevant: "The [Vehicle A] has [feature], while the [Vehicle B] has [different feature]..."
 
 ${vehicleContext}
 
@@ -308,33 +355,199 @@ Important: Be conversational and natural. Don't list all vehicles unless asked. 
       messages,
     })
 
-    // Check if user is inquiring about a vehicle (detect vehicle-related questions)
-    const lastUserMessage = messages[messages.length - 1]?.content?.toLowerCase() || ''
-    const vehicleKeywords = ['jeep', 'charger', 'wrangler', 'vehicle', 'car', 'truck', 'suv', 'price', 'how much', 'cost', 'interested', 'looking for']
-    const isVehicleInquiry = vehicleKeywords.some(keyword => lastUserMessage.includes(keyword))
+    // Track conversation in messages table
+    if (dealer && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1]
+      if (lastMessage && lastMessage.role === 'user') {
+        try {
+          // Store user message in messages table
+          await supabase
+            .from('messages')
+            .insert({
+              dealer_id: dealer.id,
+              channel: 'website_chat',
+              direction: 'inbound',
+              from_address: sessionId || 'anonymous',
+              body: lastMessage.content,
+              status: 'received',
+              created_at: new Date().toISOString()
+            })
+        } catch (err) {
+          console.error('Error tracking conversation:', err)
+          // Don't fail the request if tracking fails
+        }
+      }
+    }
+
+    // Extract customer information from conversation
+    let customerInfo: any = {
+      name: null,
+      phone: null,
+      email: null,
+      currentVehicle: null,
+      needs: null,
+      budget: null,
+      timeline: null,
+      tradeIn: null,
+      priorities: null,
+      vehicleInterest: vehicleId || null
+    }
+
+    // Try to extract information from conversation
+    const conversationText = messages.map(m => m.content).join(' ').toLowerCase()
     
-    // Send email notification if it's a vehicle inquiry (only once per session to avoid spam)
-    if (isVehicleInquiry && lastUserMessage.length > 5) {
-      // In production, you'd use Redis or similar for rate limiting
-      // For now, we'll send notifications (you can add rate limiting later)
-      sendEmail({
-        to: 'unlimitedautoredford@gmail.com',
-        subject: `🤖 New Chatbot Vehicle Inquiry - Unlimited Auto`,
-        html: `
-          <h2>New Vehicle Inquiry from Chatbot</h2>
-          <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #4caf50;">
-            <h3 style="margin-top: 0; color: #155724;">💬 Customer Message</h3>
-            <p style="font-size: 16px; color: #333;">"${messages[messages.length - 1]?.content || 'N/A'}"</p>
-          </div>
-          <p><strong>Source:</strong> Website Chatbot</p>
-          <p><strong>Timestamp:</strong> ${new Date().toLocaleString()}</p>
-          <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 20px;">
-            <p style="margin: 0; font-weight: bold; color: #856404;">💡 Tip: Check your chatbot logs to see the full conversation!</p>
-          </div>
-        `
-      }).catch(err => {
-        console.error('Failed to send chatbot inquiry email:', err)
-      })
+    // Extract name (look for "my name is", "I'm", "call me", etc.)
+    const namePatterns = [
+      /(?:my name is|i'm|i am|call me|this is)\s+([a-z]+(?:\s+[a-z]+)?)/i,
+      /name[:\s]+([a-z]+(?:\s+[a-z]+)?)/i
+    ]
+    for (const pattern of namePatterns) {
+      const match = conversationText.match(pattern)
+      if (match && match[1]) {
+        customerInfo.name = match[1].trim()
+        break
+      }
+    }
+
+    // Extract phone (look for phone number patterns)
+    const phonePattern = /(\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4})/g
+    const phoneMatch = conversationText.match(phonePattern)
+    if (phoneMatch) {
+      customerInfo.phone = phoneMatch[0].replace(/[-.\s()]/g, '')
+    }
+
+    // Extract email
+    const emailPattern = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g
+    const emailMatch = conversationText.match(emailPattern)
+    if (emailMatch) {
+      customerInfo.email = emailMatch[0]
+    }
+
+    // Create or update lead if we have enough information
+    if (dealer && (customerInfo.name || customerInfo.phone || customerInfo.email)) {
+      try {
+        // Check if lead already exists (by phone or email)
+        let existingLead = null
+        if (customerInfo.phone) {
+          const { data } = await supabase
+            .from('leads')
+            .select('id')
+            .eq('dealer_id', dealer.id)
+            .eq('phone', customerInfo.phone)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
+          existingLead = data
+        }
+        
+        if (!existingLead && customerInfo.email) {
+          const { data } = await supabase
+            .from('leads')
+            .select('id')
+            .eq('dealer_id', dealer.id)
+            .eq('email', customerInfo.email)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
+          existingLead = data
+        }
+
+        if (existingLead) {
+          // Get existing notes
+          const { data: leadData } = await supabase
+            .from('leads')
+            .select('notes')
+            .eq('id', existingLead.id)
+            .single()
+          
+          let existingNotes = {}
+          try {
+            existingNotes = leadData?.notes ? JSON.parse(leadData.notes) : {}
+          } catch (e) {
+            existingNotes = {}
+          }
+
+          // Update existing lead with new information
+          await supabase
+            .from('leads')
+            .update({
+              name: customerInfo.name || undefined,
+              phone: customerInfo.phone || undefined,
+              email: customerInfo.email || undefined,
+              vehicle_id: customerInfo.vehicleInterest || undefined,
+              notes: JSON.stringify({
+                ...existingNotes,
+                currentVehicle: customerInfo.currentVehicle || existingNotes.currentVehicle,
+                needs: customerInfo.needs || existingNotes.needs,
+                budget: customerInfo.budget || existingNotes.budget,
+                timeline: customerInfo.timeline || existingNotes.timeline,
+                tradeIn: customerInfo.tradeIn || existingNotes.tradeIn,
+                priorities: customerInfo.priorities || existingNotes.priorities,
+                lastChatUpdate: new Date().toISOString()
+              }),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingLead.id)
+        } else {
+          // Create new lead
+          const leadData = {
+            dealer_id: dealer.id,
+            name: customerInfo.name || '',
+            phone: customerInfo.phone || '',
+            email: customerInfo.email || '',
+            vehicle_id: customerInfo.vehicleInterest || null,
+            source: 'sales_agent_chat',
+            status: 'new',
+            message: `Sales Agent Chat - ${customerInfo.needs || 'Customer inquiry'}`,
+            notes: JSON.stringify({
+              currentVehicle: customerInfo.currentVehicle,
+              needs: customerInfo.needs,
+              budget: customerInfo.budget,
+              timeline: customerInfo.timeline,
+              tradeIn: customerInfo.tradeIn,
+              priorities: customerInfo.priorities,
+              conversationSession: sessionId,
+              createdFromChat: true
+            }),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+
+          const { data: newLead, error: insertError } = await supabase
+            .from('leads')
+            .insert(leadData)
+            .select()
+            .single()
+
+          // Send SMS notification for new lead
+          if (newLead && !insertError) {
+            try {
+              const { data: dealerWithPhones } = await supabase
+                .from('dealers')
+                .select('sms_phone_numbers')
+                .eq('id', dealer.id)
+                .single()
+
+              if (dealerWithPhones?.sms_phone_numbers) {
+                const phoneNumbers = Array.isArray(dealerWithPhones.sms_phone_numbers) 
+                  ? dealerWithPhones.sms_phone_numbers 
+                  : []
+                
+                if (phoneNumbers.length > 0) {
+                  await sendSMSNotificationForLead(newLead, phoneNumbers)
+                  console.log('✅ SMS notifications sent to', phoneNumbers.length, 'phone number(s)')
+                }
+              }
+            } catch (smsError: any) {
+              console.error('❌ Error sending SMS notifications:', smsError)
+              // Don't fail the request if SMS fails
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error creating/updating lead:', err)
+        // Don't fail the request if lead creation fails
+      }
     }
 
     // Return streaming response - useChat hook works with toTextStreamResponse
