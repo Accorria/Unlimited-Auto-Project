@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import imageCompression from 'browser-image-compression'
 
 interface PhotoUploadProps {
@@ -18,6 +18,13 @@ export default function PhotoUpload({ onPhotosChange, vehicleData }: PhotoUpload
   const [uploadProgress, setUploadProgress] = useState<Record<number, number>>({})
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  // Reset photos when component mounts (fresh start for new vehicle)
+  useEffect(() => {
+    setPhotos([])
+    onPhotosChange([])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run once on mount to clear any stale photos
 
   const uploadFile = async (file: File, index: number): Promise<string | null> => {
     try {
@@ -59,7 +66,6 @@ export default function PhotoUpload({ onPhotosChange, vehicleData }: PhotoUpload
 
         // Verify the API route exists by checking if we can reach it
         const apiUrl = '/api/upload'
-        console.log('Attempting to upload to:', apiUrl)
         
         // Create abort controller for timeout
         const controller = new AbortController()
@@ -76,14 +82,6 @@ export default function PhotoUpload({ onPhotosChange, vehicleData }: PhotoUpload
           clearTimeout(timeoutId)
         }
       } catch (fetchError: any) {
-        console.error('Network error during upload:', fetchError)
-        console.error('Fetch error details:', {
-          name: fetchError.name,
-          message: fetchError.message,
-          stack: fetchError.stack,
-          cause: fetchError.cause
-        })
-        
         // Check for specific error types
         if (fetchError.name === 'AbortError' || fetchError.message?.includes('timeout')) {
           throw new Error(`Upload timeout: The request took too long\n💡 Check your internet connection and try again`)
@@ -106,7 +104,13 @@ export default function PhotoUpload({ onPhotosChange, vehicleData }: PhotoUpload
       if (!response.ok) {
         let errorData
         try {
-          errorData = await response.json()
+          const text = await response.text()
+          try {
+            errorData = JSON.parse(text)
+          } catch {
+            // If JSON parse fails, use the text as error message
+            throw new Error(`Upload failed (${response.status}): ${text || response.statusText}`)
+          }
         } catch (parseError) {
           // If we can't parse the error response, use the status text
           throw new Error(`Upload failed: ${response.status} ${response.statusText}\n💡 Server returned an error but couldn't parse the response`)
@@ -118,11 +122,11 @@ export default function PhotoUpload({ onPhotosChange, vehicleData }: PhotoUpload
         
         // Create a more informative error message
         let fullErrorMessage = errorMessage
-        if (errorDetails) {
-          fullErrorMessage += `: ${errorDetails}`
+        if (errorDetails && errorDetails !== errorMessage) {
+          fullErrorMessage += `\n\n${errorDetails}`
         }
         if (errorHint) {
-          fullErrorMessage += `\n💡 ${errorHint}`
+          fullErrorMessage += `\n\n💡 ${errorHint}`
         }
         
         throw new Error(fullErrorMessage)
@@ -132,8 +136,33 @@ export default function PhotoUpload({ onPhotosChange, vehicleData }: PhotoUpload
       setUploadProgress(prev => ({ ...prev, [index]: 100 }))
       
       return result.publicUrl
-    } catch (error) {
-      console.error('Upload error:', error)
+    } catch (error: any) {
+      // Filter out DOM events (image load errors) - these are not upload errors
+      if (error && typeof error === 'object' && error.type === 'error' && error.target) {
+        // This is a DOM event, not an upload error - silently ignore
+        setUploadProgress(prev => ({ ...prev, [index]: 0 }))
+        return null
+      }
+      
+      // Only handle actual Error objects with messages
+      if (error instanceof Error || (error?.message && typeof error.message === 'string' && error.message.length > 0)) {
+        const errorMessage = error.message || 'Unknown upload error'
+        console.error('Upload error:', errorMessage)
+        
+        // Try to extract more detailed error info if it's a formatted error message
+        let displayMessage = errorMessage
+        if (errorMessage.includes('💡')) {
+          // Error already has helpful hints, use it as-is
+          displayMessage = errorMessage
+        } else {
+          // Add generic troubleshooting tips
+          displayMessage = `${errorMessage}\n\n💡 Troubleshooting:\n- Check your internet connection\n- Verify the server is running (npm run dev)\n- Ensure Supabase storage is configured\n- Check browser console for detailed errors`
+        }
+        
+        alert(`Photo upload failed: ${displayMessage}`)
+      }
+      // Otherwise silently ignore (likely a DOM event or non-error object)
+      
       setUploadProgress(prev => ({ ...prev, [index]: 0 }))
       return null
     }
@@ -145,24 +174,34 @@ export default function PhotoUpload({ onPhotosChange, vehicleData }: PhotoUpload
     setUploading(true)
     const newPhotos: string[] = []
     
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i]
-      setUploadProgress(prev => ({ ...prev, [i]: 0 }))
-      
-      const uploadedUrl = await uploadFile(file, i)
-      if (uploadedUrl) {
-        newPhotos.push(uploadedUrl)
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        setUploadProgress(prev => ({ ...prev, [i]: 0 }))
+        
+        try {
+          const uploadedUrl = await uploadFile(file, i)
+          if (uploadedUrl) {
+            newPhotos.push(uploadedUrl)
+          }
+        } catch (uploadError: any) {
+          // Only log actual upload errors, not image load errors
+          if (uploadError?.message && !uploadError?.type) {
+            console.error(`Upload failed for file ${i + 1}:`, uploadError.message)
+          }
+          // Continue with other files even if one fails
+        }
       }
+      
+      if (newPhotos.length > 0) {
+        const updatedPhotos = [...photos, ...newPhotos]
+        setPhotos(updatedPhotos)
+        onPhotosChange(updatedPhotos)
+      }
+    } finally {
+      setUploading(false)
+      setUploadProgress({})
     }
-    
-    if (newPhotos.length > 0) {
-      const updatedPhotos = [...photos, ...newPhotos]
-      setPhotos(updatedPhotos)
-      onPhotosChange(updatedPhotos)
-    }
-    
-    setUploading(false)
-    setUploadProgress({})
   }
 
   const removePhoto = (index: number) => {
@@ -274,9 +313,11 @@ export default function PhotoUpload({ onPhotosChange, vehicleData }: PhotoUpload
                     alt={`Vehicle photo ${index + 1}`}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      console.log(`Image ${index + 1} failed to load`)
-                      // Show a placeholder for broken images
+                      // Silently handle image load errors - show placeholder
                       e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzlmYTJhNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlPC90ZXh0Pjwvc3ZnPg=='
+                      // Stop event propagation and prevent default to avoid bubbling
+                      e.stopPropagation()
+                      e.preventDefault()
                     }}
                   />
                 </div>

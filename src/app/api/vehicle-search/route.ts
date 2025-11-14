@@ -98,6 +98,16 @@ export async function GET(req: NextRequest) {
 function getSuggestedSpecs(make: string, model: string, trim: string | null) {
   // Common engine specs by make/model
   const engineMap: Record<string, Record<string, string[]>> = {
+    'Ford': {
+      'F-150': ['3.5L Turbo V6', '2.7L Turbo V6', '5.0L V8', '3.3L V6', '3.5L PowerBoost Hybrid'],
+      'Mustang': ['5.0L V8', '2.3L Turbo 4-Cylinder', '5.2L Supercharged V8'],
+      'Escape': ['2.0L Turbo 4-Cylinder', '1.5L Turbo 3-Cylinder', '2.5L Hybrid'],
+      'Explorer': ['3.0L Turbo V6', '2.3L Turbo 4-Cylinder', '3.3L Hybrid'],
+      'Edge': ['2.7L Turbo V6', '2.0L Turbo 4-Cylinder'],
+      'Bronco': ['2.7L Turbo V6', '2.3L Turbo 4-Cylinder'],
+      'Ranger': ['2.3L Turbo 4-Cylinder'],
+      'Fusion': ['2.0L Turbo 4-Cylinder', '1.5L Turbo 4-Cylinder', '2.5L Hybrid']
+    },
     'Chevrolet': {
       'Cruze': ['1.4L Turbo 4-Cylinder', '1.8L 4-Cylinder', '1.6L Turbo Diesel'],
       'Malibu': ['1.5L Turbo 4-Cylinder', '2.0L Turbo 4-Cylinder'],
@@ -122,6 +132,16 @@ function getSuggestedSpecs(make: string, model: string, trim: string | null) {
 
   // Common MPG ranges
   const mpgMap: Record<string, Record<string, string>> = {
+    'Ford': {
+      'F-150': '18 City / 24 Highway',
+      'Mustang': '16 City / 25 Highway',
+      'Escape': '28 City / 34 Highway',
+      'Explorer': '21 City / 28 Highway',
+      'Edge': '21 City / 28 Highway',
+      'Bronco': '20 City / 22 Highway',
+      'Ranger': '21 City / 26 Highway',
+      'Fusion': '23 City / 34 Highway'
+    },
     'Chevrolet': {
       'Cruze': '28 City / 40 Highway',
       'Malibu': '29 City / 36 Highway',
@@ -144,14 +164,43 @@ function getSuggestedSpecs(make: string, model: string, trim: string | null) {
     }
   }
 
+  // Determine drivetrain based on model and trim
+  const getDrivetrain = (make: string, model: string, trim: string | null): string => {
+    // Check if trim or model indicates 4WD/4x4
+    const trimLower = (trim || '').toLowerCase()
+    const modelLower = model.toLowerCase()
+    
+    if (trimLower.includes('4x4') || trimLower.includes('4wd') || 
+        modelLower.includes('4x4') || modelLower.includes('4wd')) {
+      return '4WD'
+    }
+    
+    // Trucks and SUVs default to 4WD if no indication otherwise
+    if (modelLower.includes('truck') || modelLower.includes('f-150') || 
+        modelLower.includes('silverado') || modelLower.includes('sierra') ||
+        modelLower.includes('suv') || modelLower.includes('explorer') ||
+        modelLower.includes('tahoe') || modelLower.includes('suburban') ||
+        modelLower.includes('expedition') || modelLower.includes('navigator')) {
+      return '4WD'
+    }
+    
+    // Default for trucks
+    if (modelLower.includes('truck') || modelLower.includes('pickup')) {
+      return '4WD'
+    }
+    
+    return 'FWD'
+  }
+
   const engines = engineMap[make]?.[model] || ['2.0L 4-Cylinder']
   const mpg = mpgMap[make]?.[model] || '25 City / 32 Highway'
+  const drivetrain = getDrivetrain(make, model, trim)
 
   return {
     engine: engines[0],
     mpg: mpg,
     transmission: 'Automatic',
-    drivetrain: model.includes('SUV') || model.includes('Truck') ? 'AWD' : 'FWD'
+    drivetrain: drivetrain
   }
 }
 

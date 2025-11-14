@@ -74,41 +74,80 @@ export async function POST(req: NextRequest) {
       }, { status: 500 })
     }
     
-    const { data, error } = await supabase.storage
-      .from('vehicle-images')
-      .upload(uniqueFileName, file, {
-        cacheControl: '3600',
-        upsert: false
-      })
+    // Attempt upload with better error handling
+    let uploadResult
+    try {
+      uploadResult = await supabase.storage
+        .from('vehicle-images')
+        .upload(uniqueFileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+    } catch (uploadException: any) {
+      console.error('Exception during Supabase upload:', uploadException)
+      console.error('Exception type:', uploadException?.name)
+      console.error('Exception message:', uploadException?.message)
+      console.error('Exception stack:', uploadException?.stack)
+      
+      // Check if it's a fetch/network error
+      if (uploadException?.message?.includes('fetch') || 
+          uploadException?.name === 'TypeError' ||
+          uploadException?.message?.includes('Failed to fetch') ||
+          uploadException?.message?.includes('NetworkError')) {
+        return NextResponse.json({ 
+          error: 'Failed to connect to Supabase storage',
+          details: 'Unable to reach Supabase storage service. This could be due to network issues, incorrect Supabase URL, or storage service being unavailable.',
+          hint: 'Check:\n- NEXT_PUBLIC_SUPABASE_URL is correct\n- SUPABASE_SERVICE_ROLE is set\n- Your internet connection\n- Supabase service status'
+        }, { status: 500 })
+      }
+      
+      return NextResponse.json({ 
+        error: 'Upload failed',
+        details: uploadException?.message || 'Unknown error during upload',
+        hint: 'Check server logs for more details'
+      }, { status: 500 })
+    }
+
+    const { data, error } = uploadResult
 
     if (error) {
       console.error('Supabase upload error:', error)
       console.error('Error code:', error.statusCode)
       console.error('Error message:', error.message)
+      console.error('Error name:', error.name)
       
       // Provide more specific error messages
       let errorMessage = 'Failed to upload to storage'
       let errorDetails = error.message
+      let errorHint = 'Check Supabase Storage settings and bucket policies'
       
       if (error.statusCode === '409' || error.message?.includes('already exists')) {
         errorMessage = 'File already exists'
         errorDetails = 'A file with this name already exists in storage'
+        errorHint = 'Try uploading with a different filename'
       } else if (error.statusCode === '413' || error.message?.includes('too large')) {
         errorMessage = 'File too large'
         errorDetails = 'The file exceeds the maximum allowed size'
+        errorHint = 'Compress the image or use a smaller file'
       } else if (error.message?.includes('bucket') || error.message?.includes('not found')) {
         errorMessage = 'Storage bucket not found'
         errorDetails = 'The "vehicle-images" bucket does not exist. Please create it in Supabase Storage.'
+        errorHint = 'Go to Supabase Dashboard → Storage → New Bucket → Name: "vehicle-images" → Make it Public'
       } else if (error.message?.includes('permission') || error.message?.includes('policy')) {
         errorMessage = 'Storage permission denied'
         errorDetails = 'Check storage bucket policies in Supabase dashboard'
+        errorHint = 'Verify bucket policies allow uploads. Check Storage → vehicle-images → Policies'
+      } else if (error.message?.includes('fetch') || error.message?.includes('network')) {
+        errorMessage = 'Network error connecting to storage'
+        errorDetails = 'Unable to reach Supabase storage service'
+        errorHint = 'Check:\n- NEXT_PUBLIC_SUPABASE_URL is correct\n- SUPABASE_SERVICE_ROLE is set\n- Your internet connection'
       }
       
       return NextResponse.json({ 
         error: errorMessage,
         details: errorDetails,
         code: error.statusCode || error.code,
-        hint: 'Check Supabase Storage settings and bucket policies'
+        hint: errorHint
       }, { status: 500 })
     }
 
@@ -135,20 +174,30 @@ export async function POST(req: NextRequest) {
     console.error('Upload error:', error)
     console.error('Error stack:', error.stack)
     console.error('Error name:', error.name)
+    console.error('Error message:', error.message)
     
     // Provide more specific error information
     let errorMessage = 'Upload failed'
     let errorDetails = error.message || 'Unknown error occurred'
     let errorHint = 'Check server logs for more details'
     
-    if (error.message?.includes('fetch')) {
+    // Check for environment variable issues
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      errorMessage = 'Supabase not configured'
+      errorDetails = 'NEXT_PUBLIC_SUPABASE_URL environment variable is missing'
+      errorHint = 'Set NEXT_PUBLIC_SUPABASE_URL in your environment variables (.env.local for local dev)'
+    } else if (error.message?.includes('fetch') || error.name === 'TypeError') {
       errorMessage = 'Failed to connect to storage'
-      errorDetails = 'Unable to reach Supabase storage service'
-      errorHint = 'Check if Supabase is accessible and environment variables are set correctly'
+      errorDetails = 'Unable to reach Supabase storage service. This could be due to:\n- Incorrect Supabase URL\n- Missing or invalid service role key\n- Network connectivity issues\n- Supabase service being unavailable'
+      errorHint = 'Check:\n- NEXT_PUBLIC_SUPABASE_URL is correct\n- SUPABASE_SERVICE_ROLE is set and valid\n- Your internet connection\n- Supabase dashboard shows service is running'
     } else if (error.message?.includes('network') || error.message?.includes('ECONNREFUSED')) {
       errorMessage = 'Network error'
       errorDetails = 'Cannot connect to Supabase services'
-      errorHint = 'Check your internet connection and Supabase service status'
+      errorHint = 'Check your internet connection and Supabase service status at status.supabase.com'
+    } else if (error.message?.includes('ENOTFOUND') || error.message?.includes('getaddrinfo')) {
+      errorMessage = 'DNS resolution failed'
+      errorDetails = 'Cannot resolve Supabase hostname. The NEXT_PUBLIC_SUPABASE_URL may be incorrect.'
+      errorHint = 'Verify NEXT_PUBLIC_SUPABASE_URL is correct (should be https://your-project-id.supabase.co)'
     }
     
     return NextResponse.json(
