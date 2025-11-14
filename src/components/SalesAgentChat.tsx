@@ -29,6 +29,12 @@ export default function SalesAgentChat({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showOptions, setShowOptions] = useState(true)
   const [showAppointmentScheduler, setShowAppointmentScheduler] = useState(false)
+  const [showCallForm, setShowCallForm] = useState(false)
+  const [callFormData, setCallFormData] = useState({
+    name: '',
+    phone: '',
+    email: ''
+  })
 
   // Phone number formatting function
   const formatPhoneNumber = (value: string) => {
@@ -193,8 +199,8 @@ export default function SalesAgentChat({
           id: 'greeting-' + Date.now(),
           role: 'assistant',
           content: vehicleName 
-            ? `Hey! 👋\n\nInterested in the ${vehicleName}?\n\nWould you like to:\n🚗 Set up an appointment for a test drive?\n✅ Get pre-approved for financing?`
-            : `Hey! 👋\n\nI'm here to help you find the perfect vehicle!\n\nWould you like to:\n🚗 Schedule a test drive?\n✅ Get pre-approved for financing?\n💬 Or just ask me questions?`
+            ? `Hey! 👋\n\nInterested in the ${vehicleName}?\n\nWould you like to:\n🚗 Set up an appointment for a test drive?\n✅ Get pre-approved for financing?\n📞 Get a call from us?`
+            : `Hey! 👋\n\nI'm here to help you find the perfect vehicle!\n\nWould you like to:\n🚗 Schedule a test drive?\n✅ Get pre-approved for financing?\n📞 Get a call from us?\n💬 Or just ask me questions?`
         }
         setLocalMessages([greetingMessage])
       }, 500) // Small delay to make it feel natural
@@ -203,7 +209,7 @@ export default function SalesAgentChat({
     }
   }, [isOpen, displayMessages.length, displayLoading, vehicleName, showOptions])
 
-  const handleOptionClick = async (option: 'test_drive' | 'pre_approval') => {
+  const handleOptionClick = async (option: 'test_drive' | 'pre_approval' | 'call') => {
     setShowOptions(false)
     
     if (option === 'pre_approval') {
@@ -218,6 +224,13 @@ export default function SalesAgentChat({
       return
     }
     
+    if (option === 'call') {
+      // Show form to collect customer info
+      setShowCallForm(true)
+      setShowOptions(false)
+      return
+    }
+    
     if (option === 'test_drive') {
       // Show appointment scheduler directly
       setShowAppointmentScheduler(true)
@@ -226,6 +239,51 @@ export default function SalesAgentChat({
     }
   }
 
+
+  const handleCallFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!callFormData.name || !callFormData.phone || !callFormData.email) {
+      alert('Please fill in your name, phone number, and email')
+      return
+    }
+
+    // Create lead with customer info
+    try {
+      const response = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: callFormData.name,
+          phone: callFormData.phone,
+          email: callFormData.email,
+          message: `Customer requested a call about ${vehicleName || 'vehicle'}`,
+          source: 'sales_agent_chat',
+          vehicleId: vehicleId || null,
+          vehicleInterest: vehicleName || null
+        })
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        // SMS will be sent automatically by the API
+        
+        // Show success message
+        const callMessage = {
+          id: 'call-' + Date.now(),
+          role: 'assistant',
+          content: `Thanks ${callFormData.name}! We've got your info and we'll call you soon. We're here to help!`
+        }
+        setLocalMessages(prev => [...prev, callMessage])
+        setShowCallForm(false)
+        setCallFormData({ name: '', phone: '', email: '' })
+      } else {
+        alert('Failed to submit. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error creating lead for call request:', error)
+      alert('Failed to submit. Please try again.')
+    }
+  }
 
   const handleQuickFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -290,13 +348,80 @@ export default function SalesAgentChat({
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-          {displayMessages.length === 0 && !displayLoading && !showQuickForm && !showOptions && !showAppointmentScheduler && (
+          {displayMessages.length === 0 && !displayLoading && !showQuickForm && !showOptions && !showAppointmentScheduler && !showCallForm && (
             <div className="text-center text-gray-500 pt-8">
               <p className="font-semibold mb-2">👋 Hello! I'm your sales agent.</p>
               <p className="text-sm">I'll help you find the perfect vehicle and answer all your questions!</p>
             </div>
           )}
 
+          {/* Call Form */}
+          {showCallForm && (
+            <div className="bg-white border-2 border-gray-500 rounded-lg p-4 space-y-3">
+              <div className="flex justify-between items-center">
+                <h4 className="font-bold text-gray-900">Get a Call</h4>
+                <button
+                  onClick={() => {
+                    setShowCallForm(false)
+                    setShowOptions(true)
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-sm text-gray-600">We'll call you back! Please provide your contact information:</p>
+              <form onSubmit={handleCallFormSubmit} className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Your Name *"
+                  value={callFormData.name}
+                  onChange={(e) => setCallFormData({...callFormData, name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  required
+                />
+                <input
+                  type="tel"
+                  placeholder="Phone Number *"
+                  value={callFormData.phone}
+                  onChange={(e) => {
+                    const formattedPhone = formatPhoneNumber(e.target.value)
+                    setCallFormData({...callFormData, phone: formattedPhone})
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  required
+                />
+                <input
+                  type="email"
+                  placeholder="Email *"
+                  value={callFormData.email}
+                  onChange={(e) => setCallFormData({...callFormData, email: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  required
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors font-semibold text-sm"
+                  >
+                    Submit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCallForm(false)
+                      setShowOptions(true)
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
 
           {/* Appointment Scheduler */}
           {showAppointmentScheduler && (
@@ -428,9 +553,9 @@ export default function SalesAgentChat({
 
 
         {/* Quick Action Buttons - Sticky at bottom when no active forms */}
-        {!showAppointmentScheduler && !showQuickForm && displayMessages.length > 0 && (
+        {!showAppointmentScheduler && !showCallForm && !showQuickForm && displayMessages.length > 0 && (
           <div className="px-4 py-2 border-t border-gray-200 bg-gray-50">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => handleOptionClick('test_drive')}
                 className="bg-blue-600 text-white py-2 px-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold text-xs shadow-sm"
@@ -444,6 +569,13 @@ export default function SalesAgentChat({
                 title="Get Pre-Approved"
               >
                 ✅ Pre-Approved
+              </button>
+              <button
+                onClick={() => handleOptionClick('call')}
+                className="bg-gray-600 text-white py-2 px-2 rounded-lg hover:bg-gray-700 transition-colors font-semibold text-xs shadow-sm"
+                title="Get a Call"
+              >
+                📞 Get a Call
               </button>
             </div>
           </div>
