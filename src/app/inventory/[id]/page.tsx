@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, use, useEffect } from 'react'
+import { useState, use, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import Header from '@/components/Header'
@@ -18,6 +18,12 @@ interface Vehicle {
   miles?: number
   coverPhoto?: string
   photos?: Array<{
+    id: string
+    angle: string
+    file_path: string
+    public_url: string
+  }>
+  vehicle_photos?: Array<{
     id: string
     angle: string
     file_path: string
@@ -54,12 +60,38 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
   const [showTalkToSalesAgent, setShowTalkToSalesAgent] = useState(false)
   const resolvedParams = use(params)
 
+  // Get images from photos array or use cover photo (must be computed before early returns)
+  const vehicleImages = useMemo(() => {
+    if (!vehicle) return []
+    if (vehicle.vehicle_photos && vehicle.vehicle_photos.length > 0) {
+      return vehicle.vehicle_photos.map((photo: { public_url: string }) => photo.public_url)
+    }
+    if (vehicle.photos && vehicle.photos.length > 0) {
+      return vehicle.photos.map((photo: { public_url: string }) => photo.public_url)
+    }
+    if (vehicle.coverPhoto) {
+      return [vehicle.coverPhoto]
+    }
+    return []
+  }, [vehicle])
+
+  // Debug: Log image URLs to help troubleshoot (must be before early returns)
+  useEffect(() => {
+    if (vehicleImages.length > 0) {
+      console.log('Vehicle images:', vehicleImages)
+      vehicleImages.forEach((url: string, index: number) => {
+        console.log(`Image ${index + 1}:`, url)
+      })
+    }
+  }, [vehicleImages])
+
   useEffect(() => {
     const fetchVehicle = async () => {
       try {
         // Add timestamp to prevent caching
         const timestamp = new Date().getTime()
-        const response = await fetch(`/api/vehicles?dealer=unlimited-auto&_t=${timestamp}`, {
+        // Use the individual vehicle endpoint for more reliable data
+        const response = await fetch(`/api/vehicles/${resolvedParams.id}?_t=${timestamp}`, {
           cache: 'no-store',
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -69,7 +101,49 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
         })
         
         if (response.ok) {
-          const data = await response.json()
+          const foundVehicle = await response.json()
+          
+          if (foundVehicle) {
+            // Transform the vehicle data to match expected format
+            const transformedVehicle = {
+              ...foundVehicle,
+              vehicle_photos: foundVehicle.vehicle_photos || [],
+              photos: foundVehicle.photos || foundVehicle.vehicle_photos?.map((p: any) => p.public_url) || [],
+              downPayment: foundVehicle.down_payment || foundVehicle.downPayment,
+              transmission: foundVehicle.transmission,
+              drivetrain: foundVehicle.drivetrain,
+              engine: foundVehicle.engine,
+              mpg: foundVehicle.mpg,
+              body_style: foundVehicle.body_style,
+              doors: foundVehicle.doors,
+              passengers: foundVehicle.passengers,
+              fuel_type: foundVehicle.fuel_type,
+              exterior_color: foundVehicle.exterior_color,
+              interior_color: foundVehicle.interior_color,
+              condition: foundVehicle.condition || 'Good',
+              // Ensure status is explicitly included
+              status: foundVehicle.status || 'available'
+            }
+            // Debug: log the status to help troubleshoot
+            console.log('Vehicle status:', transformedVehicle.status, 'isSold:', (transformedVehicle.status?.toLowerCase() || 'available') === 'sold')
+            setVehicle(transformedVehicle)
+            setLoading(false)
+            return
+          }
+        }
+        
+        // Fallback: try the list endpoint if individual endpoint fails
+        const listResponse = await fetch(`/api/vehicles?dealer=unlimited-auto&_t=${timestamp}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        })
+        
+        if (listResponse.ok) {
+          const data = await listResponse.json()
           const foundVehicle = data.vehicles.find((v: Vehicle) => v.id === resolvedParams.id)
           
           if (foundVehicle) {
@@ -93,11 +167,11 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
 
     fetchVehicle()
     
-    // Refresh every 60 seconds to catch status and data changes (only when page is visible)
+    // Refresh every 10 seconds to catch status and data changes (only when page is visible)
     let interval: NodeJS.Timeout | null = null
     const startPolling = () => {
       if (document.visibilityState === 'visible') {
-        interval = setInterval(fetchVehicle, 60000) // 60 seconds instead of 10
+        interval = setInterval(fetchVehicle, 10000) // 10 seconds for faster updates
       }
     }
     const stopPolling = () => {
@@ -166,16 +240,11 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
     )
   }
 
-  // Get images from photos array or use cover photo
-  const vehicleImages = vehicle.vehicle_photos?.map(photo => photo.public_url) || 
-                       vehicle.photos?.map(photo => photo.public_url) ||
-                       (vehicle.coverPhoto ? [vehicle.coverPhoto] : [])
-  
-  const displayedFeatures = vehicle.features ? 
+  const displayedFeatures = vehicle?.features ? 
     (showAllFeatures ? vehicle.features : vehicle.features.slice(0, 6)) : []
 
   // Normalize status to lowercase for comparison
-  const normalizedStatus = vehicle.status?.toLowerCase() || 'available'
+  const normalizedStatus = vehicle?.status?.toLowerCase() || 'available'
   const isSold = normalizedStatus === 'sold'
 
   return (
@@ -199,31 +268,42 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Image Gallery */}
           <div className="space-y-4">
-            <div className="relative h-96 rounded-lg overflow-hidden">
+            <div className="relative h-96 rounded-lg overflow-hidden bg-gray-200">
               <Image
-                src={vehicleImages[selectedImageIndex] || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop'}
-                alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                src={vehicleImages[selectedImageIndex] || vehicle?.coverPhoto || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop'}
+                alt={`${vehicle?.year} ${vehicle?.make} ${vehicle?.model}`}
                 fill
-                className={`object-cover ${isSold ? 'opacity-80 grayscale' : ''}`}
+                className="object-cover"
                 priority
+                unoptimized={vehicleImages[selectedImageIndex]?.includes('supabase.co')}
+                onError={(e) => {
+                  console.error('Image failed to load:', vehicleImages[selectedImageIndex])
+                  // Fallback to regular img tag if Next.js Image fails
+                  const target = e.target as HTMLImageElement
+                  if (target.parentElement) {
+                    const img = document.createElement('img')
+                    img.src = vehicleImages[selectedImageIndex] || vehicle?.coverPhoto || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop'
+                    img.alt = `${vehicle?.year} ${vehicle?.make} ${vehicle?.model}`
+                    img.className = 'w-full h-full object-cover'
+                    img.onerror = () => {
+                      img.src = 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop'
+                    }
+                    target.parentElement.innerHTML = ''
+                    target.parentElement.appendChild(img)
+                  }
+                }}
               />
               {isSold && (
-                <>
-                  <div className="absolute inset-0 bg-black bg-opacity-40 z-10"></div>
-                  <div className="absolute top-6 left-0 right-0 bg-red-600 text-white text-center py-4 text-3xl font-extrabold shadow-2xl transform -rotate-2 z-20 border-4 border-white">
-                    SOLD
-                  </div>
-                  <div className="absolute bottom-6 right-6 bg-red-600 text-white px-6 py-3 rounded-lg text-lg font-bold shadow-lg z-20 border-2 border-white">
-                    SOLD
-                  </div>
-                </>
+                <div className="absolute bottom-4 left-4 bg-red-600 text-white px-4 py-2 rounded-lg text-lg font-bold shadow-xl z-20 border-2 border-white">
+                  SOLD
+                </div>
               )}
             </div>
             
             {/* Thumbnail Gallery */}
             {vehicleImages.length > 1 && (
               <div className="grid grid-cols-4 gap-2">
-                {vehicleImages.map((image, index) => (
+                {vehicleImages.map((image: string, index: number) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImageIndex(index)}
@@ -233,9 +313,25 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
                   >
                     <Image
                       src={image}
-                      alt={`${vehicle.year} ${vehicle.make} ${vehicle.model} - Image ${index + 1}`}
+                      alt={`${vehicle?.year} ${vehicle?.make} ${vehicle?.model} - Image ${index + 1}`}
                       fill
                       className="object-cover"
+                      unoptimized={image?.includes('supabase.co')}
+                      onError={(e) => {
+                        console.error('Thumbnail failed to load:', image)
+                        const target = e.target as HTMLImageElement
+                        if (target.parentElement) {
+                          const img = document.createElement('img')
+                          img.src = image
+                          img.alt = `${vehicle?.year} ${vehicle?.make} ${vehicle?.model} - Image ${index + 1}`
+                          img.className = 'w-full h-full object-cover'
+                          img.onerror = () => {
+                            img.src = 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=200&h=200&fit=crop'
+                          }
+                          target.parentElement.innerHTML = ''
+                          target.parentElement.appendChild(img)
+                        }
+                      }}
                     />
                   </button>
                 ))}
@@ -246,8 +342,13 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
           {/* Vehicle Details */}
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className={`text-3xl font-bold mb-2 ${isSold ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
                 {vehicle.year} {vehicle.make} {vehicle.model} {vehicle.trim}
+                {isSold && (
+                  <span className="ml-2 inline-flex items-center px-3 py-1 rounded text-sm font-medium bg-red-100 text-red-800">
+                    SOLD
+                  </span>
+                )}
               </h1>
               {isSold && (
                 <div className="mb-4 bg-red-600 text-white text-center py-4 px-6 rounded-lg shadow-lg border-4 border-white transform -rotate-1">
