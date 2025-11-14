@@ -380,15 +380,31 @@ export default function InventoryPage() {
                 return (
                 <div key={vehicle.id} className={`bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 border-2 ${
                   isSold
-                    ? 'opacity-80 grayscale border-red-300' 
+                    ? 'border-red-300' 
                     : 'border-gray-100 hover:shadow-2xl hover:-translate-y-2'
                 }`}>
-                  <div className="relative h-64">
+                  <div className="relative h-64 bg-gray-200">
                     <Image
                       src={vehicle.vehicle_photos?.[0]?.public_url || vehicle.coverPhoto || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop'}
                       alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
                       fill
                       className="object-cover"
+                      unoptimized={(vehicle.vehicle_photos?.[0]?.public_url || vehicle.coverPhoto)?.includes('supabase.co')}
+                      onError={(e) => {
+                        console.error('Vehicle image failed to load:', vehicle.vehicle_photos?.[0]?.public_url || vehicle.coverPhoto)
+                        const target = e.target as HTMLImageElement
+                        if (target.parentElement) {
+                          const img = document.createElement('img')
+                          img.src = vehicle.vehicle_photos?.[0]?.public_url || vehicle.coverPhoto || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop'
+                          img.alt = `${vehicle.year} ${vehicle.make} ${vehicle.model}`
+                          img.className = 'w-full h-full object-cover'
+                          img.onerror = () => {
+                            img.src = 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop'
+                          }
+                          target.parentElement.innerHTML = ''
+                          target.parentElement.appendChild(img)
+                        }
+                      }}
                     />
                     {/* Dynamic down payment badge - only show if not sold */}
                     {!isSold && (
@@ -397,17 +413,11 @@ export default function InventoryPage() {
                       </div>
                     )}
                     
-                    {/* SOLD banner - more prominent */}
+                    {/* SOLD badge - bottom corner, keeps image visible */}
                     {isSold && (
-                      <>
-                        <div className="absolute inset-0 bg-black bg-opacity-40 z-10"></div>
-                        <div className="absolute top-4 left-0 right-0 bg-red-600 text-white text-center py-3 text-xl font-extrabold shadow-2xl transform -rotate-2 z-20 border-4 border-white">
-                          SOLD
-                        </div>
-                        <div className="absolute bottom-4 right-4 bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg z-20 border-2 border-white">
-                          SOLD
-                        </div>
-                      </>
+                      <div className="absolute bottom-2 left-2 bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-xl z-20 border-2 border-white">
+                        SOLD
+                      </div>
                     )}
                   </div>
 
@@ -472,7 +482,7 @@ export default function InventoryPage() {
                             </Link>
                           </div>
                           <Link
-                            href="/credit-application"
+                            href={`/credit-application?vehicle=${vehicle.id}`}
                             className="w-full bg-green-600 text-white text-center py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold block"
                           >
                             🚗 Drive Today

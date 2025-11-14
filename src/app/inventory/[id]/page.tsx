@@ -479,7 +479,7 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
                       Schedule Test Drive
                     </Link>
                     <Link
-                      href="/credit-application"
+                      href={`/credit-application?vehicle=${vehicle.id}`}
                       className="border-2 border-blue-600 text-blue-600 text-center py-4 rounded-lg hover:bg-blue-600 hover:text-white transition-colors font-semibold text-lg"
                     >
                       Get Pre-Approved

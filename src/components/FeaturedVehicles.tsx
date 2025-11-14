@@ -223,7 +223,7 @@ export default function FeaturedVehicles() {
                     </Link>
                   </div>
                   <Link
-                    href="/credit-application"
+                    href={`/credit-application?vehicle=${vehicle.id}`}
                     className="w-full bg-green-600 text-white text-center py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold block"
                   >
                     🚗 Drive Today
