@@ -101,7 +101,7 @@ export default function TalkToSalesAgent({ vehicle, onClose }: TalkToSalesAgentP
             </p>
           </div>
 
-          {/* Action Buttons */}
+          {/* Action Buttons - NO PHONE NUMBER DISPLAYED */}
           {!showAppointmentScheduler && !showPreApproval && (
             <div className="space-y-4">
               <button
@@ -144,12 +144,6 @@ export default function TalkToSalesAgent({ vehicle, onClose }: TalkToSalesAgentP
             </div>
           )}
 
-          {/* Contact Info */}
-          <div className="border-t border-gray-200 pt-4">
-            <p className="text-center text-gray-600 text-sm">
-              Or call us: <a href="tel:+13137664475" className="text-blue-600 hover:text-blue-800 font-semibold">(313) 766-4475</a>
-            </p>
-          </div>
         </div>
       </div>
     </div>
