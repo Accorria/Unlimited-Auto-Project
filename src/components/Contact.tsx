@@ -46,7 +46,7 @@ export default function Contact() {
       }
     } catch (error) {
       console.error('Error submitting contact form:', error)
-      alert('There was an error submitting your message. Please try again or call us directly.')
+      alert('There was an error submitting your message. Please try again or contact us through our form.')
     }
   }
 
