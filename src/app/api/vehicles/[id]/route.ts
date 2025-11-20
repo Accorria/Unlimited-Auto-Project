@@ -8,8 +8,18 @@ export async function GET(
   try {
     const { id: vehicleId } = await params
 
+    if (!vehicleId) {
+      console.error('No vehicle ID provided')
+      return NextResponse.json({ error: 'Vehicle ID is required' }, { status: 400 })
+    }
+
     // Use service role client to bypass RLS
     const supabase = createServerClient()
+
+    if (!supabase) {
+      console.error('Failed to create Supabase client')
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 })
+    }
 
     // Fetch the vehicle with its photos
     const { data: vehicle, error } = await supabase
@@ -28,6 +38,14 @@ export async function GET(
 
     if (error) {
       console.error('Error fetching vehicle:', error)
+      return NextResponse.json({ 
+        error: 'Vehicle not found',
+        details: error.message 
+      }, { status: 404 })
+    }
+
+    if (!vehicle) {
+      console.error('Vehicle not found:', vehicleId)
       return NextResponse.json({ error: 'Vehicle not found' }, { status: 404 })
     }
 
@@ -40,14 +58,37 @@ export async function GET(
 
     const transformedVehicle = {
       ...vehicle,
+      // Ensure status is explicitly included
+      status: vehicle.status || 'available',
       coverPhoto: coverPhoto?.public_url || null,
       photos: photos.sort((a, b) => {
         const angleOrder = ['FDS','FPS','SDS','SPS','SRDS','SRPS','RDS','R','F','INT','INTB','ENG','TRK','ODOM','VIN']
         return angleOrder.indexOf(a.angle) - angleOrder.indexOf(b.angle)
-      })
+      }),
+      // Map database fields to expected API response format
+      transmission: vehicle.transmission,
+      drivetrain: vehicle.drivetrain,
+      engine: vehicle.engine,
+      mpg: vehicle.mpg,
+      bodyStyle: vehicle.body_style,
+      doors: vehicle.doors,
+      passengers: vehicle.passengers,
+      fuelType: vehicle.fuel_type,
+      color: vehicle.exterior_color,
+      interiorColor: vehicle.interior_color,
+      condition: vehicle.condition || 'Good',
+      downPayment: vehicle.down_payment || 999,
+      vehicle_photos: photos
     }
 
-    return NextResponse.json(transformedVehicle)
+    // Return with no-cache headers to ensure fresh data
+    return NextResponse.json(transformedVehicle, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    })
 
   } catch (error: any) {
     console.error('API error:', error)
@@ -61,11 +102,28 @@ export async function PUT(
 ) {
   try {
     const { id: vehicleId } = await params
+
+    if (!vehicleId) {
+      console.error('No vehicle ID provided')
+      return NextResponse.json({ 
+        error: 'Vehicle ID is required',
+        details: 'No vehicle ID found in request' 
+      }, { status: 400 })
+    }
+
     const body = await req.json()
     console.log('Updating vehicle:', vehicleId, body)
 
     // Use service role client to bypass RLS
     const supabase = createServerClient()
+
+    if (!supabase) {
+      console.error('Failed to create Supabase client')
+      return NextResponse.json({ 
+        error: 'Database connection failed',
+        details: 'Could not initialize Supabase client. Check SUPABASE_SERVICE_ROLE environment variable.'
+      }, { status: 500 })
+    }
 
     // Update the vehicle
     const { data: vehicle, error } = await supabase
@@ -99,7 +157,20 @@ export async function PUT(
 
     if (error) {
       console.error('Error updating vehicle:', error)
-      return NextResponse.json({ error: 'Failed to update vehicle' }, { status: 500 })
+      return NextResponse.json({ 
+        error: 'Failed to update vehicle',
+        details: error.message || 'Database error occurred',
+        code: error.code,
+        hint: error.hint
+      }, { status: 500 })
+    }
+
+    if (!vehicle) {
+      console.error('Vehicle not found after update:', vehicleId)
+      return NextResponse.json({ 
+        error: 'Vehicle not found',
+        details: `Vehicle with ID ${vehicleId} was not found or could not be updated`
+      }, { status: 404 })
     }
 
     console.log('Vehicle updated successfully:', vehicle)
@@ -111,7 +182,11 @@ export async function PUT(
 
   } catch (error: any) {
     console.error('API error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error.message || 'An unexpected error occurred',
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    }, { status: 500 })
   }
 }
 

@@ -42,7 +42,7 @@ export default function Contact() {
           interest: 'general'
         })
       } else {
-        alert('There was an error submitting your message. Please try again or call us directly at (313) 766-4475.')
+        alert('There was an error submitting your message. Please try again or contact us through our contact form.')
       }
     } catch (error) {
       console.error('Error submitting contact form:', error)
@@ -237,27 +237,6 @@ export default function Contact() {
                   </div>
                 </div>
 
-                <div className="flex items-start space-x-4">
-                  <div className="text-2xl">📞</div>
-                  <div>
-                    <h4 className="font-semibold text-lg">Phone</h4>
-                    <p className="text-gray-300">
-        <a
-          href="tel:+13137664475"
-          className="hover:text-white transition-colors"
-          onClick={() => {
-            if (typeof window !== 'undefined') {
-              import('@/lib/tracking').then(({ trackPhoneClick }) => {
-                trackPhoneClick('(313) 766-4475', 'contact_section')
-              })
-            }
-          }}
-        >
-          (313) 766-4475
-        </a>
-                    </p>
-                  </div>
-                </div>
 
                 <div className="flex items-start space-x-4">
                   <div className="text-2xl">📧</div>

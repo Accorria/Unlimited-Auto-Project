@@ -127,9 +127,17 @@ export default function FinancingPage() {
     setSubmitStatus('idle')
     setSubmitMessage('')
 
-    // Find the selected vehicle name
+    // Find the selected vehicle name - ensure we have the full vehicle details
     const selectedVehicle = vehicles.find(v => v.id === formData.vehicleInterest)
-    const vehicleName = selectedVehicle ? `${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}` : formData.vehicleInterest
+    const vehicleName = selectedVehicle 
+      ? `${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model} ${selectedVehicle.trim || ''}`.trim()
+      : formData.vehicleInterest || 'No vehicle selected'
+    
+    if (!formData.vehicleInterest) {
+      alert('Please select a vehicle from our inventory before submitting.')
+      setIsSubmitting(false)
+      return
+    }
 
     try {
       const response = await fetch('/api/financing/apply', {
@@ -515,11 +523,12 @@ export default function FinancingPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle of Interest</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle of Interest *</label>
                 <select
                   name="vehicleInterest"
                   value={formData.vehicleInterest}
                   onChange={handleInputChange}
+                  required
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 >
                   <option value="">Select Vehicle from Our Inventory</option>
@@ -529,6 +538,16 @@ export default function FinancingPage() {
                     </option>
                   ))}
                 </select>
+                {formData.vehicleInterest && (
+                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                      <strong>Selected Vehicle:</strong> {(() => {
+                        const selected = vehicles.find(v => v.id === formData.vehicleInterest);
+                        return selected ? `${selected.year} ${selected.make} ${selected.model} ${selected.trim || ''}` : 'Loading...';
+                      })()}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Status Messages */}
@@ -774,12 +793,6 @@ export default function FinancingPage() {
               className="bg-white text-blue-800 px-8 py-4 rounded-lg text-lg font-bold hover:bg-gray-100 transition-colors"
             >
               Browse Inventory
-            </Link>
-            <Link
-              href="/contact"
-              className="border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-bold hover:bg-white hover:text-blue-800 transition-colors"
-            >
-              Call Now: (313) 766-4475
             </Link>
           </div>
         </div>

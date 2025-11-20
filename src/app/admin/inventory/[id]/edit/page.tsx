@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, use } from 'react'
+import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import PhotoUpload from '@/components/PhotoUpload'
@@ -23,7 +23,7 @@ const colorOptions = [
 
 // Common vehicle makes (alphabetical order)
 const commonMakes = [
-  'Acura', 'Audi', 'BMW', 'Buick', 'Cadillac', 'Chevrolet', 'Chrysler', 'Dodge', 'Ford', 'GMC', 'Honda', 'Hyundai', 'Infiniti', 'Jeep', 'Kia', 'Lexus', 'Lincoln', 'Mazda', 'Mercedes-Benz', 'Mini', 'Mitsubishi', 'Nissan', 'Ram', 'Subaru', 'Tesla', 'Toyota', 'Volkswagen', 'Volvo'
+  'Acura', 'Audi', 'BMW', 'Buick', 'Cadillac', 'Chevrolet', 'Chrysler', 'Dodge', 'Ford', 'GMC', 'Honda', 'Hyundai', 'Infiniti', 'Jaguar', 'Jeep', 'Kia', 'Lexus', 'Lincoln', 'Mazda', 'Mercedes-Benz', 'Mini', 'Mitsubishi', 'Nissan', 'Ram', 'Subaru', 'Tesla', 'Toyota', 'Volkswagen', 'Volvo'
 ]
 
 // Common models by make (alphabetical order)
@@ -41,6 +41,7 @@ const commonModels: Record<string, string[]> = {
   'Honda': ['Accord', 'Civic', 'CR-V', 'Fit', 'HR-V', 'Insight', 'Passport', 'Pilot', 'Ridgeline'],
   'Hyundai': ['Elantra', 'Genesis', 'Kona', 'Palisade', 'Santa Fe', 'Sonata', 'Tucson', 'Veloster', 'Venue'],
   'Infiniti': ['FX', 'G37', 'Q50', 'Q60', 'Q70', 'QX50', 'QX60', 'QX80'],
+  'Jaguar': ['E-Pace', 'F-Pace', 'F-Type', 'I-Pace', 'S-Type', 'XE', 'XF', 'XJ', 'XK', 'X-Type'],
   'Jeep': [
     'Wrangler', 
     'Wrangler Unlimited', 
@@ -93,6 +94,7 @@ const makeSpecificTrims: Record<string, string[]> = {
   'Lexus': ['Base', 'F Sport', 'Luxury'],
   'Acura': ['Base', 'Technology', 'Advance'],
   'Infiniti': ['Base', 'Luxury', 'Sport'],
+  'Jaguar': ['Base', 'Premium', 'Premium Luxury', 'Portfolio', 'S', 'R-Sport', 'SVR', 'R', 'S Sport'],
   'Cadillac': ['Base', 'Luxury', 'Premium Luxury', 'Platinum'],
   'Lincoln': ['Base', 'Reserve', 'Black Label'],
   'Chrysler': ['Base', 'Touring', 'Limited', 'Pinnacle', 'L', 'LX', 'LXI'],
@@ -107,6 +109,617 @@ const makeSpecificTrims: Record<string, string[]> = {
   'Subaru': ['Base', 'Premium', 'Limited', 'Touring'],
   'Volkswagen': ['Base', 'S', 'SE', 'SEL'],
   'Volvo': ['Base', 'Momentum', 'R-Design', 'Inscription']
+}
+
+// Model-specific engine options
+const modelSpecificEngines: Record<string, Record<string, string[]>> = {
+  // Chevrolet
+  'Chevrolet': {
+    'Cruze': ['1.4L Turbo 4-Cylinder', '1.6L Turbo Diesel 4-Cylinder'],
+    'Malibu': ['1.5L Turbo 4-Cylinder', '2.0L Turbo 4-Cylinder', '1.8L Hybrid'],
+    'Camaro': ['2.0L Turbo 4-Cylinder', '3.6L V6', '6.2L V8', '6.2L Supercharged V8'],
+    'Corvette': ['6.2L V8', '5.5L V8', '6.2L Supercharged V8'],
+    'Equinox': ['1.5L Turbo 4-Cylinder', '2.0L Turbo 4-Cylinder', '1.6L Diesel'],
+    'Traverse': ['3.6L V6'],
+    'Tahoe': ['5.3L V8', '6.2L V8'],
+    'Suburban': ['5.3L V8', '6.2L V8'],
+    'Silverado 1500': ['2.7L Turbo 4-Cylinder', '3.0L Turbo Diesel V6', '5.3L V8', '6.2L V8'],
+    'Silverado 2500 HD': ['6.6L Turbo Diesel V8', '6.6L Gas V8'],
+    'Silverado 3500 HD': ['6.6L Turbo Diesel V8', '6.6L Gas V8'],
+    'Trailblazer': ['1.2L Turbo 3-Cylinder', '1.3L Turbo 3-Cylinder'],
+    'Blazer': ['2.5L 4-Cylinder', '3.6L V6', '2.0L Turbo 4-Cylinder'],
+    'Trax': ['1.4L Turbo 4-Cylinder'],
+    'Sonic': ['1.4L Turbo 4-Cylinder', '1.8L 4-Cylinder'],
+    'Spark': ['1.4L 4-Cylinder'],
+    'Express': ['4.3L V6', '5.3L V8', '6.6L Turbo Diesel V8'],
+    'Impala': ['2.5L 4-Cylinder', '3.6L V6'],
+    'Bolt EV': ['Electric Motor (200 HP)'],
+    'Bolt EUV': ['Electric Motor (200 HP)'],
+    'Colorado': ['2.5L 4-Cylinder', '3.6L V6', '2.8L Turbo Diesel']
+  },
+  
+  // Ford
+  'Ford': {
+    'F-150': ['3.3L V6', '2.7L Turbo V6', '3.5L Turbo V6', '5.0L V8', '3.5L PowerBoost Hybrid'],
+    'Bronco': ['2.3L Turbo 4-Cylinder', '2.7L Turbo V6'],
+    'Edge': ['2.0L Turbo 4-Cylinder', '2.7L Turbo V6'],
+    'EcoSport': ['1.0L EcoBoost I3', '2.0L Ti-VCT I4'],
+    'Escape': ['1.5L Turbo 3-Cylinder', '2.0L Turbo 4-Cylinder', '2.5L Hybrid'],
+    'Explorer': ['2.3L Turbo 4-Cylinder', '3.3L Hybrid', '3.0L Turbo V6'],
+    'Expedition': ['3.5L Turbo V6'],
+    'Focus': ['2.0L 4-Cylinder', '1.0L Turbo 3-Cylinder'],
+    'Fusion': ['2.5L Hybrid', '2.0L Turbo 4-Cylinder'],
+    'Maverick': ['2.5L Hybrid', '2.0L Turbo 4-Cylinder'],
+    'Mustang': ['2.3L Turbo 4-Cylinder', '5.0L V8', '5.2L Supercharged V8'],
+    'Ranger': ['2.3L Turbo 4-Cylinder'],
+    'Transit': ['3.5L V6', '3.5L EcoBoost V6']
+  },
+  
+  // Honda
+  'Honda': {
+    'Civic': ['2.0L 4-Cylinder', '1.5L Turbo 4-Cylinder'],
+    'Accord': ['1.5L Turbo 4-Cylinder', '2.0L Turbo 4-Cylinder', '2.0L Hybrid'],
+    'CR-V': ['2.0L Hybrid', '1.5L Turbo 4-Cylinder'],
+    'Pilot': ['3.5L V6'],
+    'Passport': ['3.5L V6'],
+    'Ridgeline': ['3.5L V6'],
+    'HR-V': ['1.8L 4-Cylinder', '2.0L 4-Cylinder'],
+    'Fit': ['1.5L 4-Cylinder'],
+    'Insight': ['1.5L Hybrid']
+  },
+  
+  // Toyota
+  'Toyota': {
+    'Camry': ['2.5L 4-Cylinder', '3.5L V6', '2.5L Hybrid'],
+    'Corolla': ['1.8L 4-Cylinder', '2.0L 4-Cylinder', '1.8L Hybrid'],
+    'RAV4': ['2.5L 4-Cylinder', '2.5L Hybrid', '2.5L Prime Plug-in Hybrid'],
+    'Highlander': ['3.5L V6', '2.5L Hybrid'],
+    '4Runner': ['4.0L V6'],
+    'Tacoma': ['2.7L 4-Cylinder', '3.5L V6'],
+    'Tundra': ['3.5L Twin-Turbo V6', 'i-FORCE MAX Hybrid'],
+    'Prius': ['1.8L Hybrid'],
+    'Avalon': ['3.5L V6', '2.5L Hybrid'],
+    'Sienna': ['2.5L Hybrid'],
+    'Venza': ['2.5L Hybrid'],
+    'C-HR': ['2.0L 4-Cylinder']
+  },
+  
+  // Nissan
+  'Nissan': {
+    'Altima': ['2.5L 4-Cylinder', '2.0L Turbo 4-Cylinder'],
+    'Sentra': ['2.0L 4-Cylinder'],
+    'Maxima': ['3.5L V6'],
+    'Rogue': ['2.5L 4-Cylinder'],
+    'Pathfinder': ['3.5L V6'],
+    'Murano': ['3.5L V6'],
+    'Frontier': ['3.8L V6'],
+    'Titan': ['5.6L V8'],
+    '370Z': ['3.7L V6'],
+    'GT-R': ['3.8L Twin-Turbo V6'],
+    'Armada': ['5.6L V8'],
+    'Versa': ['1.6L 4-Cylinder']
+  },
+  
+  // Jeep
+  'Jeep': {
+    'Wrangler': ['3.6L V6', '2.0L Turbo 4-Cylinder', '3.0L Turbo Diesel V6', '6.4L V8'],
+    'Cherokee': ['2.4L 4-Cylinder', '3.2L V6', '2.0L Turbo 4-Cylinder'],
+    'Grand Cherokee': ['3.6L V6', '5.7L V8', '6.4L V8', '6.2L Supercharged V8'],
+    'Compass': ['2.4L 4-Cylinder', '1.3L Turbo 4-Cylinder'],
+    'Renegade': ['1.3L Turbo 4-Cylinder', '2.4L 4-Cylinder'],
+    'Gladiator': ['3.6L V6', '3.0L Turbo Diesel V6'],
+    'Grand Wagoneer': ['5.7L V8', '6.4L V8']
+  },
+  
+  // Ram
+  'Ram': {
+    '1500': ['3.6L V6', '5.7L V8', '3.0L Turbo Diesel V6', '6.2L Supercharged V8'],
+    '2500': ['6.4L V8', '6.7L Turbo Diesel I6'],
+    '3500': ['6.4L V8', '6.7L Turbo Diesel I6'],
+    'ProMaster': ['3.6L V6', '3.0L Turbo Diesel V6'],
+    'ProMaster City': ['2.4L 4-Cylinder']
+  },
+  
+  // GMC
+  'GMC': {
+    'Sierra 1500': ['2.7L Turbo 4-Cylinder', '3.0L Turbo Diesel V6', '5.3L V8', '6.2L V8'],
+    'Sierra 2500 HD': ['6.6L V8', '6.6L Turbo Diesel V8', '6.6L Turbo Diesel V8 (High Output)'],
+    'Sierra 3500 HD': ['6.6L V8', '6.6L Turbo Diesel V8', '6.6L Turbo Diesel V8 (High Output)'],
+    'Acadia': ['2.5L 4-Cylinder', '3.6L V6'],
+    'Yukon': ['5.3L V8', '6.2L V8', '3.0L Turbo Diesel'],
+    'Yukon XL': ['5.3L V8', '6.2L V8', '3.0L Turbo Diesel'],
+    'Terrain': ['1.5L Turbo 4-Cylinder', '2.0L Turbo 4-Cylinder'],
+    'Canyon': ['2.5L 4-Cylinder', '3.6L V6', '2.8L Turbo Diesel'],
+    'Savana': ['4.3L V6', '5.3L V8', '6.6L Turbo Diesel V8']
+  },
+  
+  // Dodge
+  'Dodge': {
+    'Challenger': ['3.6L V6', '5.7L V8', '6.4L V8', '6.2L Supercharged V8'],
+    'Charger': ['3.6L V6', '5.7L V8', '6.4L V8', '6.2L Supercharged V8'],
+    'Durango': ['3.6L V6', '5.7L V8', '6.4L V8', '6.2L Supercharged V8'],
+    'Journey': ['2.4L 4-Cylinder', '3.6L V6'],
+    'Grand Caravan': ['3.6L V6']
+  },
+  
+  // Jaguar
+  'Jaguar': {
+    'XK': ['4.2L V8', '4.2L Supercharged V8'],
+    'XF': ['2.0L Turbo 4-Cylinder', '3.0L Supercharged V6', '5.0L V8', '5.0L Supercharged V8'],
+    'XJ': ['3.0L Supercharged V6', '5.0L V8', '5.0L Supercharged V8'],
+    'F-Pace': ['2.0L Turbo 4-Cylinder', '3.0L Supercharged V6', '5.0L Supercharged V8'],
+    'E-Pace': ['2.0L Turbo 4-Cylinder', '2.0L Turbo 4-Cylinder (P300)'],
+    'I-Pace': ['Electric Motor (394 HP)'],
+    'XE': ['2.0L Turbo 4-Cylinder', '3.0L Supercharged V6'],
+    'F-Type': ['3.0L Supercharged V6', '5.0L V8', '5.0L Supercharged V8'],
+    'S-Type': ['3.0L V6', '4.0L V8', '4.2L V8'],
+    'X-Type': ['2.5L V6', '3.0L V6']
+  },
+  
+  // Acura
+  'Acura': {
+    'ILX': ['2.4L 4-Cylinder', '2.0L Hybrid'],
+    'TLX': ['2.4L 4-Cylinder', '3.5L V6', '2.0L Turbo 4-Cylinder', '3.0L Turbo V6'],
+    'RLX': ['3.5L V6', '3.5L Hybrid'],
+    'RDX': ['2.0L Turbo 4-Cylinder', '3.5L V6'],
+    'MDX': ['3.5L V6', '3.0L Turbo V6', '3.5L Hybrid'],
+    'CDX': ['1.5L Turbo 4-Cylinder'],
+    'NSX': ['3.5L Twin-Turbo V6 Hybrid'],
+    'ZDX': ['3.7L V6']
+  },
+  
+  // Audi
+  'Audi': {
+    'A3': ['2.0L Turbo 4-Cylinder'],
+    'A4': ['2.0L Turbo 4-Cylinder', '3.0L Turbo V6'],
+    'A5': ['2.0L Turbo 4-Cylinder', '3.0L Turbo V6'],
+    'A6': ['2.0L Turbo 4-Cylinder', '3.0L Turbo V6', '4.0L Twin-Turbo V8'],
+    'A7': ['2.0L Turbo 4-Cylinder', '3.0L Turbo V6', '4.0L Twin-Turbo V8'],
+    'A8': ['3.0L Turbo V6', '4.0L Twin-Turbo V8'],
+    'Q3': ['2.0L Turbo 4-Cylinder'],
+    'Q5': ['2.0L Turbo 4-Cylinder', '3.0L Turbo V6'],
+    'Q7': ['2.0L Turbo 4-Cylinder', '3.0L Turbo V6'],
+    'Q8': ['3.0L Turbo V6', '4.0L Twin-Turbo V8'],
+    'R8': ['5.2L V10', '5.2L V10 Performance'],
+    'TT': ['2.0L Turbo 4-Cylinder'],
+    'e-tron': ['Electric Motor (402 HP)']
+  },
+  
+  // BMW
+  'BMW': {
+    '2 Series': ['2.0L Turbo 4-Cylinder', '3.0L Turbo I6'],
+    '3 Series': ['2.0L Turbo 4-Cylinder', '3.0L Turbo I6', 'M3'],
+    '4 Series': ['2.0L Turbo 4-Cylinder', '3.0L Turbo I6', 'M4'],
+    '5 Series': ['2.0L Turbo 4-Cylinder', '3.0L Turbo I6', '4.4L Twin-Turbo V8', 'M5'],
+    '6 Series': ['3.0L Turbo I6', '4.4L Twin-Turbo V8'],
+    '7 Series': ['3.0L Turbo I6', '4.4L Twin-Turbo V8', '6.6L Twin-Turbo V12'],
+    'X1': ['2.0L Turbo 4-Cylinder'],
+    'X2': ['2.0L Turbo 4-Cylinder'],
+    'X3': ['2.0L Turbo 4-Cylinder', '3.0L Turbo I6', 'M40i'],
+    'X4': ['2.0L Turbo 4-Cylinder', '3.0L Turbo I6'],
+    'X5': ['3.0L Turbo I6', '4.4L Twin-Turbo V8', 'M50i'],
+    'X6': ['3.0L Turbo I6', '4.4L Twin-Turbo V8'],
+    'X7': ['3.0L Turbo I6', '4.4L Twin-Turbo V8'],
+    'Z4': ['2.0L Turbo 4-Cylinder', '3.0L Turbo I6'],
+    'i3': ['Electric Motor'],
+    'i8': ['1.5L Turbo 3-Cylinder Hybrid']
+  },
+  
+  // Buick
+  'Buick': {
+    'Encore': ['1.4L Turbo 4-Cylinder'],
+    'Envision': ['2.0L Turbo 4-Cylinder', '2.5L 4-Cylinder'],
+    'Enclave': ['3.6L V6'],
+    'LaCrosse': ['2.4L 4-Cylinder', '3.6L V6'],
+    'Regal': ['2.0L Turbo 4-Cylinder', '2.4L 4-Cylinder', '3.6L V6'],
+    'Cascada': ['1.6L Turbo 4-Cylinder']
+  },
+  
+  // Cadillac
+  'Cadillac': {
+    'ATS': ['2.0L Turbo 4-Cylinder', '2.5L 4-Cylinder', '3.6L V6'],
+    'CT4': ['2.0L Turbo 4-Cylinder', '2.7L Turbo 4-Cylinder'],
+    'CT5': ['2.0L Turbo 4-Cylinder', '3.0L Twin-Turbo V6'],
+    'CT6': ['2.0L Turbo 4-Cylinder', '3.0L Twin-Turbo V6', '4.2L Twin-Turbo V8'],
+    'CTS': ['2.0L Turbo 4-Cylinder', '3.6L V6', '6.2L V8'],
+    'Escalade': ['6.2L V8', '3.0L Turbo Diesel'],
+    'XTS': ['3.6L V6', '3.6L Twin-Turbo V6'],
+    'XT4': ['2.0L Turbo 4-Cylinder'],
+    'XT5': ['2.0L Turbo 4-Cylinder', '3.6L V6'],
+    'XT6': ['2.0L Turbo 4-Cylinder', '3.6L V6']
+  },
+  
+  // Chrysler
+  'Chrysler': {
+    '200': ['2.4L 4-Cylinder', '3.6L V6'],
+    '300': ['3.6L V6', '5.7L V8', '6.4L V8'],
+    'Pacifica': ['3.6L V6', '3.6L Hybrid'],
+    'Voyager': ['3.6L V6']
+  },
+  
+  // Hyundai
+  'Hyundai': {
+    'Accent': ['1.6L 4-Cylinder'],
+    'Elantra': ['2.0L 4-Cylinder', '1.6L Turbo 4-Cylinder'],
+    'Sonata': ['2.5L 4-Cylinder', '1.6L Turbo 4-Cylinder', '2.0L Turbo 4-Cylinder', '2.0L Hybrid'],
+    'Santa Fe': ['2.5L 4-Cylinder', '2.5L Turbo 4-Cylinder', '3.5L V6'],
+    'Tucson': ['2.0L 4-Cylinder', '2.4L 4-Cylinder', '1.6L Turbo 4-Cylinder'],
+    'Palisade': ['3.8L V6'],
+    'Kona': ['2.0L 4-Cylinder', '1.6L Turbo 4-Cylinder', 'Electric Motor'],
+    'Veloster': ['2.0L 4-Cylinder', '1.6L Turbo 4-Cylinder'],
+    'Venue': ['1.6L 4-Cylinder'],
+    'Ioniq': ['1.6L Hybrid', 'Electric Motor'],
+    'Genesis': ['3.8L V6', '5.0L V8']
+  },
+  
+  // Infiniti
+  'Infiniti': {
+    'Q50': ['2.0L Turbo 4-Cylinder', '3.0L Twin-Turbo V6', '3.7L V6'],
+    'Q60': ['2.0L Turbo 4-Cylinder', '3.0L Twin-Turbo V6', '3.7L V6'],
+    'Q70': ['3.7L V6', '5.6L V8'],
+    'QX30': ['2.0L Turbo 4-Cylinder'],
+    'QX50': ['2.0L Turbo 4-Cylinder', '3.5L V6'],
+    'QX60': ['3.5L V6'],
+    'QX80': ['5.6L V8'],
+    'FX': ['3.5L V6', '5.0L V8'],
+    'G37': ['3.7L V6']
+  },
+  
+  // Kia
+  'Kia': {
+    'Forte': ['2.0L 4-Cylinder', '1.6L Turbo 4-Cylinder'],
+    'K5': ['1.6L Turbo 4-Cylinder', '2.5L Turbo 4-Cylinder'],
+    'Optima': ['2.4L 4-Cylinder', '1.6L Turbo 4-Cylinder', '2.0L Turbo 4-Cylinder'],
+    'Rio': ['1.6L 4-Cylinder'],
+    'Sedona': ['3.3L V6'],
+    'Sorento': ['2.4L 4-Cylinder', '3.3L V6', '2.0L Turbo 4-Cylinder'],
+    'Soul': ['1.6L 4-Cylinder', '2.0L 4-Cylinder'],
+    'Sportage': ['2.4L 4-Cylinder', '2.0L Turbo 4-Cylinder', '2.4L Turbo 4-Cylinder'],
+    'Telluride': ['3.8L V6'],
+    'Niro': ['1.6L Hybrid', 'Electric Motor'],
+    'Seltos': ['2.0L 4-Cylinder', '1.6L Turbo 4-Cylinder'],
+    'Stinger': ['2.0L Turbo 4-Cylinder', '2.5L Turbo 4-Cylinder', '3.3L Twin-Turbo V6']
+  },
+  
+  // Lexus
+  'Lexus': {
+    'ES': ['2.5L 4-Cylinder', '3.5L V6', '2.5L Hybrid'],
+    'GS': ['3.5L V6', '2.0L Turbo 4-Cylinder'],
+    'GX': ['4.6L V8'],
+    'IS': ['2.0L Turbo 4-Cylinder', '3.5L V6'],
+    'LC': ['5.0L V8', '3.5L Hybrid'],
+    'LS': ['3.5L Twin-Turbo V6', '5.0L V8 Hybrid'],
+    'LX': ['5.7L V8'],
+    'NX': ['2.0L Turbo 4-Cylinder', '2.5L Hybrid'],
+    'RC': ['2.0L Turbo 4-Cylinder', '3.5L V6', '5.0L V8'],
+    'RX': ['3.5L V6', '2.5L Hybrid', '3.5L Twin-Turbo V6'],
+    'UX': ['2.0L 4-Cylinder', '2.0L Hybrid']
+  },
+  
+  // Lincoln
+  'Lincoln': {
+    'Aviator': ['3.0L Twin-Turbo V6', '3.0L Hybrid'],
+    'Continental': ['2.7L Twin-Turbo V6', '3.0L Twin-Turbo V6', '3.7L V6'],
+    'Corsair': ['2.0L Turbo 4-Cylinder', '2.5L Hybrid'],
+    'MKC': ['2.0L Turbo 4-Cylinder', '2.3L Turbo 4-Cylinder'],
+    'MKT': ['3.7L V6', '3.5L Twin-Turbo V6'],
+    'MKX': ['2.0L Turbo 4-Cylinder', '2.7L Twin-Turbo V6', '3.7L V6'],
+    'MKZ': ['2.0L Turbo 4-Cylinder', '3.0L Twin-Turbo V6', '2.0L Hybrid'],
+    'Navigator': ['3.5L Twin-Turbo V6']
+  },
+  
+  // Mazda
+  'Mazda': {
+    'CX-3': ['2.0L 4-Cylinder'],
+    'CX-30': ['2.5L 4-Cylinder', '2.5L Turbo 4-Cylinder'],
+    'CX-5': ['2.5L 4-Cylinder', '2.5L Turbo 4-Cylinder'],
+    'CX-9': ['2.5L Turbo 4-Cylinder'],
+    'Mazda3': ['2.0L 4-Cylinder', '2.5L 4-Cylinder', '2.5L Turbo 4-Cylinder'],
+    'Mazda6': ['2.5L 4-Cylinder', '2.5L Turbo 4-Cylinder'],
+    'MX-5 Miata': ['2.0L 4-Cylinder']
+  },
+  
+  // Mercedes-Benz
+  'Mercedes-Benz': {
+    'A-Class': ['2.0L Turbo 4-Cylinder', 'AMG 2.0L Turbo'],
+    'C-Class': ['2.0L Turbo 4-Cylinder', '3.0L Turbo V6', 'AMG 4.0L Twin-Turbo V8'],
+    'CLA': ['2.0L Turbo 4-Cylinder', 'AMG 2.0L Turbo'],
+    'CLS': ['3.0L Turbo V6', '4.0L Twin-Turbo V8'],
+    'E-Class': ['2.0L Turbo 4-Cylinder', '3.0L Turbo V6', 'AMG 4.0L Twin-Turbo V8'],
+    'S-Class': ['3.0L Turbo V6', '4.0L Twin-Turbo V8', '6.0L Twin-Turbo V12'],
+    'G-Class': ['4.0L Twin-Turbo V8', 'AMG 4.0L Twin-Turbo V8'],
+    'GLA': ['2.0L Turbo 4-Cylinder', 'AMG 2.0L Turbo'],
+    'GLB': ['2.0L Turbo 4-Cylinder'],
+    'GLC': ['2.0L Turbo 4-Cylinder', '3.0L Turbo V6', 'AMG 4.0L Twin-Turbo V8'],
+    'GLE': ['2.0L Turbo 4-Cylinder', '3.0L Turbo V6', 'AMG 4.0L Twin-Turbo V8'],
+    'GLS': ['3.0L Turbo V6', '4.0L Twin-Turbo V8', 'AMG 4.0L Twin-Turbo V8']
+  },
+  
+  // Mini
+  'Mini': {
+    'Cooper': ['1.5L Turbo 3-Cylinder', '2.0L Turbo 4-Cylinder'],
+    'Cooper S': ['2.0L Turbo 4-Cylinder'],
+    'Cooper SE': ['Electric Motor'],
+    'Cooper JCW': ['2.0L Turbo 4-Cylinder'],
+    'Countryman': ['1.5L Turbo 3-Cylinder', '2.0L Turbo 4-Cylinder'],
+    'Countryman S': ['2.0L Turbo 4-Cylinder'],
+    'Countryman JCW': ['2.0L Turbo 4-Cylinder'],
+    'Hardtop': ['1.5L Turbo 3-Cylinder', '2.0L Turbo 4-Cylinder'],
+    'Hardtop S': ['2.0L Turbo 4-Cylinder'],
+    'Hardtop JCW': ['2.0L Turbo 4-Cylinder'],
+    'Convertible': ['1.5L Turbo 3-Cylinder', '2.0L Turbo 4-Cylinder'],
+    'Convertible S': ['2.0L Turbo 4-Cylinder'],
+    'Convertible JCW': ['2.0L Turbo 4-Cylinder'],
+    'Clubman': ['1.5L Turbo 3-Cylinder', '2.0L Turbo 4-Cylinder'],
+    'Clubman S': ['2.0L Turbo 4-Cylinder'],
+    'Clubman JCW': ['2.0L Turbo 4-Cylinder'],
+    'Paceman': ['1.6L Turbo 4-Cylinder'],
+    'Roadster': ['1.6L Turbo 4-Cylinder']
+  },
+  
+  // Mitsubishi
+  'Mitsubishi': {
+    'Eclipse Cross': ['1.5L Turbo 4-Cylinder', '2.4L 4-Cylinder'],
+    'Lancer': ['2.0L 4-Cylinder', '2.4L 4-Cylinder'],
+    'Mirage': ['1.2L 3-Cylinder'],
+    'Mirage G4': ['1.2L 3-Cylinder'],
+    'Outlander': ['2.4L 4-Cylinder', '3.0L V6'],
+    'Outlander Sport': ['2.0L 4-Cylinder', '2.4L 4-Cylinder']
+  },
+  
+  // Subaru
+  'Subaru': {
+    'Ascent': ['2.4L Turbo 4-Cylinder'],
+    'BRZ': ['2.4L 4-Cylinder'],
+    'Crosstrek': ['2.0L 4-Cylinder', '2.5L 4-Cylinder'],
+    'Forester': ['2.5L 4-Cylinder'],
+    'Impreza': ['2.0L 4-Cylinder'],
+    'Legacy': ['2.5L 4-Cylinder', '2.4L Turbo 4-Cylinder'],
+    'Outback': ['2.5L 4-Cylinder', '2.4L Turbo 4-Cylinder'],
+    'WRX': ['2.0L Turbo 4-Cylinder', '2.4L Turbo 4-Cylinder']
+  },
+  
+  // Tesla
+  'Tesla': {
+    'Model 3': ['Electric Motor (Standard Range)', 'Electric Motor (Long Range)', 'Electric Motor (Performance)'],
+    'Model S': ['Electric Motor (Long Range)', 'Electric Motor (Plaid)'],
+    'Model X': ['Electric Motor (Long Range)', 'Electric Motor (Plaid)'],
+    'Model Y': ['Electric Motor (Long Range)', 'Electric Motor (Performance)'],
+    'Cybertruck': ['Electric Motor (Single Motor)', 'Electric Motor (Dual Motor)', 'Electric Motor (Tri Motor)'],
+    'Roadster': ['Electric Motor']
+  },
+  
+  // Volkswagen
+  'Volkswagen': {
+    'Arteon': ['2.0L Turbo 4-Cylinder'],
+    'Atlas': ['2.0L Turbo 4-Cylinder', '3.6L V6'],
+    'Beetle': ['2.0L Turbo 4-Cylinder'],
+    'Golf': ['1.4L Turbo 4-Cylinder', '2.0L Turbo 4-Cylinder', 'GTI 2.0L Turbo'],
+    'ID.4': ['Electric Motor'],
+    'Jetta': ['1.4L Turbo 4-Cylinder', '1.5L Turbo 4-Cylinder'],
+    'Passat': ['2.0L Turbo 4-Cylinder'],
+    'Tiguan': ['2.0L Turbo 4-Cylinder']
+  },
+  
+  // Volvo
+  'Volvo': {
+    'S60': ['2.0L Turbo 4-Cylinder', '2.0L Twin-Turbo 4-Cylinder', 'T8 Plug-in Hybrid'],
+    'S90': ['2.0L Turbo 4-Cylinder', 'T8 Plug-in Hybrid'],
+    'V60': ['2.0L Turbo 4-Cylinder', 'T8 Plug-in Hybrid'],
+    'V90': ['2.0L Turbo 4-Cylinder', 'T8 Plug-in Hybrid'],
+    'XC40': ['2.0L Turbo 4-Cylinder', 'Electric Motor'],
+    'XC60': ['2.0L Turbo 4-Cylinder', '2.0L Twin-Turbo 4-Cylinder', 'T8 Plug-in Hybrid'],
+    'XC90': ['2.0L Turbo 4-Cylinder', '2.0L Twin-Turbo 4-Cylinder', 'T8 Plug-in Hybrid']
+  }
+}
+
+// Make-specific common engines (fallback)
+const makeSpecificEngines: Record<string, string[]> = {
+  'Honda': ['1.5L 4-Cylinder', '1.8L 4-Cylinder', '2.0L 4-Cylinder', '1.5L Turbo 4-Cylinder', '2.0L Turbo 4-Cylinder', '3.5L V6', '2.0L Hybrid'],
+  'Toyota': ['1.8L 4-Cylinder', '2.0L 4-Cylinder', '2.5L 4-Cylinder', '3.5L V6', '4.0L V6', '1.8L Hybrid', '2.5L Hybrid', '3.5L Twin-Turbo V6'],
+  'Ford': ['1.5L Turbo 3-Cylinder', '2.0L Turbo 4-Cylinder', '2.3L Turbo 4-Cylinder', '2.7L Turbo V6', '3.5L Turbo V6', '5.0L V8'],
+  'Chevrolet': ['1.4L Turbo 4-Cylinder', '1.5L Turbo 4-Cylinder', '2.0L Turbo 4-Cylinder', '3.6L V6', '5.3L V8', '6.2L V8'],
+  'Nissan': ['1.6L 4-Cylinder', '2.0L 4-Cylinder', '2.5L 4-Cylinder', '3.5L V6', '3.7L V6', '5.6L V8'],
+  'BMW': ['2.0L Turbo 4-Cylinder', '3.0L Turbo I6', '4.4L Twin-Turbo V8', 'Electric Motor'],
+  'Mercedes-Benz': ['2.0L Turbo 4-Cylinder', '3.0L Turbo V6', '4.0L Twin-Turbo V8', 'Electric Motor'],
+  'Audi': ['2.0L Turbo 4-Cylinder', '3.0L Turbo V6', '4.0L Twin-Turbo V8', 'Electric Motor'],
+  'Hyundai': ['1.6L Turbo 4-Cylinder', '2.0L 4-Cylinder', '2.5L 4-Cylinder', '2.5L Turbo 4-Cylinder', '3.3L Turbo V6'],
+  'Kia': ['1.6L Turbo 4-Cylinder', '2.0L 4-Cylinder', '2.5L Turbo 4-Cylinder', '3.3L Turbo V6'],
+  'Mazda': ['2.0L 4-Cylinder', '2.5L 4-Cylinder', '2.5L Turbo 4-Cylinder', '2.0L Skyactiv-X'],
+  'Subaru': ['2.0L 4-Cylinder', '2.5L 4-Cylinder', '2.4L Turbo 4-Cylinder', '3.6L H6'],
+  'Volkswagen': ['1.4L Turbo 4-Cylinder', '2.0L Turbo 4-Cylinder', 'Electric Motor'],
+  'Lexus': ['2.0L Turbo 4-Cylinder', '2.5L 4-Cylinder', '3.5L V6', '5.0L V8', '3.5L Hybrid', '5.0L Hybrid'],
+  'Acura': ['2.0L Turbo 4-Cylinder', '2.4L 4-Cylinder', '3.5L V6'],
+  'Infiniti': ['2.0L Turbo 4-Cylinder', '3.0L Turbo V6', '3.7L V6', '5.6L V8'],
+  'Cadillac': ['2.0L Turbo 4-Cylinder', '3.6L V6', '4.2L Twin-Turbo V8', '6.2L Supercharged V8'],
+  'Lincoln': ['2.0L Turbo 4-Cylinder', '3.0L Turbo V6', '3.5L Twin-Turbo V6'],
+  'Buick': ['1.5L Turbo 4-Cylinder', '2.0L Turbo 4-Cylinder', '3.6L V6'],
+  'Chrysler': ['2.4L 4-Cylinder', '3.6L V6', '5.7L V8'],
+  'Dodge': ['3.6L V6', '5.7L V8', '6.4L V8', '6.2L Supercharged V8'],
+  'Jeep': ['2.0L Turbo 4-Cylinder', '3.6L V6', '3.0L Turbo Diesel V6', '6.4L V8'],
+  'Ram': ['3.6L V6', '5.7L V8', '6.4L V8', '3.0L Turbo Diesel V6', '6.7L Turbo Diesel I6'],
+  'GMC': ['2.7L Turbo 4-Cylinder', '3.6L V6', '5.3L V8', '6.2L V8', '3.0L Turbo Diesel'],
+  'Tesla': ['Electric Motor (varies by model)'],
+  'Volvo': ['2.0L Turbo 4-Cylinder', '2.0L Twin-Turbo 4-Cylinder', 'Electric Motor'],
+  'Mitsubishi': ['2.0L 4-Cylinder', '2.4L 4-Cylinder', '3.0L V6'],
+  'Jaguar': ['2.0L Turbo 4-Cylinder', '3.0L Supercharged V6', '4.2L V8', '4.2L Supercharged V8', '5.0L V8', '5.0L Supercharged V8', 'Electric Motor']
+}
+
+// MPG database - organized by make, model, and engine
+const mpgDatabase: Record<string, Record<string, Record<string, string>>> = {
+  'Jaguar': {
+    'XK': {
+      '4.2L V8': '18 City / 27 Highway',
+      '4.2L Supercharged V8': '16 City / 24 Highway'
+    },
+    'XF': {
+      '2.0L Turbo 4-Cylinder': '23 City / 33 Highway',
+      '3.0L Supercharged V6': '20 City / 30 Highway',
+      '5.0L V8': '16 City / 23 Highway',
+      '5.0L Supercharged V8': '15 City / 22 Highway'
+    },
+    'XJ': {
+      '3.0L Supercharged V6': '18 City / 27 Highway',
+      '5.0L V8': '16 City / 23 Highway',
+      '5.0L Supercharged V8': '15 City / 22 Highway'
+    },
+    'F-Pace': {
+      '2.0L Turbo 4-Cylinder': '22 City / 27 Highway',
+      '3.0L Supercharged V6': '18 City / 23 Highway',
+      '5.0L Supercharged V8': '16 City / 22 Highway'
+    },
+    'E-Pace': {
+      '2.0L Turbo 4-Cylinder': '21 City / 26 Highway',
+      '2.0L Turbo 4-Cylinder (P300)': '21 City / 26 Highway'
+    },
+    'I-Pace': {
+      'Electric Motor (394 HP)': 'N/A'
+    },
+    'XE': {
+      '2.0L Turbo 4-Cylinder': '23 City / 33 Highway',
+      '3.0L Supercharged V6': '20 City / 30 Highway'
+    },
+    'F-Type': {
+      '3.0L Supercharged V6': '18 City / 26 Highway',
+      '5.0L V8': '16 City / 24 Highway',
+      '5.0L Supercharged V8': '15 City / 23 Highway'
+    },
+    'S-Type': {
+      '3.0L V6': '18 City / 26 Highway',
+      '4.0L V8': '17 City / 25 Highway',
+      '4.2L V8': '17 City / 25 Highway'
+    },
+    'X-Type': {
+      '2.5L V6': '20 City / 28 Highway',
+      '3.0L V6': '19 City / 27 Highway'
+    }
+  },
+  'Ford': {
+    'F-150': {
+      '3.3L V6': '20 City / 24 Highway',
+      '2.7L Turbo V6': '20 City / 26 Highway',
+      '3.5L Turbo V6': '18 City / 24 Highway',
+      '5.0L V8': '17 City / 23 Highway',
+      '3.5L PowerBoost Hybrid': '25 City / 26 Highway'
+    },
+    'Mustang': {
+      '2.3L Turbo 4-Cylinder': '21 City / 32 Highway',
+      '5.0L V8': '16 City / 25 Highway',
+      '5.2L Supercharged V8': '14 City / 22 Highway'
+    }
+  },
+  'Chevrolet': {
+    'Silverado 1500': {
+      '2.7L Turbo 4-Cylinder': '20 City / 23 Highway',
+      '3.0L Turbo Diesel V6': '23 City / 33 Highway',
+      '5.3L V8': '16 City / 20 Highway',
+      '6.2L V8': '15 City / 20 Highway'
+    },
+    'Camaro': {
+      '2.0L Turbo 4-Cylinder': '22 City / 31 Highway',
+      '3.6L V6': '19 City / 29 Highway',
+      '6.2L V8': '16 City / 26 Highway',
+      '6.2L Supercharged V8': '14 City / 20 Highway'
+    }
+  },
+  'Honda': {
+    'Civic': {
+      '2.0L 4-Cylinder': '31 City / 40 Highway',
+      '1.5L Turbo 4-Cylinder': '31 City / 40 Highway'
+    },
+    'Accord': {
+      '1.5L Turbo 4-Cylinder': '30 City / 38 Highway',
+      '2.0L Turbo 4-Cylinder': '22 City / 32 Highway',
+      '2.0L Hybrid': '48 City / 48 Highway'
+    },
+    'CR-V': {
+      '2.0L Hybrid': '40 City / 35 Highway',
+      '1.5L Turbo 4-Cylinder': '28 City / 34 Highway'
+    }
+  },
+  'Toyota': {
+    'Camry': {
+      '2.5L 4-Cylinder': '28 City / 39 Highway',
+      '3.5L V6': '22 City / 33 Highway',
+      '2.5L Hybrid': '51 City / 53 Highway'
+    },
+    'RAV4': {
+      '2.5L 4-Cylinder': '27 City / 35 Highway',
+      '2.5L Hybrid': '41 City / 38 Highway',
+      '2.5L Prime Plug-in Hybrid': '94 Combined'
+    }
+  }
+}
+
+// Get MPG based on make, model, and engine
+const getMPG = (make: string, model: string, engine: string): string => {
+  if (!make || !model || !engine) return ''
+  
+  // Check for exact match in database
+  if (mpgDatabase[make] && mpgDatabase[make][model] && mpgDatabase[make][model][engine]) {
+    return mpgDatabase[make][model][engine]
+  }
+  
+  // Check for electric vehicles
+  if (engine.toLowerCase().includes('electric')) {
+    return 'N/A'
+  }
+  
+  return ''
+}
+
+// Get engine options based on make and model
+const getEngineOptions = (make: string, model: string): string[] => {
+  if (!make) {
+    return [
+      '1.5L 4-Cylinder',
+      '2.0L 4-Cylinder',
+      '2.5L 4-Cylinder',
+      '3.0L V6',
+      '3.5L V6',
+      '5.0L V8',
+      'Electric Motor'
+    ]
+  }
+  
+  // Collect all engines for this make from all models
+  const allEnginesForMake = new Set<string>()
+  
+  // First, add model-specific engines if model is selected
+  if (model && modelSpecificEngines[make] && modelSpecificEngines[make][model]) {
+    modelSpecificEngines[make][model].forEach(engine => allEnginesForMake.add(engine))
+  }
+  
+  // Then, add all engines from all models of this make
+  if (modelSpecificEngines[make]) {
+    Object.values(modelSpecificEngines[make]).forEach(engines => {
+      engines.forEach(engine => allEnginesForMake.add(engine))
+    })
+  }
+  
+  // Also add make-specific engines
+  if (makeSpecificEngines[make]) {
+    makeSpecificEngines[make].forEach(engine => allEnginesForMake.add(engine))
+  }
+  
+  // Convert to sorted array
+  const engines = Array.from(allEnginesForMake).sort()
+  
+  // If we have engines, return them; otherwise fallback
+  if (engines.length > 0) {
+    return engines
+  }
+  
+  // Final fallback
+  return [
+    '1.5L 4-Cylinder',
+    '2.0L 4-Cylinder',
+    '2.5L 4-Cylinder',
+    '3.0L V6',
+    '3.5L V6',
+    '5.0L V8',
+    'Electric Motor'
+  ]
 }
 
 // Vehicle features organized by category
@@ -194,6 +807,8 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
     customDownPayment: ''
   })
   
+  const [showCustomEngine, setShowCustomEngine] = useState(false)
+  
   // Form validation state
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
@@ -255,10 +870,26 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value || ''
-    }))
+    setFormData(prev => {
+      const updated = { ...prev, [name]: value || '' }
+      
+      // Auto-populate MPG when engine is selected
+      if (name === 'engine' && value && prev.make && prev.model) {
+        const mpg = getMPG(prev.make, prev.model, value)
+        if (mpg) {
+          updated.mpg = mpg
+        }
+      }
+      
+      return updated
+    })
+    
+    // Reset custom engine state when make or model changes
+    if (name === 'make' || name === 'model') {
+      setShowCustomEngine(false)
+      // Also clear MPG when make/model changes
+      setFormData(prev => ({ ...prev, mpg: '' }))
+    }
   }
 
   const handleFeatureToggle = (feature: string) => {
@@ -341,12 +972,30 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
         body: JSON.stringify(submitData)
       })
 
-      const result = await response.json()
+      let result
+      try {
+        result = await response.json()
+      } catch (jsonError) {
+        console.error('Failed to parse JSON response:', jsonError)
+        const text = await response.text()
+        console.error('Response text:', text)
+        throw new Error(`Server returned invalid response: ${response.status} ${response.statusText}`)
+      }
+
       console.log('API response:', result)
 
       if (!response.ok) {
-        console.error('API error details:', result)
-        throw new Error(result.error || 'Failed to update vehicle')
+        console.error('API error details:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: result.error,
+          details: result.details,
+          code: result.code,
+          hint: result.hint
+        })
+        const errorMessage = result.error || 'Failed to update vehicle'
+        const errorDetails = result.details ? `: ${result.details}` : ''
+        throw new Error(`${errorMessage}${errorDetails}`)
       }
 
       console.log('Vehicle updated successfully:', result)
@@ -542,8 +1191,14 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
                 <label className="block text-sm font-medium text-gray-700 mb-2">Down Payment</label>
                 <select
                   name="downPayment"
-                  value={formData.downPayment || ''}
-                  onChange={handleInputChange}
+                  value={typeof formData.downPayment === 'string' && formData.downPayment === 'custom' ? 'custom' : (formData.downPayment?.toString() || '')}
+                  onChange={(e) => {
+                    if (e.target.value === 'custom') {
+                      setFormData(prev => ({ ...prev, downPayment: 'custom' as any }))
+                    } else {
+                      handleInputChange(e)
+                    }
+                  }}
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 >
                   <option value="">Select down payment</option>
@@ -560,7 +1215,7 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
                   <option value="5000">$5,000 Down Payment</option>
                   <option value="custom">Custom Amount</option>
                 </select>
-                {formData.downPayment === 'custom' && (
+                {(String(formData.downPayment) === 'custom') && (
                   <div className="mt-2">
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -718,14 +1373,47 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Engine</label>
-                <input
-                  type="text"
+                <select
                   name="engine"
-                  value={formData.engine || ''}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 2.0L 4-Cylinder"
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
-                />
+                  value={showCustomEngine || (formData.engine && !getEngineOptions(formData.make, formData.model).includes(formData.engine)) ? 'custom' : (formData.engine || '')}
+                  onChange={(e) => {
+                    if (e.target.value === 'custom') {
+                      setShowCustomEngine(true)
+                      if (!formData.engine || getEngineOptions(formData.make, formData.model).includes(formData.engine)) {
+                        setFormData(prev => ({ ...prev, engine: '' }))
+                      }
+                    } else {
+                      setShowCustomEngine(false)
+                      handleInputChange(e)
+                    }
+                  }}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base appearance-none cursor-pointer hover:border-blue-400 transition-colors"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                    backgroundPosition: 'right 0.5rem center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: '1.5em 1.5em',
+                    paddingRight: '2.5rem'
+                  }}
+                >
+                  <option value="" style={{ backgroundColor: '#ffffff', color: '#6b7280' }}>Select engine...</option>
+                  {getEngineOptions(formData.make, formData.model).map((engine) => (
+                    <option key={engine} value={engine} style={{ backgroundColor: '#ffffff', color: '#111827' }}>
+                      {engine}
+                    </option>
+                  ))}
+                  <option value="custom" style={{ backgroundColor: '#ffffff', color: '#111827' }}>Custom (type below)</option>
+                </select>
+                {(showCustomEngine || (formData.engine && !getEngineOptions(formData.make, formData.model).includes(formData.engine))) && (
+                  <input
+                    type="text"
+                    name="engine"
+                    value={formData.engine}
+                    onChange={handleInputChange}
+                    placeholder="Enter custom engine (e.g., 4.2L V8)"
+                    className="w-full mt-2 px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                  />
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">MPG</label>

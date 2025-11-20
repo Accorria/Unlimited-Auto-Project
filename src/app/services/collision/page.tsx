@@ -78,12 +78,6 @@ export default function CollisionRepairPage() {
                 >
                   Get Free Estimate
                 </Link>
-                <a
-                  href="tel:+13137664475"
-                  className="border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-bold hover:bg-white hover:text-blue-800 transition-colors"
-                >
-                  Call: (313) 766-4475
-                </a>
               </div>
             </div>
             <div className="relative h-96 rounded-lg overflow-hidden">
@@ -194,12 +188,6 @@ export default function CollisionRepairPage() {
             >
               Get Free Estimate
             </Link>
-            <a
-              href="tel:+13137664475"
-              className="border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-bold hover:bg-white hover:text-blue-800 transition-colors"
-            >
-              Call: (313) 766-4475
-            </a>
           </div>
         </div>
       </section>

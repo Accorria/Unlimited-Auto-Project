@@ -100,36 +100,73 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
           }
         })
         
-        if (response.ok) {
-          const foundVehicle = await response.json()
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          console.error('API response error:', response.status, errorData)
           
-          if (foundVehicle) {
-            // Transform the vehicle data to match expected format
-            const transformedVehicle = {
-              ...foundVehicle,
-              vehicle_photos: foundVehicle.vehicle_photos || [],
-              photos: foundVehicle.photos || foundVehicle.vehicle_photos?.map((p: any) => p.public_url) || [],
-              downPayment: foundVehicle.down_payment || foundVehicle.downPayment,
-              transmission: foundVehicle.transmission,
-              drivetrain: foundVehicle.drivetrain,
-              engine: foundVehicle.engine,
-              mpg: foundVehicle.mpg,
-              body_style: foundVehicle.body_style,
-              doors: foundVehicle.doors,
-              passengers: foundVehicle.passengers,
-              fuel_type: foundVehicle.fuel_type,
-              exterior_color: foundVehicle.exterior_color,
-              interior_color: foundVehicle.interior_color,
-              condition: foundVehicle.condition || 'Good',
-              // Ensure status is explicitly included
-              status: foundVehicle.status || 'available'
+          // If 404, try fallback endpoints
+          if (response.status === 404) {
+            // Fallback: try the list endpoint if individual endpoint fails
+            const listResponse = await fetch(`/api/vehicles?dealer=unlimited-auto&_t=${timestamp}`, {
+              cache: 'no-store',
+              headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+              }
+            })
+            
+            if (listResponse.ok) {
+              const data = await listResponse.json()
+              const foundVehicle = data.vehicles.find((v: Vehicle) => v.id === resolvedParams.id)
+              
+              if (foundVehicle) {
+                setVehicle(foundVehicle)
+                setLoading(false)
+                return
+              }
             }
-            // Debug: log the status to help troubleshoot
-            console.log('Vehicle status:', transformedVehicle.status, 'isSold:', (transformedVehicle.status?.toLowerCase() || 'available') === 'sold')
-            setVehicle(transformedVehicle)
+            
+            // Fallback to static data if API fails
+            console.log('Using fallback vehicle data')
+            const foundVehicle = vehicleData.find((v: Vehicle) => v.id === resolvedParams.id)
+            setVehicle(foundVehicle || null)
             setLoading(false)
             return
           }
+          
+          // For other errors, throw to be caught below
+          throw new Error(`API error: ${response.status} ${errorData.error || 'Unknown error'}`)
+        }
+        
+        const foundVehicle = await response.json()
+        
+        if (foundVehicle && !foundVehicle.error) {
+          // Transform the vehicle data to match expected format
+          const transformedVehicle = {
+            ...foundVehicle,
+            vehicle_photos: foundVehicle.vehicle_photos || [],
+            photos: foundVehicle.photos || foundVehicle.vehicle_photos?.map((p: any) => p.public_url) || [],
+            downPayment: foundVehicle.down_payment || foundVehicle.downPayment,
+            transmission: foundVehicle.transmission,
+            drivetrain: foundVehicle.drivetrain,
+            engine: foundVehicle.engine,
+            mpg: foundVehicle.mpg,
+            body_style: foundVehicle.body_style,
+            doors: foundVehicle.doors,
+            passengers: foundVehicle.passengers,
+            fuel_type: foundVehicle.fuel_type,
+            exterior_color: foundVehicle.exterior_color,
+            interior_color: foundVehicle.interior_color,
+            condition: foundVehicle.condition || 'Good',
+            // Ensure status is explicitly included
+            status: foundVehicle.status || 'available'
+          }
+          // Debug: log the status to help troubleshoot
+          console.log('Vehicle status:', transformedVehicle.status, 'isSold:', (transformedVehicle.status?.toLowerCase() || 'available') === 'sold')
+          setVehicle(transformedVehicle)
+          setLoading(false)
+          return
         }
         
         // Fallback: try the list endpoint if individual endpoint fails
@@ -157,9 +194,17 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
         console.log('Using fallback vehicle data')
         const foundVehicle = vehicleData.find((v: Vehicle) => v.id === resolvedParams.id)
         setVehicle(foundVehicle || null)
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching vehicle:', error)
-        setVehicle(null)
+        console.error('Error details:', {
+          message: error.message,
+          name: error.name,
+          stack: error.stack
+        })
+        
+        // Try fallback to static data
+        const foundVehicle = vehicleData.find((v: Vehicle) => v.id === resolvedParams.id)
+        setVehicle(foundVehicle || null)
       } finally {
         setLoading(false)
       }
