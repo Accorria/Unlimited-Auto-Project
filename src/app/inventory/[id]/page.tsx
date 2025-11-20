@@ -118,10 +118,10 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
             
             if (listResponse.ok) {
               const data = await listResponse.json()
-              const foundVehicle = data.vehicles.find((v: Vehicle) => v.id === resolvedParams.id)
+              const vehicleFromList = data.vehicles.find((v: Vehicle) => v.id === resolvedParams.id)
               
-              if (foundVehicle) {
-                setVehicle(foundVehicle)
+              if (vehicleFromList) {
+                setVehicle(vehicleFromList)
                 setLoading(false)
                 return
               }
@@ -129,8 +129,8 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
             
             // Fallback to static data if API fails
             console.log('Using fallback vehicle data')
-            const foundVehicle = vehicleData.find((v: Vehicle) => v.id === resolvedParams.id)
-            setVehicle(foundVehicle || null)
+            const vehicleFromStatic = vehicleData.find((v: Vehicle) => v.id === resolvedParams.id)
+            setVehicle(vehicleFromStatic || null)
             setLoading(false)
             return
           }
@@ -139,28 +139,28 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
           throw new Error(`API error: ${response.status} ${errorData.error || 'Unknown error'}`)
         }
         
-        const foundVehicle = await response.json()
+        const vehicleResponse = await response.json()
         
-        if (foundVehicle && !foundVehicle.error) {
+        if (vehicleResponse && !vehicleResponse.error) {
           // Transform the vehicle data to match expected format
           const transformedVehicle = {
-            ...foundVehicle,
-            vehicle_photos: foundVehicle.vehicle_photos || [],
-            photos: foundVehicle.photos || foundVehicle.vehicle_photos?.map((p: any) => p.public_url) || [],
-            downPayment: foundVehicle.down_payment || foundVehicle.downPayment,
-            transmission: foundVehicle.transmission,
-            drivetrain: foundVehicle.drivetrain,
-            engine: foundVehicle.engine,
-            mpg: foundVehicle.mpg,
-            body_style: foundVehicle.body_style,
-            doors: foundVehicle.doors,
-            passengers: foundVehicle.passengers,
-            fuel_type: foundVehicle.fuel_type,
-            exterior_color: foundVehicle.exterior_color,
-            interior_color: foundVehicle.interior_color,
-            condition: foundVehicle.condition || 'Good',
+            ...vehicleResponse,
+            vehicle_photos: vehicleResponse.vehicle_photos || [],
+            photos: vehicleResponse.photos || vehicleResponse.vehicle_photos?.map((p: any) => p.public_url) || [],
+            downPayment: vehicleResponse.down_payment || vehicleResponse.downPayment,
+            transmission: vehicleResponse.transmission,
+            drivetrain: vehicleResponse.drivetrain,
+            engine: vehicleResponse.engine,
+            mpg: vehicleResponse.mpg,
+            body_style: vehicleResponse.body_style,
+            doors: vehicleResponse.doors,
+            passengers: vehicleResponse.passengers,
+            fuel_type: vehicleResponse.fuel_type,
+            exterior_color: vehicleResponse.exterior_color,
+            interior_color: vehicleResponse.interior_color,
+            condition: vehicleResponse.condition || 'Good',
             // Ensure status is explicitly included
-            status: foundVehicle.status || 'available'
+            status: vehicleResponse.status || 'available'
           }
           // Debug: log the status to help troubleshoot
           console.log('Vehicle status:', transformedVehicle.status, 'isSold:', (transformedVehicle.status?.toLowerCase() || 'available') === 'sold')
@@ -181,10 +181,10 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
         
         if (listResponse.ok) {
           const data = await listResponse.json()
-          const foundVehicle = data.vehicles.find((v: Vehicle) => v.id === resolvedParams.id)
+          const vehicleFromList = data.vehicles.find((v: Vehicle) => v.id === resolvedParams.id)
           
-          if (foundVehicle) {
-            setVehicle(foundVehicle)
+          if (vehicleFromList) {
+            setVehicle(vehicleFromList)
             setLoading(false)
             return
           }
@@ -192,8 +192,8 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
         
         // Fallback to static data if API fails
         console.log('Using fallback vehicle data')
-        const foundVehicle = vehicleData.find((v: Vehicle) => v.id === resolvedParams.id)
-        setVehicle(foundVehicle || null)
+        const vehicleFromStatic = vehicleData.find((v: Vehicle) => v.id === resolvedParams.id)
+        setVehicle(vehicleFromStatic || null)
       } catch (error: any) {
         console.error('Error fetching vehicle:', error)
         console.error('Error details:', {
@@ -203,8 +203,8 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
         })
         
         // Try fallback to static data
-        const foundVehicle = vehicleData.find((v: Vehicle) => v.id === resolvedParams.id)
-        setVehicle(foundVehicle || null)
+        const vehicleFromStatic = vehicleData.find((v: Vehicle) => v.id === resolvedParams.id)
+        setVehicle(vehicleFromStatic || null)
       } finally {
         setLoading(false)
       }
