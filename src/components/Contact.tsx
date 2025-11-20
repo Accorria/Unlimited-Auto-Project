@@ -278,7 +278,7 @@ export default function Contact() {
               <h4 className="font-bold text-lg mb-3">Quick Response Guarantee</h4>
               <p className="text-blue-100">
                 We respond to all inquiries within 2 hours during business hours. 
-                Need immediate assistance? Call us now!
+                Need immediate assistance? Contact us through our form or email.
               </p>
             </div>
           </div>

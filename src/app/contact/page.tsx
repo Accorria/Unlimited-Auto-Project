@@ -164,11 +164,11 @@ export default function ContactPage() {
           appointmentTime: ''
         })
       } else {
-        setError('There was an error submitting your message. Please try again or call us directly at (313) 766-4475.')
+        setError('There was an error submitting your message. Please try again or contact us via email.')
       }
-    } catch (error) {
+      } catch (error) {
       console.error('Error submitting contact form:', error)
-      setError('There was an error submitting your message. Please try again or call us directly.')
+      setError('There was an error submitting your message. Please try again or contact us via email.')
     }
   }
 
@@ -178,12 +178,6 @@ export default function ContactPage() {
       title: 'Address',
       details: ['24645 Plymouth Rd Unit A', 'Redford Township, MI 48239'],
       action: 'Get Directions'
-    },
-    {
-      icon: '📞',
-      title: 'Phone',
-      details: ['(313) 766-4475'],
-      action: 'Call Now'
     },
     {
       icon: '✉️',
@@ -224,7 +218,7 @@ export default function ContactPage() {
             <h1 className="text-4xl md:text-5xl font-bold mb-4">Contact Us</h1>
             <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
               Get in touch with us today! We're here to help with all your automotive needs. 
-              Call, visit, or send us a message - we'd love to hear from you.
+              Visit us or send us a message - we'd love to hear from you.
             </p>
           </div>
         </div>
@@ -417,13 +411,6 @@ export default function ContactPage() {
                         >
                           {info.action} →
                         </a>
-                      ) : info.title === 'Phone' ? (
-                        <a 
-                          href="tel:+13137664475"
-                          className="mt-3 inline-block text-blue-600 hover:text-blue-800 font-semibold"
-                        >
-                          {info.action} →
-                        </a>
                       ) : info.title === 'Address' ? (
                         <a 
                           href="https://www.google.com/maps/dir//24645+Plymouth+Rd+Unit+A,+Redford+Township,+MI+48239"
@@ -487,12 +474,6 @@ export default function ContactPage() {
                 >
                   Get Pre-Approved
                 </Link>
-                <a
-                  href="tel:+13137664475"
-                  className="block w-full bg-green-600 text-white text-center py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold"
-                >
-                  Call Now: (313) 766-4475
-                </a>
               </div>
             </div>
           </div>
