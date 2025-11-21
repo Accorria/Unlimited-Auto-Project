@@ -43,12 +43,9 @@ export async function POST(req: NextRequest) {
       
       // Contact information
       name: `${body.firstName} ${body.lastName}`.trim(),
-      phone: body.phone,
-      email: body.email,
-      address: body.address || null,
-      city: body.city || null,
+      phone: body.phone || null,
+      email: body.email || null,
       state: body.state || null,
-      zip_code: body.zip || null,
       message: body.vehicleInterest || null,
       
       // Financial information
@@ -127,13 +124,10 @@ export async function POST(req: NextRequest) {
               subject: `New Pre-approval Application from ${lead.name} - Unlimited Auto`,
         html: `
           <h2>New Pre-approval Application Received!</h2>
-          <p><strong>Name:</strong> ${lead.name}</p>
-          <p><strong>Email:</strong> ${lead.email}</p>
-          <p><strong>Phone:</strong> ${lead.phone}</p>
-          <p><strong>Address:</strong> ${lead.address || 'N/A'}</p>
-          <p><strong>City:</strong> ${lead.city || 'N/A'}</p>
-          <p><strong>State:</strong> ${lead.state || 'N/A'}</p>
-          <p><strong>Zip:</strong> ${lead.zip_code || 'N/A'}</p>
+          <p><strong>Name:</strong> ${lead.name || body.firstName + ' ' + body.lastName || 'N/A'}</p>
+          <p><strong>Email:</strong> ${lead.email || body.email || 'N/A'}</p>
+          <p><strong>Phone:</strong> ${lead.phone || body.phone || 'N/A'}</p>
+          <p><strong>State:</strong> ${lead.state || body.state || 'N/A'}</p>
           <p><strong>Employment Status:</strong> ${body.employment || lead.employer || 'N/A'}</p>
           <p><strong>Monthly Income:</strong> ${body.income || lead.income || 'N/A'}</p>
           <p><strong>Net Monthly Income:</strong> ${lead.net_monthly_income ? `$${lead.net_monthly_income.toLocaleString()}` : 'N/A'}</p>

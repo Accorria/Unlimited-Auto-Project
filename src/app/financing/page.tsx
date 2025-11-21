@@ -20,10 +20,7 @@ export default function FinancingPage() {
     lastName: '',
     email: '',
     phone: '',
-    address: '',
-    city: '',
     state: '',
-    zip: '',
     employment: '',
     income: '',
     downPayment: '',
@@ -69,14 +66,15 @@ export default function FinancingPage() {
     fetchVehicles()
   }, [])
 
-  // Track incomplete leads when user enters email
-  const trackIncompleteLead = async () => {
+  // Track incomplete leads when user enters phone or email
+  const trackIncompleteLead = async (triggerField: 'phone' | 'email') => {
     const firstName = formData.firstName || ''
     const lastName = formData.lastName || ''
     const phone = formData.phone || ''
     const email = formData.email || ''
     
-    if (firstName || phone || email) {
+    // Only track if we have at least name + phone OR name + email
+    if ((firstName || lastName) && (phone || email)) {
       try {
         await fetch('/api/leads/track', {
           method: 'POST',
@@ -86,10 +84,11 @@ export default function FinancingPage() {
             lastName: lastName,
             phone: phone,
             email: email,
-            formStep: 'financing_form',
+            formStep: `financing_form_${triggerField}`,
             source: 'financing_page'
           })
         })
+        console.log(`✅ Tracked incomplete lead - ${triggerField} entered`)
       } catch (error) {
         console.error('Error tracking incomplete lead:', error)
       }
@@ -167,10 +166,7 @@ export default function FinancingPage() {
           lastName: '',
           email: '',
           phone: '',
-          address: '',
-          city: '',
           state: '',
-          zip: '',
           employment: '',
           income: '',
           downPayment: '',
@@ -320,211 +316,181 @@ export default function FinancingPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    onBlur={(e) => {
-                      // Track when email is entered (capture full name + email)
-                      const currentEmail = e.target.value;
-                      if (currentEmail && currentEmail.includes('@')) {
-                        setTimeout(() => {
-                          trackIncompleteLead();
-                        }, 100);
-                      }
-                    }}
-                    required
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone *</label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
-                  />
-                </div>
-              </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Address *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
                 <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
                   onChange={handleInputChange}
+                  onBlur={(e) => {
+                    // Track when phone is entered (capture name + phone)
+                    const currentPhone = e.target.value.replace(/\D/g, '');
+                    if (currentPhone.length >= 10 && (formData.firstName || formData.lastName)) {
+                      setTimeout(() => {
+                        trackIncompleteLead('phone');
+                      }, 100);
+                    }
+                  }}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">City *</label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">State *</label>
-                  <select
-                    name="state"
-                    value={formData.state}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
-                  >
-                    <option value="">Select State</option>
-                    <option value="AL">Alabama</option>
-                    <option value="AK">Alaska</option>
-                    <option value="AZ">Arizona</option>
-                    <option value="AR">Arkansas</option>
-                    <option value="CA">California</option>
-                    <option value="CO">Colorado</option>
-                    <option value="CT">Connecticut</option>
-                    <option value="DE">Delaware</option>
-                    <option value="FL">Florida</option>
-                    <option value="GA">Georgia</option>
-                    <option value="HI">Hawaii</option>
-                    <option value="ID">Idaho</option>
-                    <option value="IL">Illinois</option>
-                    <option value="IN">Indiana</option>
-                    <option value="IA">Iowa</option>
-                    <option value="KS">Kansas</option>
-                    <option value="KY">Kentucky</option>
-                    <option value="LA">Louisiana</option>
-                    <option value="ME">Maine</option>
-                    <option value="MD">Maryland</option>
-                    <option value="MA">Massachusetts</option>
-                    <option value="MI">Michigan</option>
-                    <option value="MN">Minnesota</option>
-                    <option value="MS">Mississippi</option>
-                    <option value="MO">Missouri</option>
-                    <option value="MT">Montana</option>
-                    <option value="NE">Nebraska</option>
-                    <option value="NV">Nevada</option>
-                    <option value="NH">New Hampshire</option>
-                    <option value="NJ">New Jersey</option>
-                    <option value="NM">New Mexico</option>
-                    <option value="NY">New York</option>
-                    <option value="NC">North Carolina</option>
-                    <option value="ND">North Dakota</option>
-                    <option value="OH">Ohio</option>
-                    <option value="OK">Oklahoma</option>
-                    <option value="OR">Oregon</option>
-                    <option value="PA">Pennsylvania</option>
-                    <option value="RI">Rhode Island</option>
-                    <option value="SC">South Carolina</option>
-                    <option value="SD">South Dakota</option>
-                    <option value="TN">Tennessee</option>
-                    <option value="TX">Texas</option>
-                    <option value="UT">Utah</option>
-                    <option value="VT">Vermont</option>
-                    <option value="VA">Virginia</option>
-                    <option value="WA">Washington</option>
-                    <option value="WV">West Virginia</option>
-                    <option value="WI">Wisconsin</option>
-                    <option value="WY">Wyoming</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">ZIP Code *</label>
-                  <input
-                    type="text"
-                    name="zip"
-                    value={formData.zip}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  onBlur={(e) => {
+                    // Track when email is entered (capture name + email)
+                    const currentEmail = e.target.value;
+                    if (currentEmail && currentEmail.includes('@') && (formData.firstName || formData.lastName)) {
+                      setTimeout(() => {
+                        trackIncompleteLead('email');
+                      }, 100);
+                    }
+                  }}
+                  required
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Employment Status *</label>
-                  <select
-                    name="employment"
-                    value={formData.employment}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
-                  >
-                    <option value="">Select Status</option>
-                    <option value="employed">Employed</option>
-                    <option value="self-employed">Self-Employed</option>
-                    <option value="unemployed">Unemployed</option>
-                    <option value="retired">Retired</option>
-                    <option value="student">Student</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Income *</label>
-                  <select
-                    name="income"
-                    value={formData.income}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
-                  >
-                    <option value="">Select Monthly Income</option>
-                    <option value="1000">$1,000</option>
-                    <option value="1500">$1,500</option>
-                    <option value="2000">$2,000</option>
-                    <option value="2500">$2,500</option>
-                    <option value="3000">$3,000</option>
-                    <option value="3500">$3,500</option>
-                    <option value="4000">$4,000</option>
-                    <option value="4500">$4,500</option>
-                    <option value="5000">$5,000</option>
-                    <option value="6000">$6,000</option>
-                    <option value="7000">$7,000</option>
-                    <option value="8000">$8,000</option>
-                    <option value="9000">$9,000</option>
-                    <option value="10000">$10,000+</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">State *</label>
+                <select
+                  name="state"
+                  value={formData.state}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                >
+                  <option value="">Select State</option>
+                  <option value="AL">Alabama</option>
+                  <option value="AK">Alaska</option>
+                  <option value="AZ">Arizona</option>
+                  <option value="AR">Arkansas</option>
+                  <option value="CA">California</option>
+                  <option value="CO">Colorado</option>
+                  <option value="CT">Connecticut</option>
+                  <option value="DE">Delaware</option>
+                  <option value="FL">Florida</option>
+                  <option value="GA">Georgia</option>
+                  <option value="HI">Hawaii</option>
+                  <option value="ID">Idaho</option>
+                  <option value="IL">Illinois</option>
+                  <option value="IN">Indiana</option>
+                  <option value="IA">Iowa</option>
+                  <option value="KS">Kansas</option>
+                  <option value="KY">Kentucky</option>
+                  <option value="LA">Louisiana</option>
+                  <option value="ME">Maine</option>
+                  <option value="MD">Maryland</option>
+                  <option value="MA">Massachusetts</option>
+                  <option value="MI">Michigan</option>
+                  <option value="MN">Minnesota</option>
+                  <option value="MS">Mississippi</option>
+                  <option value="MO">Missouri</option>
+                  <option value="MT">Montana</option>
+                  <option value="NE">Nebraska</option>
+                  <option value="NV">Nevada</option>
+                  <option value="NH">New Hampshire</option>
+                  <option value="NJ">New Jersey</option>
+                  <option value="NM">New Mexico</option>
+                  <option value="NY">New York</option>
+                  <option value="NC">North Carolina</option>
+                  <option value="ND">North Dakota</option>
+                  <option value="OH">Ohio</option>
+                  <option value="OK">Oklahoma</option>
+                  <option value="OR">Oregon</option>
+                  <option value="PA">Pennsylvania</option>
+                  <option value="RI">Rhode Island</option>
+                  <option value="SC">South Carolina</option>
+                  <option value="SD">South Dakota</option>
+                  <option value="TN">Tennessee</option>
+                  <option value="TX">Texas</option>
+                  <option value="UT">Utah</option>
+                  <option value="VT">Vermont</option>
+                  <option value="VA">Virginia</option>
+                  <option value="WA">Washington</option>
+                  <option value="WV">West Virginia</option>
+                  <option value="WI">Wisconsin</option>
+                  <option value="WY">Wyoming</option>
+                </select>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Down Payment</label>
-                  <select
-                    name="downPayment"
-                    value={formData.downPayment}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
-                  >
-                    <option value="">Select Down Payment</option>
-                    <option value="1000">$1,000</option>
-                    <option value="1500">$1,500</option>
-                    <option value="2000">$2,000</option>
-                    <option value="2500">$2,500</option>
-                    <option value="3000">$3,000</option>
-                    <option value="3500">$3,500</option>
-                    <option value="4000">$4,000</option>
-                    <option value="4500">$4,500</option>
-                    <option value="5000">$5,000</option>
-                    <option value="6000">$6,000</option>
-                    <option value="7000">$7,000</option>
-                    <option value="8000">$8,000</option>
-                    <option value="9000">$9,000</option>
-                    <option value="10000">$10,000+</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Employment Status *</label>
+                <select
+                  name="employment"
+                  value={formData.employment}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                >
+                  <option value="">Select Status</option>
+                  <option value="employed">Employed</option>
+                  <option value="self-employed">Self-Employed</option>
+                  <option value="unemployed">Unemployed</option>
+                  <option value="retired">Retired</option>
+                  <option value="student">Student</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Income *</label>
+                <select
+                  name="income"
+                  value={formData.income}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                >
+                  <option value="">Select Monthly Income</option>
+                  <option value="1000">$1,000</option>
+                  <option value="1500">$1,500</option>
+                  <option value="2000">$2,000</option>
+                  <option value="2500">$2,500</option>
+                  <option value="3000">$3,000</option>
+                  <option value="3500">$3,500</option>
+                  <option value="4000">$4,000</option>
+                  <option value="4500">$4,500</option>
+                  <option value="5000">$5,000</option>
+                  <option value="6000">$6,000</option>
+                  <option value="7000">$7,000</option>
+                  <option value="8000">$8,000</option>
+                  <option value="9000">$9,000</option>
+                  <option value="10000">$10,000+</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Down Payment *</label>
+                <select
+                  name="downPayment"
+                  value={formData.downPayment}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                >
+                  <option value="">Select Down Payment</option>
+                  <option value="1000">$1,000</option>
+                  <option value="1500">$1,500</option>
+                  <option value="2000">$2,000</option>
+                  <option value="2500">$2,500</option>
+                  <option value="3000">$3,000</option>
+                  <option value="3500">$3,500</option>
+                  <option value="4000">$4,000</option>
+                  <option value="4500">$4,500</option>
+                  <option value="5000">$5,000</option>
+                  <option value="6000">$6,000</option>
+                  <option value="7000">$7,000</option>
+                  <option value="8000">$8,000</option>
+                  <option value="9000">$9,000</option>
+                  <option value="10000">$10,000+</option>
+                </select>
               </div>
 
               <div>
@@ -769,15 +735,7 @@ export default function FinancingPage() {
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="text-green-600">✓</div>
-                  <span className="text-gray-700">Proof of Residence (utility bill, lease, etc.)</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="text-green-600">✓</div>
                   <span className="text-gray-700">Down Payment (varies by credit)</span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="text-green-600">✓</div>
-                  <span className="text-gray-700">Insurance Information</span>
                 </div>
               </div>
             </div>
