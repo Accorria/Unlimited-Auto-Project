@@ -57,6 +57,15 @@ export default function SalesAgentChat({
     }
   }
 
+  // Log vehicleId to debug
+  useEffect(() => {
+    if (vehicleId) {
+      console.log('🔍 SalesAgentChat - vehicleId provided:', vehicleId)
+    } else {
+      console.warn('⚠️ SalesAgentChat - No vehicleId provided')
+    }
+  }, [vehicleId])
+
   const chatHook = useChat({
     api: '/api/chat',
     body: {
@@ -105,6 +114,7 @@ export default function SalesAgentChat({
     
     try {
       // Call the API directly with sessionId and vehicleId
+      console.log('📤 Sending message with vehicleId:', vehicleId)
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
