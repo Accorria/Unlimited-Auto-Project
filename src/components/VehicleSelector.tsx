@@ -29,11 +29,12 @@ export default function VehicleSelector({ selectedVehicle, onVehicleChange, requ
         const response = await fetch('/api/vehicles?dealer=unlimited-auto')
         if (response.ok) {
           const data = await response.json()
-          // Only show active vehicles that are for sale
-          const activeVehicles = (data.vehicles || []).filter((v: Vehicle) => 
-            v.status === 'active' && v.price && v.price > 0
-          )
-          setVehicles(activeVehicles)
+          // Filter out sold vehicles - only show available/active vehicles
+          const availableVehicles = (data.vehicles || []).filter((v: Vehicle) => {
+            const status = (v.status || '').toLowerCase()
+            return status !== 'sold' && (status === 'active' || status === 'available') && v.price && v.price > 0
+          })
+          setVehicles(availableVehicles)
         }
       } catch (error) {
         console.error('Error fetching vehicles:', error)

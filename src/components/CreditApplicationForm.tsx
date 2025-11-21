@@ -160,14 +160,19 @@ export default function CreditApplicationForm() {
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [documents, setDocuments] = useState<DocumentFile[]>([]);
 
-  // Fetch vehicles for the dropdown
+  // Fetch vehicles for the dropdown - exclude sold vehicles
   useEffect(() => {
     const fetchVehicles = async () => {
       try {
         const response = await fetch('/api/vehicles?dealer=unlimited-auto')
         if (response.ok) {
           const data = await response.json()
-          setVehicles(data.vehicles || [])
+          // Filter out sold vehicles - only show available vehicles for selection
+          const availableVehicles = (data.vehicles || []).filter((v: any) => {
+            const status = (v.status || '').toLowerCase()
+            return status !== 'sold'
+          })
+          setVehicles(availableVehicles)
         }
       } catch (error) {
         console.error('Error fetching vehicles:', error)
@@ -199,7 +204,7 @@ export default function CreditApplicationForm() {
   // Vehicle Makes array
   const vehicleMakes = [
     'Acura', 'Audi', 'BMW', 'Buick', 'Cadillac', 'Chevrolet', 'Chrysler', 'Dodge', 'Ford', 'GMC',
-    'Honda', 'Hyundai', 'Infiniti', 'Jeep', 'Kia', 'Lexus', 'Lincoln', 'Mazda', 'Mercedes-Benz', 'Mitsubishi',
+    'Honda', 'Hyundai', 'Infiniti', 'Jaguar', 'Jeep', 'Kia', 'Lexus', 'Lincoln', 'Mazda', 'Mercedes-Benz', 'Mitsubishi',
     'Nissan', 'Ram', 'Subaru', 'Toyota', 'Volkswagen', 'Volvo'
   ].sort()
 
@@ -218,6 +223,7 @@ export default function CreditApplicationForm() {
     'Honda': ['Accord', 'Civic', 'Clarity', 'CR-V', 'HR-V', 'Insight', 'Odyssey', 'Passport', 'Pilot', 'Ridgeline'],
     'Hyundai': ['Accent', 'Elantra', 'Ioniq', 'Kona', 'Palisade', 'Santa Fe', 'Sonata', 'Tucson', 'Veloster', 'Venue'],
     'Infiniti': ['Q50', 'Q60', 'Q70', 'QX30', 'QX50', 'QX60', 'QX80'],
+    'Jaguar': ['E-Pace', 'F-Pace', 'F-Type', 'I-Pace', 'S-Type', 'XE', 'XF', 'XJ', 'XK', 'X-Type'],
     'Jeep': [
       'Wrangler', 
       'Wrangler Unlimited', 
@@ -726,7 +732,7 @@ export default function CreditApplicationForm() {
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Pre-approval</h1>
         <p className="text-gray-600">Unlimited Auto Repair & Collision LLC</p>
-        <p className="text-sm text-gray-500">24645 Plymouth Rd Unit A, Redford Township, MI 48239 | (313) 766-4475</p>
+        <p className="text-sm text-gray-500">24645 Plymouth Rd Unit A, Redford Township, MI 48239</p>
       </div>
 
       {errors.length > 0 && (
@@ -826,6 +832,7 @@ export default function CreditApplicationForm() {
               </div>
             </div>
 
+            {/* Email and Phone - Side by Side */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">EMAIL ADDRESS</label>
@@ -857,8 +864,27 @@ export default function CreditApplicationForm() {
                   autoComplete="email"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">PHONE NUMBER</label>
+                <input
+                  type="tel"
+                  value={data.applicant.homePhone}
+                  onChange={(e) => {
+                    const formattedPhone = formatPhoneNumber(e.target.value);
+                    set("applicant", { ...data.applicant, homePhone: formattedPhone });
+                    // Track with current value immediately (pass it to function)
+                    if (formattedPhone.replace(/\D/g, '').length >= 10) {
+                      trackIncompleteLead('applicant_phone', { firstName: data.applicant.firstName, lastName: data.applicant.lastName, email: data.applicant.email, phone: formattedPhone });
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  placeholder="(313) 555-1234"
+                  required
+                />
+              </div>
             </div>
 
+            {/* State, Address, Apt */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">STATE</label>
@@ -895,6 +921,7 @@ export default function CreditApplicationForm() {
               </div>
             </div>
 
+            {/* City, Zip, Birthdate */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">CITY</label>
@@ -944,25 +971,9 @@ export default function CreditApplicationForm() {
                   required
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">HOME PHONE</label>
-                  <input
-                    type="tel"
-                    value={data.applicant.homePhone}
-                    onChange={(e) => {
-                      const formattedPhone = formatPhoneNumber(e.target.value);
-                      set("applicant", { ...data.applicant, homePhone: formattedPhone });
-                      // Track with current value immediately (pass it to function)
-                      if (formattedPhone.replace(/\D/g, '').length >= 10) {
-                        trackIncompleteLead('applicant_phone', { firstName: data.applicant.firstName, lastName: data.applicant.lastName, email: data.applicant.email, phone: formattedPhone });
-                      }
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    required
-                  />
-              </div>
             </div>
 
+            {/* Housing, Monthly Payment, How Long at Address */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">HOUSING STATUS</label>
@@ -1647,42 +1658,47 @@ export default function CreditApplicationForm() {
                 <p className="text-red-500 text-xs mt-1">Please select a down payment option</p>
               )}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">NET TRADE $</label>
-              <input
-                type="text"
-                value={data.financing.netTrade}
-                onChange={(e) => set("financing", { ...data.financing, netTrade: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                placeholder="Trade-in value"
-              />
-            </div>
           </div>
 
           {/* Trade-In Vehicle Information */}
           <div className="mb-4">
-            <div className="flex items-center mb-4">
-              <input
-                type="checkbox"
-                id="hasTradeIn"
-                checked={data.financing.hasTradeIn}
-                onChange={(e) => {
-                  const hasTradeIn = e.target.checked
-                  set("financing", {
-                    ...data.financing,
-                    hasTradeIn: hasTradeIn,
-                    // Clear trade-in fields if unchecked
-                    tradeMake: hasTradeIn ? data.financing.tradeMake : "",
-                    tradeModel: hasTradeIn ? data.financing.tradeModel : "",
-                    tradeMileage: hasTradeIn ? data.financing.tradeMileage : "",
-                    tradeYear: hasTradeIn ? data.financing.tradeYear : "",
-                  })
-                }}
-                className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <label htmlFor="hasTradeIn" className="ml-3 text-sm font-medium text-gray-700 cursor-pointer">
-                Yes, I have a vehicle to trade in
-              </label>
+            <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 mb-4 hover:bg-blue-100 transition-colors cursor-pointer" onClick={() => {
+              const newValue = !data.financing.hasTradeIn
+              set("financing", {
+                ...data.financing,
+                hasTradeIn: newValue,
+                // Clear trade-in fields if unchecked
+                tradeMake: newValue ? data.financing.tradeMake : "",
+                tradeModel: newValue ? data.financing.tradeModel : "",
+                tradeMileage: newValue ? data.financing.tradeMileage : "",
+                tradeYear: newValue ? data.financing.tradeYear : "",
+              })
+            }}>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="hasTradeIn"
+                  checked={data.financing.hasTradeIn}
+                  onChange={(e) => {
+                    const hasTradeIn = e.target.checked
+                    set("financing", {
+                      ...data.financing,
+                      hasTradeIn: hasTradeIn,
+                      // Clear trade-in fields if unchecked
+                      tradeMake: hasTradeIn ? data.financing.tradeMake : "",
+                      tradeModel: hasTradeIn ? data.financing.tradeModel : "",
+                      tradeMileage: hasTradeIn ? data.financing.tradeMileage : "",
+                      tradeYear: hasTradeIn ? data.financing.tradeYear : "",
+                    })
+                  }}
+                  className="w-6 h-6 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                />
+                <label htmlFor="hasTradeIn" className="ml-3 text-base font-semibold text-gray-900 cursor-pointer flex items-center gap-2">
+                  <span className="text-2xl">🚗</span>
+                  <span>Yes, I have a vehicle to trade in</span>
+                  <span className="text-sm text-gray-600 font-normal">(Click to expand)</span>
+                </label>
+              </div>
             </div>
 
             {data.financing.hasTradeIn && (

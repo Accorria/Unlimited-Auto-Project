@@ -45,13 +45,18 @@ export default function ContactPage() {
       }))
     }
 
-    // Fetch vehicles for dropdown
+    // Fetch vehicles for dropdown - exclude sold vehicles
     const fetchVehicles = async () => {
       try {
         const response = await fetch('/api/vehicles?dealer=unlimited-auto')
         if (response.ok) {
           const data = await response.json()
-          setVehicles(data.vehicles || [])
+          // Filter out sold vehicles - only show available vehicles for selection
+          const availableVehicles = (data.vehicles || []).filter((v: Vehicle) => {
+            const status = (v.status || '').toLowerCase()
+            return status !== 'sold'
+          })
+          setVehicles(availableVehicles)
         }
       } catch (error) {
         console.error('Error fetching vehicles:', error)
