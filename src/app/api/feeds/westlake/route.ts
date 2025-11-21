@@ -85,7 +85,7 @@ export async function GET() {
     ]
 
     const dealerName = 'Unlimited Auto Repair & Collision'
-    const dealerPhone = '(313) 766-4475'
+    const dealerPhone = '' // Phone number removed - use contact form
     const dealerAddress = '24645 Plymouth Rd Unit A, Redford Township, MI 48239'
 
     const rows: string[] = []

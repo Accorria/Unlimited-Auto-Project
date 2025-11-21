@@ -525,7 +525,7 @@ export default function ContactPage() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-bold text-gray-900 mb-2">Can I schedule a test drive?</h3>
-                <p className="text-gray-600">Absolutely! Call us or fill out the contact form to schedule a test drive at your convenience.</p>
+                <p className="text-gray-600">Absolutely! Fill out the contact form to schedule a test drive at your convenience.</p>
               </div>
               <div>
                 <h3 className="text-lg font-bold text-gray-900 mb-2">Do you accept trade-ins?</h3>

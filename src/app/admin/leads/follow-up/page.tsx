@@ -119,7 +119,7 @@ export default function FollowUpPage() {
     const formType = lead.source.includes('finance') ? 'financing application' : 
                     lead.source.includes('credit') ? 'credit application' : 'inquiry'
     
-    return `Hi ${name}! I noticed you started filling out our ${formType} but didn't complete it. I'd love to help you finish the process and get you into the perfect vehicle! Give me a call at (313) 766-4475 or reply to this message.`
+    return `Hi ${name}! I noticed you started filling out our ${formType} but didn't complete it. I'd love to help you finish the process and get you into the perfect vehicle! Reply to this message or contact us through our website.`
   }
 
   const copyToClipboard = (text: string) => {

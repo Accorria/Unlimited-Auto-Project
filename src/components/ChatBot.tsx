@@ -200,7 +200,7 @@ export default function ChatBot() {
         alert('Appointment request submitted! We\'ll contact you soon to confirm.')
         setIsOpen(false)
       } else {
-        alert('Failed to submit appointment request. Please try again or call us directly.')
+        alert('Failed to submit appointment request. Please try again or contact us through our contact form.')
       }
     } catch (error) {
       console.error('Error submitting appointment:', error)

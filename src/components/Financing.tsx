@@ -112,10 +112,7 @@ export default function Financing() {
                 Get Pre-Approved
               </Link>
               <p className="text-sm text-gray-500 text-center">
-                Questions? Call us at{' '}
-                <a href="tel:+13137664475" className="text-blue-600 hover:underline">
-                  (313) 766-4475
-                </a>
+                Questions? Contact us via email and we'll get back to you.
               </p>
             </div>
           </div>

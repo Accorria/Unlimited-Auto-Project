@@ -155,7 +155,7 @@ function FinanceForm() {
               Browse Our Inventory
             </Link>
             <div className="text-sm text-gray-500">
-              <p>Questions? Call us at <strong>(555) 123-4567</strong></p>
+              <p>Questions? Contact us through our contact form and we'll get back to you.</p>
             </div>
           </div>
         </div>
