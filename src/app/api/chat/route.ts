@@ -29,7 +29,8 @@ export async function POST(req: NextRequest) {
     
     // If vehicleId is provided, fetch that specific vehicle for context
     if (vehicleId && dealer) {
-      const { data: currentVehicle } = await supabase
+      console.log('🔍 Fetching current vehicle context for vehicleId:', vehicleId)
+      const { data: currentVehicle, error: vehicleError } = await supabase
         .from('vehicles')
         .select(`
           id,
@@ -52,28 +53,42 @@ export async function POST(req: NextRequest) {
         .eq('dealer_id', dealer.id)
         .single()
       
+      if (vehicleError) {
+        console.error('❌ Error fetching current vehicle:', vehicleError)
+      }
+      
       if (currentVehicle) {
+        console.log('✅ Current vehicle fetched:', {
+          id: currentVehicle.id,
+          name: `${currentVehicle.year} ${currentVehicle.make} ${currentVehicle.model}${currentVehicle.trim ? ` ${currentVehicle.trim}` : ''}`,
+          price: currentVehicle.price,
+          down_payment: currentVehicle.down_payment
+        })
         const fullName = `${currentVehicle.year} ${currentVehicle.make} ${currentVehicle.model}${currentVehicle.trim ? ` ${currentVehicle.trim}` : ''}`.trim()
         const exactPrice = currentVehicle.price ? `$${currentVehicle.price.toLocaleString()}` : 'Call for Price'
         
-        currentVehicleContext = `\n\n=== CUSTOMER IS CURRENTLY VIEWING THIS VEHICLE ===\n`
-        currentVehicleContext += `CRITICAL: The customer clicked "Talk to Sales Agent" from the detail page for this specific vehicle.\n`
-        currentVehicleContext += `When they say "this vehicle", "the car I just clicked on", "this one", "the note", or refer to the vehicle they're viewing, they are referring to:\n\n`
+        currentVehicleContext = `\n\n🚨🚨🚨 CRITICAL - CUSTOMER IS CURRENTLY VIEWING THIS SPECIFIC VEHICLE 🚨🚨🚨\n`
+        currentVehicleContext += `\nTHE CUSTOMER CLICKED "TALK TO SALES AGENT" FROM THE DETAIL PAGE FOR THIS EXACT VEHICLE.\n`
+        currentVehicleContext += `WHEN THEY ASK ABOUT "THE NOTE", "THE PAYMENT", "HOW MUCH", "THE PRICE", "THIS VEHICLE", "THE CAR I JUST CLICKED ON", OR ANY PRICE-RELATED QUESTION, THEY ARE REFERRING TO THIS VEHICLE BELOW.\n`
+        currentVehicleContext += `\nYOU MUST USE THE EXACT PRICE BELOW - DO NOT USE ANY OTHER PRICE FROM THE GENERAL INVENTORY LIST.\n`
+        currentVehicleContext += `IF THE GENERAL INVENTORY SHOWS A DIFFERENT PRICE FOR A SIMILAR VEHICLE, IGNORE IT - USE ONLY THE PRICE BELOW.\n\n`
         currentVehicleContext += `Vehicle ID: ${currentVehicle.id}\n`
         currentVehicleContext += `Full Name: ${fullName}\n`
         currentVehicleContext += `Year: ${currentVehicle.year} | Make: ${currentVehicle.make} | Model: ${currentVehicle.model}${currentVehicle.trim ? ` | Trim: ${currentVehicle.trim}` : ''}\n`
         if (currentVehicle.exterior_color) currentVehicleContext += `Color: ${currentVehicle.exterior_color}\n`
-        currentVehicleContext += `Price: ${exactPrice} (EXACT - DO NOT CHANGE THIS)\n`
+        currentVehicleContext += `\n💰 PRICE: ${exactPrice} 💰\n`
+        currentVehicleContext += `⚠️ THIS IS THE EXACT PRICE - USE THIS PRICE AND NO OTHER PRICE ⚠️\n`
+        if (currentVehicle.down_payment) currentVehicleContext += `Down Payment: $${currentVehicle.down_payment}\n`
         currentVehicleContext += `Mileage: ${currentVehicle.miles?.toLocaleString() || 'TBD'} miles\n`
         currentVehicleContext += `Condition: ${currentVehicle.condition || 'Good'}\n`
         if (currentVehicle.transmission) currentVehicleContext += `Transmission: ${currentVehicle.transmission}\n`
         if (currentVehicle.drivetrain) currentVehicleContext += `Drivetrain: ${currentVehicle.drivetrain}\n`
         if (currentVehicle.fuel_type) currentVehicleContext += `Fuel Type: ${currentVehicle.fuel_type}\n`
-        if (currentVehicle.down_payment) currentVehicleContext += `Down Payment: $${currentVehicle.down_payment}\n`
         if (currentVehicle.description) currentVehicleContext += `Description: ${currentVehicle.description}\n`
-        currentVehicleContext += `\nWhen the customer asks about "the note", "the payment", "how much", or refers to "this vehicle" or "the car I just clicked on", they are asking about THIS vehicle above.\n`
-        currentVehicleContext += `Provide the EXACT details from above immediately - do not ask which vehicle they're referring to.\n`
-        currentVehicleContext += `=== END OF CURRENT VEHICLE ===\n\n`
+        currentVehicleContext += `\n🚨 WHEN ANSWERING PRICE QUESTIONS, USE THE PRICE ABOVE (${exactPrice}) - DO NOT USE ANY OTHER PRICE 🚨\n`
+        currentVehicleContext += `🚨 DO NOT ASK WHICH VEHICLE - THEY ARE REFERRING TO THE VEHICLE ABOVE 🚨\n`
+        currentVehicleContext += `🚨 DO NOT USE PRICES FROM THE GENERAL INVENTORY LIST BELOW - USE ONLY THE PRICE ABOVE 🚨\n`
+        currentVehicleContext += `\n=== END OF CURRENT VEHICLE ===\n\n`
       }
     }
     
@@ -238,11 +253,12 @@ export async function POST(req: NextRequest) {
 
 YOUR ROLE AS A SALES AGENT:
 1. Answer questions DIRECTLY - don't ask unnecessary questions
-2. If customer asks about a vehicle, provide the EXACT details from inventory immediately
-3. If customer asks about price, give the EXACT price from inventory
-4. If customer provides their info (name, phone, email), acknowledge it and move forward
-5. Only ask questions if you NEED the information to help them
-6. Be helpful and efficient - get to the point fast
+2. CRITICAL: If there is a "CUSTOMER IS CURRENTLY VIEWING THIS VEHICLE" section above, the customer clicked from a vehicle detail page. ALWAYS use the price and details from that section - NEVER use prices from the general inventory list below it.
+3. If customer asks about a vehicle, provide the EXACT details from inventory immediately
+4. If customer asks about price and there's a current vehicle context, use THAT vehicle's price - do not search the general inventory
+5. If customer provides their info (name, phone, email), acknowledge it and move forward
+6. Only ask questions if you NEED the information to help them
+7. Be helpful and efficient - get to the point fast
 
 YOUR PERSONALITY - BE DIRECT AND HELPFUL:
 - Be friendly but get straight to the point
