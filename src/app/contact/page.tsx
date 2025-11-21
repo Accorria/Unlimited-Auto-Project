@@ -119,13 +119,19 @@ export default function ContactPage() {
     setSuccess('')
     setError('')
     
+    // Validate vehicle selection is required
+    if (!formData.vehicleInterest) {
+      setError('Please select a vehicle from our inventory before submitting.')
+      return
+    }
+    
     // Convert vehicle ID to vehicle name if it's a UUID
     let vehicleInterestName = formData.vehicleInterest
     if (formData.vehicleInterest && formData.vehicleInterest.includes('-')) {
       // This looks like a UUID, find the vehicle name
       const selectedVehicle = vehicles.find(v => v.id === formData.vehicleInterest)
       if (selectedVehicle) {
-        vehicleInterestName = `${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}`
+        vehicleInterestName = `${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model} ${selectedVehicle.trim || ''}`.trim()
       }
     }
     
@@ -302,12 +308,13 @@ export default function ContactPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle of Interest (if applicable)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Vehicle of Interest *</label>
                 <select
                   name="vehicleInterest"
                   value={formData.vehicleInterest}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                  required
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 >
                   <option value="">Select a vehicle from our inventory</option>
                   {vehicles.map((vehicle) => (
@@ -316,6 +323,16 @@ export default function ContactPage() {
                     </option>
                   ))}
                 </select>
+                {formData.vehicleInterest && (
+                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                      <strong>Selected Vehicle:</strong> {(() => {
+                        const selected = vehicles.find(v => v.id === formData.vehicleInterest);
+                        return selected ? `${selected.year} ${selected.make} ${selected.model} ${selected.trim || ''}` : 'Loading...';
+                      })()}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {formData.service && (
