@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { openai } from '@ai-sdk/openai'
 import { streamText } from 'ai'
+import { z } from 'zod'
 import { createServerClient } from '@/lib/auth'
 import { sendEmail } from '@/lib/email'
 import { sendSMSNotificationForLead } from '@/lib/sms'
@@ -24,6 +25,57 @@ export async function POST(req: NextRequest) {
 
     let vehicleContext = ''
     let servicesContext = ''
+    let currentVehicleContext = ''
+    
+    // If vehicleId is provided, fetch that specific vehicle for context
+    if (vehicleId && dealer) {
+      const { data: currentVehicle } = await supabase
+        .from('vehicles')
+        .select(`
+          id,
+          year,
+          make,
+          model,
+          trim,
+          price,
+          miles,
+          status,
+          description,
+          condition,
+          transmission,
+          drivetrain,
+          fuel_type,
+          down_payment,
+          exterior_color
+        `)
+        .eq('id', vehicleId)
+        .eq('dealer_id', dealer.id)
+        .single()
+      
+      if (currentVehicle) {
+        const fullName = `${currentVehicle.year} ${currentVehicle.make} ${currentVehicle.model}${currentVehicle.trim ? ` ${currentVehicle.trim}` : ''}`.trim()
+        const exactPrice = currentVehicle.price ? `$${currentVehicle.price.toLocaleString()}` : 'Call for Price'
+        
+        currentVehicleContext = `\n\n=== CUSTOMER IS CURRENTLY VIEWING THIS VEHICLE ===\n`
+        currentVehicleContext += `CRITICAL: The customer clicked "Talk to Sales Agent" from the detail page for this specific vehicle.\n`
+        currentVehicleContext += `When they say "this vehicle", "the car I just clicked on", "this one", "the note", or refer to the vehicle they're viewing, they are referring to:\n\n`
+        currentVehicleContext += `Vehicle ID: ${currentVehicle.id}\n`
+        currentVehicleContext += `Full Name: ${fullName}\n`
+        currentVehicleContext += `Year: ${currentVehicle.year} | Make: ${currentVehicle.make} | Model: ${currentVehicle.model}${currentVehicle.trim ? ` | Trim: ${currentVehicle.trim}` : ''}\n`
+        if (currentVehicle.exterior_color) currentVehicleContext += `Color: ${currentVehicle.exterior_color}\n`
+        currentVehicleContext += `Price: ${exactPrice} (EXACT - DO NOT CHANGE THIS)\n`
+        currentVehicleContext += `Mileage: ${currentVehicle.miles?.toLocaleString() || 'TBD'} miles\n`
+        currentVehicleContext += `Condition: ${currentVehicle.condition || 'Good'}\n`
+        if (currentVehicle.transmission) currentVehicleContext += `Transmission: ${currentVehicle.transmission}\n`
+        if (currentVehicle.drivetrain) currentVehicleContext += `Drivetrain: ${currentVehicle.drivetrain}\n`
+        if (currentVehicle.fuel_type) currentVehicleContext += `Fuel Type: ${currentVehicle.fuel_type}\n`
+        if (currentVehicle.down_payment) currentVehicleContext += `Down Payment: $${currentVehicle.down_payment}\n`
+        if (currentVehicle.description) currentVehicleContext += `Description: ${currentVehicle.description}\n`
+        currentVehicleContext += `\nWhen the customer asks about "the note", "the payment", "how much", or refers to "this vehicle" or "the car I just clicked on", they are asking about THIS vehicle above.\n`
+        currentVehicleContext += `Provide the EXACT details from above immediately - do not ask which vehicle they're referring to.\n`
+        currentVehicleContext += `=== END OF CURRENT VEHICLE ===\n\n`
+      }
+    }
     
     if (dealer) {
       // Get vehicle inventory
@@ -315,11 +367,18 @@ INFORMATION TO COLLECT (like a dealer service form):
 - Preferred appointment date/time (if scheduling)
 
 When customers want to schedule:
-- You should already have their name, phone, and email from earlier in the conversation
-- Ask what vehicle they're interested in (must be from inventory)
-- Ask preferred date/time
-- Confirm the appointment details
-- Offer to have a sales team member call them: "Perfect! I'll have one of our sales team members call you to confirm the appointment. Is [phone number] still the best number to reach you?"
+- CRITICAL: You MUST collect ALL required information before creating an appointment:
+  1. Full name (first and last)
+  2. Phone number (REQUIRED - ask for it if not provided)
+  3. Email address
+  4. Appointment date (e.g., "today", "tomorrow", "2024-01-15")
+  5. Appointment time (e.g., "3pm", "2:00 PM", "14:00")
+  6. Vehicle interest (optional, but preferred)
+- DO NOT ask "Is this the best phone number for you?" if you don't have a phone number yet - ASK FOR IT FIRST
+- DO NOT create an appointment until you have: name, phone, email, date, and time
+- Once you have ALL required information, use the create_appointment function to schedule it
+- After creating the appointment, confirm with: "Perfect! I've scheduled your appointment for [date] at [time]. One of our sales team members will reach out to you at [phone number] to confirm. Looking forward to seeing you!"
+- NEVER mention a phone number for customers to call - we will reach out to them instead
 
 VEHICLE FEATURES - DISCUSS IN DETAIL:
 - When discussing vehicles, mention specific features from the inventory:
@@ -333,6 +392,8 @@ VEHICLE FEATURES - DISCUSS IN DETAIL:
   * Any other specifications listed
 - Talk about features like a salesperson: "This one has all-wheel drive, which is great for Michigan winters!"
 - Compare vehicles when relevant: "The [Vehicle A] has [feature], while the [Vehicle B] has [different feature]..."
+
+${currentVehicleContext}
 
 ${vehicleContext}
 
@@ -353,6 +414,257 @@ Important: Be conversational and natural. Don't list all vehicles unless asked. 
       model: openai('gpt-4o-mini'),
       system: systemPrompt,
       messages,
+      tools: {
+        create_appointment: {
+          description: 'Create an appointment for a customer. Use this when the customer wants to schedule a test drive or appointment and you have collected all required information: name, phone, email, date, and time.',
+          inputSchema: z.object({
+            name: z.string().describe('Customer full name (first and last)'),
+            phone: z.string().describe('Customer phone number (required)'),
+            email: z.string().email().describe('Customer email address'),
+            appointmentDate: z.string().describe('Appointment date in YYYY-MM-DD format (e.g., "2024-01-15"). Convert relative dates like "today" or "tomorrow" to actual dates.'),
+            appointmentTime: z.string().describe('Appointment time in HH:MM format (24-hour, e.g., "14:00" for 2:00 PM). Convert times like "3pm" to "15:00".'),
+            vehicleInterest: z.string().optional().describe('Vehicle the customer is interested in (optional)'),
+            vehicleId: z.string().optional().describe('Vehicle ID from inventory if known (optional)'),
+            type: z.enum(['test_drive', 'service']).optional().describe('Appointment type: "test_drive" or "service"')
+          }),
+          execute: async ({ name, phone, email, appointmentDate, appointmentTime, vehicleInterest, vehicleId, type }) => {
+            try {
+              // Convert relative dates to actual dates
+              let actualDate = appointmentDate
+              const dateLower = appointmentDate.toLowerCase().trim()
+              if (dateLower === 'today') {
+                const today = new Date()
+                // Use local date to avoid timezone issues
+                actualDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+              } else if (dateLower === 'tomorrow') {
+                const tomorrow = new Date()
+                tomorrow.setDate(tomorrow.getDate() + 1)
+                actualDate = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`
+              }
+
+              // Convert time formats to HH:MM
+              let actualTime = appointmentTime
+              // Handle formats like "3pm", "3 PM", "2:00 PM", etc.
+              const timeMatch = appointmentTime.match(/(\d{1,2}):?(\d{2})?\s*(am|pm|AM|PM)?/i)
+              if (timeMatch) {
+                let hours = parseInt(timeMatch[1])
+                const minutes = timeMatch[2] ? parseInt(timeMatch[2]) : 0
+                const period = timeMatch[3]?.toLowerCase()
+                
+                if (period === 'pm' && hours !== 12) {
+                  hours += 12
+                } else if (period === 'am' && hours === 12) {
+                  hours = 0
+                }
+                
+                actualTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
+              }
+
+              // Get dealer info
+              const appointmentSupabase = createServerClient()
+              const { data: appointmentDealer, error: dealerError } = await appointmentSupabase
+                .from('dealers')
+                .select('*')
+                .eq('slug', 'unlimited-auto')
+                .single()
+
+              if (dealerError || !appointmentDealer) {
+                return {
+                  success: false,
+                  error: 'Dealer not found'
+                }
+              }
+
+              // Create appointment datetime
+              const appointmentDateTime = new Date(`${actualDate}T${actualTime}`)
+              const endDateTime = new Date(appointmentDateTime.getTime() + 60 * 60 * 1000) // 1 hour duration
+
+              // Find or create the lead
+              let leadId = null
+              const { data: existingLead } = await appointmentSupabase
+                .from('leads')
+                .select('id')
+                .eq('dealer_id', appointmentDealer.id)
+                .or(`email.eq.${email},phone.eq.${phone}`)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single()
+
+              if (existingLead) {
+                leadId = existingLead.id
+              } else {
+                // Create new lead for this appointment
+                const { data: newLead, error: leadError } = await appointmentSupabase
+                  .from('leads')
+                  .insert({
+                    dealer_id: appointmentDealer.id,
+                    name: name || '',
+                    email: email || '',
+                    phone: phone || '',
+                    source: 'chatbot',
+                    status: 'new',
+                    consent: true,
+                    notes: JSON.stringify({
+                      appointmentRequested: true,
+                      vehicleInterest,
+                      service: type || 'test_drive'
+                    })
+                  })
+                  .select()
+                  .single()
+
+                if (!leadError && newLead) {
+                  leadId = newLead.id
+                }
+              }
+
+              // Create appointment
+              const appointmentData = {
+                dealer_id: appointmentDealer.id,
+                lead_id: leadId,
+                vehicle_id: vehicleId || null,
+                type: type || 'test_drive',
+                start_at: appointmentDateTime.toISOString(),
+                end_at: endDateTime.toISOString(),
+                status: 'scheduled',
+                location: '24645 Plymouth Rd Unit A, Redford Township, MI 48239',
+                notes: JSON.stringify({
+                  name,
+                  email,
+                  phone,
+                  vehicleInterest,
+                  service: type || 'test_drive',
+                  message: `Appointment scheduled via chatbot`
+                })
+              }
+
+              const { data: appointment, error: appointmentError } = await appointmentSupabase
+                .from('appointments')
+                .insert(appointmentData)
+                .select()
+                .single()
+
+              if (appointmentError) {
+                console.error('Error creating appointment:', appointmentError)
+                return {
+                  success: false,
+                  error: appointmentError.message || 'Failed to create appointment'
+                }
+              }
+
+              // Send email notification
+              try {
+                const appointmentDateFormatted = appointmentDateTime.toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })
+                const appointmentTimeFormatted = appointmentDateTime.toLocaleTimeString('en-US', {
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  hour12: true
+                })
+
+                await sendEmail({
+                  to: 'unlimitedautoredford@gmail.com',
+                  subject: `📅 New Appointment Request: ${name || 'Customer'}`,
+                  html: `
+                    <h2>New Appointment Request</h2>
+                    <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #4caf50;">
+                      <h3 style="margin-top: 0; color: #155724;">📅 Appointment Details</h3>
+                      <p style="font-size: 16px; margin: 10px 0;"><strong>Date:</strong> <span style="color: #333;">${appointmentDateFormatted}</span></p>
+                      <p style="font-size: 16px; margin: 10px 0;"><strong>Time:</strong> <span style="color: #333;">${appointmentTimeFormatted}</span></p>
+                      <p style="font-size: 16px; margin: 10px 0;"><strong>Type:</strong> <span style="color: #333;">${type || 'Test Drive'}</span></p>
+                    </div>
+                    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #ff9800;">
+                      <h3 style="margin-top: 0; color: #856404;">👤 Contact Information</h3>
+                      <p style="font-size: 16px; margin: 10px 0;"><strong>Name:</strong> <span style="color: #333;">${name || 'Not provided'}</span></p>
+                      <p style="font-size: 16px; margin: 10px 0;"><strong>Email:</strong> <span style="color: #333;">${email || 'Not provided'}</span></p>
+                      <p style="font-size: 16px; margin: 10px 0;"><strong>Phone:</strong> <span style="color: #333;">${phone || 'Not provided'}</span></p>
+                    </div>
+                    ${vehicleInterest ? `<p><strong>Vehicle Interest:</strong> ${vehicleInterest}</p>` : ''}
+                    <p><strong>Timestamp:</strong> ${new Date().toLocaleString()}</p>
+                    <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                      <p style="margin: 0; font-weight: bold; color: #155724;">✅ Please confirm this appointment with the customer!</p>
+                    </div>
+                  `
+                })
+
+                // Also send confirmation email to customer if email provided
+                if (email) {
+                  await sendEmail({
+                    to: email,
+                    subject: `Appointment Confirmation - Unlimited Auto Repair & Collision`,
+                    html: `
+                      <h2>Your Appointment Has Been Requested</h2>
+                      <p>Thank you for scheduling with Unlimited Auto Repair & Collision!</p>
+                      <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #4caf50;">
+                        <h3 style="margin-top: 0; color: #155724;">📅 Your Appointment</h3>
+                        <p style="font-size: 16px; margin: 10px 0;"><strong>Date:</strong> ${appointmentDateFormatted}</p>
+                        <p style="font-size: 16px; margin: 10px 0;"><strong>Time:</strong> ${appointmentTimeFormatted}</p>
+                        <p style="font-size: 16px; margin: 10px 0;"><strong>Location:</strong> 24645 Plymouth Rd Unit A, Redford Township, MI 48239</p>
+                      </div>
+                      <p>We'll reach out to confirm your appointment. If you need to reschedule, please reply to this email or we'll contact you.</p>
+                      <p>We look forward to serving you!</p>
+                    `
+                  })
+                }
+
+                console.log('✅ Appointment notification emails sent successfully')
+              } catch (emailError: any) {
+                console.error('❌ Error sending appointment emails:', emailError)
+                // Don't fail the request if email fails
+              }
+
+              // Send SMS notifications to configured phone numbers
+              if (leadId) {
+                try {
+                  const { data: lead } = await appointmentSupabase
+                    .from('leads')
+                    .select('*')
+                    .eq('id', leadId)
+                    .single()
+
+                  if (lead) {
+                    const { data: dealerWithPhones } = await appointmentSupabase
+                      .from('dealers')
+                      .select('sms_phone_numbers')
+                      .eq('id', appointmentDealer.id)
+                      .single()
+
+                    if (dealerWithPhones?.sms_phone_numbers) {
+                      const phoneNumbers = Array.isArray(dealerWithPhones.sms_phone_numbers) 
+                        ? dealerWithPhones.sms_phone_numbers 
+                        : []
+                      
+                      if (phoneNumbers.length > 0) {
+                        await sendSMSNotificationForLead(lead, phoneNumbers)
+                        console.log('✅ SMS notifications sent to', phoneNumbers.length, 'phone number(s)')
+                      }
+                    }
+                  }
+                } catch (smsError: any) {
+                  console.error('❌ Error sending SMS notifications:', smsError)
+                  // Don't fail the request if SMS fails
+                }
+              }
+
+              return {
+                success: true,
+                appointmentId: appointment.id,
+                message: 'Appointment created successfully'
+              }
+            } catch (error: any) {
+              console.error('Error creating appointment:', error)
+              return {
+                success: false,
+                error: error.message || 'Failed to create appointment'
+              }
+            }
+          }
+        }
+      }
     })
 
     // Track conversation in messages table
@@ -380,7 +692,7 @@ Important: Be conversational and natural. Don't list all vehicles unless asked. 
     }
 
     // Extract customer information from conversation
-    let customerInfo: any = {
+    const customerInfo: any = {
       name: null,
       phone: null,
       email: null,
@@ -394,33 +706,76 @@ Important: Be conversational and natural. Don't list all vehicles unless asked. 
     }
 
     // Try to extract information from conversation
-    const conversationText = messages.map(m => m.content).join(' ').toLowerCase()
+    // Use original case for better name extraction
+    const conversationText = messages.map((m: any) => m.content).join(' ')
     
     // Extract name (look for "my name is", "I'm", "call me", etc.)
+    // Improved to capture full names (first + last + middle)
     const namePatterns = [
-      /(?:my name is|i'm|i am|call me|this is)\s+([a-z]+(?:\s+[a-z]+)?)/i,
-      /name[:\s]+([a-z]+(?:\s+[a-z]+)?)/i
+      /(?:my name is|i'm|i am|call me|this is|name is|it's|it is)\s+([A-Za-z]+(?:\s+[A-Za-z]+){0,2})/i,
+      /name[:\s]+([A-Za-z]+(?:\s+[A-Za-z]+){0,2})/i,
+      /(?:^|\s)([A-Z][a-z]+\s+[A-Z][a-z]+)(?:\s|$)/, // Capitalized first and last name together
     ]
     for (const pattern of namePatterns) {
       const match = conversationText.match(pattern)
       if (match && match[1]) {
-        customerInfo.name = match[1].trim()
-        break
+        const extractedName = match[1].trim()
+        // Only use if it looks like a real name (has at least 2 characters, not just single letter)
+        if (extractedName.length >= 2 && !extractedName.match(/^\d+$/)) {
+          customerInfo.name = extractedName
+          break
+        }
       }
     }
 
-    // Extract phone (look for phone number patterns)
-    const phonePattern = /(\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4})/g
-    const phoneMatch = conversationText.match(phonePattern)
-    if (phoneMatch) {
-      customerInfo.phone = phoneMatch[0].replace(/[-.\s()]/g, '')
+    // Extract phone (look for phone number patterns - improved)
+    // Handle various formats: (313) 766-4475, 313-766-4475, 3137664475, +13137664475, etc.
+    const phonePatterns = [
+      /(\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4})/g, // Standard US format
+      /(\d{10})/g, // 10 digits in a row
+      /(?:phone|call|number)[:\s]+([\d\s\-\(\)\+]+)/i, // "phone: 313-766-4475"
+    ]
+    for (const pattern of phonePatterns) {
+      const phoneMatch = conversationText.match(pattern)
+      if (phoneMatch) {
+        // Clean up the phone number
+        let phone = phoneMatch[0].replace(/[-.\s()]/g, '')
+        // Remove leading +1 if present, we'll add it back if needed
+        if (phone.startsWith('+1')) {
+          phone = phone.substring(2)
+        } else if (phone.startsWith('1') && phone.length === 11) {
+          phone = phone.substring(1)
+        }
+        // Only use if it's 10 digits
+        if (phone.length === 10 && /^\d+$/.test(phone)) {
+          customerInfo.phone = phone
+          break
+        }
+      }
     }
 
     // Extract email
     const emailPattern = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g
     const emailMatch = conversationText.match(emailPattern)
     if (emailMatch) {
-      customerInfo.email = emailMatch[0]
+      customerInfo.email = emailMatch[0].trim()
+      
+      // If we have an email but no name, try to extract name from email
+      // e.g., "mike.test@gmail.com" -> "Mike Test"
+      if (!customerInfo.name && emailMatch[0]) {
+        const emailLocal = emailMatch[0].split('@')[0]
+        // If email has dots or underscores, try to create a name from it
+        if (emailLocal.includes('.') || emailLocal.includes('_')) {
+          const nameParts = emailLocal.split(/[._]/).filter((p: string) => p.length > 0)
+          if (nameParts.length >= 1) {
+            // Capitalize first letter of each part
+            const formattedName = nameParts
+              .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+              .join(' ')
+            customerInfo.name = formattedName
+          }
+        }
+      }
     }
 
     // Create or update lead if we have enough information
@@ -460,10 +815,10 @@ Important: Be conversational and natural. Don't list all vehicles unless asked. 
             .eq('id', existingLead.id)
             .single()
           
-          let existingNotes = {}
+          let existingNotes: any = {}
           try {
             existingNotes = leadData?.notes ? JSON.parse(leadData.notes) : {}
-          } catch (e) {
+          } catch {
             existingNotes = {}
           }
 
@@ -477,12 +832,12 @@ Important: Be conversational and natural. Don't list all vehicles unless asked. 
               vehicle_id: customerInfo.vehicleInterest || undefined,
               notes: JSON.stringify({
                 ...existingNotes,
-                currentVehicle: customerInfo.currentVehicle || existingNotes.currentVehicle,
-                needs: customerInfo.needs || existingNotes.needs,
-                budget: customerInfo.budget || existingNotes.budget,
-                timeline: customerInfo.timeline || existingNotes.timeline,
-                tradeIn: customerInfo.tradeIn || existingNotes.tradeIn,
-                priorities: customerInfo.priorities || existingNotes.priorities,
+                currentVehicle: customerInfo.currentVehicle || existingNotes?.currentVehicle,
+                needs: customerInfo.needs || existingNotes?.needs,
+                budget: customerInfo.budget || existingNotes?.budget,
+                timeline: customerInfo.timeline || existingNotes?.timeline,
+                tradeIn: customerInfo.tradeIn || existingNotes?.tradeIn,
+                priorities: customerInfo.priorities || existingNotes?.priorities,
                 lastChatUpdate: new Date().toISOString()
               }),
               updated_at: new Date().toISOString()
@@ -519,8 +874,36 @@ Important: Be conversational and natural. Don't list all vehicles unless asked. 
             .select()
             .single()
 
-          // Send SMS notification for new lead
+          // Send email and SMS notifications for new lead
           if (newLead && !insertError) {
+            // Send email notification
+            try {
+              await sendEmail({
+                to: 'unlimitedautoredford@gmail.com',
+                subject: `🚗 New Lead from Sales Agent Chat: ${newLead.name || 'Customer'}`,
+                html: `
+                  <h2>New Lead from Sales Agent Chat</h2>
+                  <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #ff9800;">
+                    <h3 style="margin-top: 0; color: #856404;">👤 Contact Information</h3>
+                    <p style="font-size: 16px; margin: 10px 0;"><strong>Name:</strong> <span style="color: #333;">${newLead.name || 'Not provided'}</span></p>
+                    <p style="font-size: 16px; margin: 10px 0;"><strong>Email:</strong> <span style="color: #333;">${newLead.email || 'Not provided'}</span></p>
+                    <p style="font-size: 16px; margin: 10px 0;"><strong>Phone:</strong> <span style="color: #333;">${newLead.phone || 'Not provided'}</span></p>
+                  </div>
+                  ${newLead.message ? `<p><strong>Message:</strong> ${newLead.message}</p>` : ''}
+                  <p><strong>Source:</strong> Sales Agent Chat</p>
+                  <p><strong>Timestamp:</strong> ${new Date().toLocaleString()}</p>
+                  <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                    <p style="margin: 0; font-weight: bold; color: #155724;">✅ New lead from chatbot - follow up ASAP!</p>
+                  </div>
+                `
+              })
+              console.log('✅ Email notification sent for new lead')
+            } catch (emailError: any) {
+              console.error('❌ Error sending email notification:', emailError)
+              // Don't fail the request if email fails
+            }
+
+            // Send SMS notification
             try {
               const { data: dealerWithPhones } = await supabase
                 .from('dealers')
@@ -536,7 +919,11 @@ Important: Be conversational and natural. Don't list all vehicles unless asked. 
                 if (phoneNumbers.length > 0) {
                   await sendSMSNotificationForLead(newLead, phoneNumbers)
                   console.log('✅ SMS notifications sent to', phoneNumbers.length, 'phone number(s)')
+                } else {
+                  console.log('⚠️ No phone numbers configured for SMS notifications')
                 }
+              } else {
+                console.log('⚠️ No SMS phone numbers configured in dealer settings')
               }
             } catch (smsError: any) {
               console.error('❌ Error sending SMS notifications:', smsError)

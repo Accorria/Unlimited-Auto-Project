@@ -199,8 +199,8 @@ export default function SalesAgentChat({
           id: 'greeting-' + Date.now(),
           role: 'assistant',
           content: vehicleName 
-            ? `Hey! 👋\n\nInterested in the ${vehicleName}?\n\nWould you like to:\n🚗 Set up an appointment for a test drive?\n✅ Get pre-approved for financing?\n📞 Get a call from us?`
-            : `Hey! 👋\n\nI'm here to help you find the perfect vehicle!\n\nWould you like to:\n🚗 Schedule a test drive?\n✅ Get pre-approved for financing?\n📞 Get a call from us?\n💬 Or just ask me questions?`
+            ? `Hi! Are you interested in this vehicle? Would you like support?`
+            : `Hi! Are you interested in this vehicle? Would you like support?`
         }
         setLocalMessages([greetingMessage])
       }, 500) // Small delay to make it feel natural
