@@ -350,8 +350,8 @@ export default function SalesAgentChat({
         <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
           {displayMessages.length === 0 && !displayLoading && !showQuickForm && !showOptions && !showAppointmentScheduler && !showCallForm && (
             <div className="text-center text-gray-500 pt-8">
-              <p className="font-semibold mb-2">👋 Hello! I'm your sales agent.</p>
-              <p className="text-sm">I'll help you find the perfect vehicle and answer all your questions!</p>
+              <p className="font-semibold mb-2 text-lg">👋 Hi! Are you interested in this vehicle? Would you like support?</p>
+              <p className="text-sm">I'm here to help you find the perfect vehicle and answer all your questions!</p>
             </div>
           )}
 

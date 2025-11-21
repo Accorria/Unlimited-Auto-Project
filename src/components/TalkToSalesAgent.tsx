@@ -96,8 +96,8 @@ export default function TalkToSalesAgent({ vehicle, onClose }: TalkToSalesAgentP
 
           {/* Greeting Message */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-gray-800 text-center">
-              Hi! Interested in this vehicle? I can help you:
+            <p className="text-gray-800 text-center text-lg font-semibold">
+              Hi! Are you interested in this vehicle? Would you like support?
             </p>
           </div>
 
