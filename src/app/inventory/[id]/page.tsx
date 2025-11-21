@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import TalkToSalesAgent from '@/components/TalkToSalesAgent'
+import SalesAgentChat from '@/components/SalesAgentChat'
 import vehicleData from '@/data/vehicle-data.json'
 
 interface Vehicle {
@@ -57,7 +57,7 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
   const [showAllFeatures, setShowAllFeatures] = useState(false)
   const [vehicle, setVehicle] = useState<Vehicle | null>(null)
   const [loading, setLoading] = useState(true)
-  const [showTalkToSalesAgent, setShowTalkToSalesAgent] = useState(false)
+  const [salesAgentOpen, setSalesAgentOpen] = useState(false)
   const resolvedParams = use(params)
 
   // Get images from photos array or use cover photo (must be computed before early returns)
@@ -510,7 +510,7 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
                 <>
                   {/* Talk to a Sales Agent Button - Prominent */}
                   <button
-                    onClick={() => setShowTalkToSalesAgent(true)}
+                    onClick={() => setSalesAgentOpen(true)}
                     className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-4 px-6 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
                   >
                     💬 Talk to a Sales Agent
@@ -552,11 +552,16 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
 
       </div>
 
-      {/* Talk to Sales Agent Pop-up */}
-      {showTalkToSalesAgent && vehicle && (
-        <TalkToSalesAgent
-          vehicle={vehicle}
-          onClose={() => setShowTalkToSalesAgent(false)}
+      {/* Sales Agent Chat */}
+      {salesAgentOpen && vehicle && (
+        <SalesAgentChat
+          vehicleId={vehicle.id}
+          vehicleName={`${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.trim ? ` ${vehicle.trim}` : ''}`}
+          isOpen={salesAgentOpen}
+          onOpenChange={setSalesAgentOpen}
+          onClose={() => {
+            setSalesAgentOpen(false)
+          }}
         />
       )}
 
