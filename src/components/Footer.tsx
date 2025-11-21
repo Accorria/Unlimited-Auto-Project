@@ -21,21 +21,6 @@ export default function Footer() {
             <div className="text-gray-300 space-y-2">
               <p>📍 24645 Plymouth Rd Unit A, Redford Township, MI 48239</p>
               <p>
-                📞                         <a
-                          href="tel:+13137664475"
-                          className="hover:text-white transition-colors"
-                          onClick={() => {
-                            if (typeof window !== 'undefined') {
-                              import('@/lib/tracking').then(({ trackPhoneClick }) => {
-                                trackPhoneClick('(313) 766-4475', 'footer')
-                              })
-                            }
-                          }}
-                        >
-                          (313) 766-4475
-                        </a>
-              </p>
-              <p>
                 📧 <a 
                   href="mailto:unlimitedautoredford@gmail.com" 
                   className="hover:text-white transition-colors"
@@ -47,7 +32,7 @@ export default function Footer() {
                     }
                   }}
                 >
-                  info@unlimitedautorepaircollision.com
+                  unlimitedautoredford@gmail.com
                 </a>
               </p>
             </div>
