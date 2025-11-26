@@ -56,10 +56,16 @@ export async function GET(
                       photos.find(photo => photo.angle === 'F') || 
                       photos[0]
 
+    // Preserve status exactly as it is in the database (including 'sold', 'active', etc.)
+    // Only default to 'available' if status is null, undefined, or empty string
+    const vehicleStatus = vehicle.status && vehicle.status.trim() !== '' 
+      ? vehicle.status 
+      : 'available'
+
     const transformedVehicle = {
       ...vehicle,
-      // Ensure status is explicitly included
-      status: vehicle.status || 'available',
+      // Ensure status is explicitly included and preserved
+      status: vehicleStatus,
       coverPhoto: coverPhoto?.public_url || null,
       photos: photos.sort((a, b) => {
         const angleOrder = ['FDS','FPS','SDS','SPS','SRDS','SRPS','RDS','R','F','INT','INTB','ENG','TRK','ODOM','VIN']

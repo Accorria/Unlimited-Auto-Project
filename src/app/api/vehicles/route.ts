@@ -56,19 +56,25 @@ export async function GET(req: NextRequest) {
     }
 
     // Transform data to include cover photo (first photo by angle order)
-    const transformedVehicles = vehicles?.map(vehicle => {
-      const vehiclePhotos = vehicle.vehicle_photos || []
-      const coverPhoto = vehiclePhotos.find(photo => photo.angle === 'FDS') || 
-                        vehiclePhotos.find(photo => photo.angle === 'FPS') || 
-                        vehiclePhotos.find(photo => photo.angle === 'F') || 
+    const transformedVehicles = vehicles?.map((vehicle: any) => {
+      const vehiclePhotos = (vehicle.vehicle_photos || []) as Array<{ angle: string; public_url: string }>
+      const coverPhoto = vehiclePhotos.find((photo: { angle: string; public_url: string }) => photo.angle === 'FDS') || 
+                        vehiclePhotos.find((photo: { angle: string; public_url: string }) => photo.angle === 'FPS') || 
+                        vehiclePhotos.find((photo: { angle: string; public_url: string }) => photo.angle === 'F') || 
                         vehiclePhotos[0]
+
+      // Preserve status exactly as it is in the database (including 'sold', 'active', etc.)
+      // Only default to 'available' if status is null, undefined, or empty string
+      const vehicleStatus = vehicle.status && vehicle.status.trim() !== '' 
+        ? vehicle.status 
+        : 'available'
 
       return {
         ...vehicle,
-        // Ensure status is explicitly included
-        status: vehicle.status || 'available',
+        // Ensure status is explicitly included and preserved
+        status: vehicleStatus,
         coverPhoto: coverPhoto?.public_url || vehicle.photos?.[0] || null,
-        photos: vehicle.photos || vehiclePhotos.map(p => p.public_url),
+        photos: vehicle.photos || vehiclePhotos.map((p: { public_url: string }) => p.public_url),
         // Map database fields to expected API response format
         transmission: vehicle.transmission,
         drivetrain: vehicle.drivetrain,

@@ -142,6 +142,12 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
         const vehicleResponse = await response.json()
         
         if (vehicleResponse && !vehicleResponse.error) {
+          // Preserve status exactly as it is in the database (including 'sold', 'active', etc.)
+          // Only default to 'available' if status is null, undefined, or empty string
+          const vehicleStatus = vehicleResponse.status && vehicleResponse.status.trim() !== '' 
+            ? vehicleResponse.status 
+            : 'available'
+          
           // Transform the vehicle data to match expected format
           const transformedVehicle = {
             ...vehicleResponse,
@@ -159,8 +165,8 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
             exterior_color: vehicleResponse.exterior_color,
             interior_color: vehicleResponse.interior_color,
             condition: vehicleResponse.condition || 'Good',
-            // Ensure status is explicitly included
-            status: vehicleResponse.status || 'available'
+            // Ensure status is explicitly included and preserved
+            status: vehicleStatus
           }
           // Debug: log the status to help troubleshoot
           console.log('Vehicle status:', transformedVehicle.status, 'isSold:', (transformedVehicle.status?.toLowerCase() || 'available') === 'sold')
