@@ -17,9 +17,10 @@ interface VehicleSelectorProps {
   selectedVehicle: string
   onVehicleChange: (vehicleId: string) => void
   required?: boolean
+  hasError?: boolean
 }
 
-export default function VehicleSelector({ selectedVehicle, onVehicleChange, required = false }: VehicleSelectorProps) {
+export default function VehicleSelector({ selectedVehicle, onVehicleChange, required = false, hasError = false }: VehicleSelectorProps) {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -69,7 +70,11 @@ export default function VehicleSelector({ selectedVehicle, onVehicleChange, requ
       <select
         value={selectedVehicle}
         onChange={(e) => onVehicleChange(e.target.value)}
-        className="w-full px-2 py-2 border border-gray-300 rounded-md"
+        className={`w-full px-2 py-2 border rounded-md ${
+          (required && !selectedVehicle) || hasError
+            ? 'border-red-500 bg-red-50' 
+            : 'border-gray-300'
+        }`}
         required={required}
       >
         <option value="">Select a vehicle from our inventory</option>

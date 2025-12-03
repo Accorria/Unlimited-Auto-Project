@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { sendSMS, sendSMSNotification } from '@/lib/sms'
+import { sendSMS, sendSMSNotification, normalizePhoneToE164 } from '@/lib/sms'
 import { createServerClient } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
@@ -14,9 +14,9 @@ export async function POST(req: NextRequest) {
       }, { status: 400 })
     }
 
-    // Validate phone number format (E.164)
-    const phoneRegex = /^\+[1-9]\d{1,14}$/
-    if (!phoneRegex.test(to)) {
+    // Normalize phone number to E.164 format
+    const normalizedPhone = normalizePhoneToE164(to)
+    if (!normalizedPhone) {
       return NextResponse.json({ 
         error: 'Invalid phone number format. Must be in E.164 format (e.g., +13137664475)' 
       }, { status: 400 })
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Send SMS
-    const result = await sendSMS(to, smsMessage)
+    const result = await sendSMS(normalizedPhone, smsMessage)
 
     if (!result.success) {
       return NextResponse.json({ 

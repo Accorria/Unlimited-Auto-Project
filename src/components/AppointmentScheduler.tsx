@@ -45,6 +45,17 @@ export default function AppointmentScheduler({
     '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'
   ]
 
+  // Phone number formatting function
+  const formatPhoneNumber = (value: string) => {
+    const phoneNumber = value.replace(/\D/g, '')
+    const phoneNumberLength = phoneNumber.length
+    if (phoneNumberLength < 4) return phoneNumber
+    if (phoneNumberLength < 7) {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`
+    }
+    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
@@ -221,7 +232,11 @@ export default function AppointmentScheduler({
             <input
               type="tel"
               value={appointmentData.phone}
-              onChange={(e) => setAppointmentData({ ...appointmentData, phone: e.target.value })}
+              onChange={(e) => {
+                const formattedPhone = formatPhoneNumber(e.target.value)
+                setAppointmentData({ ...appointmentData, phone: formattedPhone })
+              }}
+              placeholder="(313) 555-1234"
               required
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
             />

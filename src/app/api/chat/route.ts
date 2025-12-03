@@ -57,6 +57,10 @@ export async function POST(req: NextRequest) {
         console.error('❌ Error fetching current vehicle:', vehicleError)
       }
       
+      if (!currentVehicle && vehicleId) {
+        console.error('❌ Vehicle not found for vehicleId:', vehicleId, 'dealerId:', dealer.id)
+      }
+      
       if (currentVehicle) {
         console.log('✅ Current vehicle fetched:', {
           id: currentVehicle.id,
@@ -85,9 +89,11 @@ export async function POST(req: NextRequest) {
         if (currentVehicle.drivetrain) currentVehicleContext += `Drivetrain: ${currentVehicle.drivetrain}\n`
         if (currentVehicle.fuel_type) currentVehicleContext += `Fuel Type: ${currentVehicle.fuel_type}\n`
         if (currentVehicle.description) currentVehicleContext += `Description: ${currentVehicle.description}\n`
-        currentVehicleContext += `\n🚨 WHEN ANSWERING PRICE QUESTIONS, USE THE PRICE ABOVE (${exactPrice}) - DO NOT USE ANY OTHER PRICE 🚨\n`
-        currentVehicleContext += `🚨 DO NOT ASK WHICH VEHICLE - THEY ARE REFERRING TO THE VEHICLE ABOVE 🚨\n`
-        currentVehicleContext += `🚨 DO NOT USE PRICES FROM THE GENERAL INVENTORY LIST BELOW - USE ONLY THE PRICE ABOVE 🚨\n`
+        currentVehicleContext += `\nCRITICAL RULES FOR THIS VEHICLE:\n`
+        currentVehicleContext += `- When customer asks about "the note", "the payment", "financing", "monthly payment", or "car note", DO NOT calculate or estimate. Instead say: "I'd need some information from you first to calculate that. Could you fill out our financing form? I can help you get pre-approved!"\n`
+        currentVehicleContext += `- When customer asks about price, miles, features, or vehicle details, use the information above (Price: ${exactPrice})\n`
+        currentVehicleContext += `- DO NOT ask which vehicle - they are referring to the vehicle above\n`
+        currentVehicleContext += `- DO NOT search the general inventory - use only the vehicle above\n`
         currentVehicleContext += `\n=== END OF CURRENT VEHICLE ===\n\n`
       }
     }
@@ -253,9 +259,12 @@ export async function POST(req: NextRequest) {
 
 YOUR ROLE AS A SALES AGENT:
 1. Answer questions DIRECTLY - don't ask unnecessary questions
-2. CRITICAL: If there is a "CUSTOMER IS CURRENTLY VIEWING THIS VEHICLE" section above, the customer clicked from a vehicle detail page. ALWAYS use the price and details from that section - NEVER use prices from the general inventory list below it.
-3. If customer asks about a vehicle, provide the EXACT details from inventory immediately
-4. If customer asks about price and there's a current vehicle context, use THAT vehicle's price - do not search the general inventory
+2. CRITICAL: If there is a "CUSTOMER IS CURRENTLY VIEWING THIS VEHICLE" section above, the customer clicked from a vehicle detail page.
+   - The vehicle in that section is the ONE they're talking about - DO NOT ask which vehicle
+   - Use the vehicle details (price, miles, features) from that section
+   - When they ask about "the note", "the payment", "financing", or "monthly payment", DO NOT calculate it. Instead say: "I'd need some information from you first to calculate that. Could you fill out our financing form? I can help you get pre-approved!"
+3. If customer asks about vehicle details (price, miles, features, condition), provide the EXACT details from inventory immediately
+4. If customer asks about financing/note/payment, redirect them to fill out the form - don't try to calculate it
 5. If customer provides their info (name, phone, email), acknowledge it and move forward
 6. Only ask questions if you NEED the information to help them
 7. Be helpful and efficient - get to the point fast
@@ -351,6 +360,15 @@ When customers ask about vehicles:
   * Build on the conversation - reference what they said earlier
 
 - CRITICAL MATCHING LOGIC:
+  IF THERE IS A "CUSTOMER IS CURRENTLY VIEWING THIS VEHICLE" SECTION ABOVE:
+    - The vehicle is already identified - DO NOT ask which vehicle
+    - DO NOT search the general inventory list below
+    - USE ONLY the vehicle information from the "CURRENTLY VIEWING" section above
+    - When customer asks about vehicle details (price, miles, features), use the info from that section
+    - When customer asks about "the note", "payment", or "financing", redirect to form: "I'd need some information from you first to calculate that. Could you fill out our financing form?"
+    - Skip all matching logic below - the vehicle is already identified
+  
+  IF THERE IS NO "CURRENTLY VIEWING" SECTION:
   1. Search ALL vehicles in the inventory below for matches
   2. Count the number of matches:
      - ONE match → Provide details immediately (DO NOT ask clarifying questions)

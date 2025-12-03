@@ -1047,11 +1047,11 @@ export default function LeadsManagement() {
                           setSmsManualPhone(e.target.value)
                           setSmsPhoneNumber('')
                         }}
-                        placeholder="+13137664475"
+                        placeholder="3137732380 or (313) 773-2380"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       />
                       <p className="mt-1 text-xs text-gray-500">
-                        Format: +1XXXXXXXXXX (E.164 format)
+                        Enter phone number in any format (e.g., 3137732380, (313) 773-2380, +13137732380). Will be automatically converted to E.164 format.
                       </p>
                     </div>
 
@@ -1078,9 +1078,33 @@ export default function LeadsManagement() {
                             return
                           }
 
-                          // Validate phone number format
-                          const phoneRegex = /^\+[1-9]\d{1,14}$/
-                          if (!phoneRegex.test(phoneToUse)) {
+                          // Normalize phone number to E.164 format
+                          // Helper function to normalize phone numbers
+                          const normalizePhone = (phone: string): string | null => {
+                            if (!phone) return null
+                            let cleaned = phone.replace(/[^\d+]/g, '')
+                            if (cleaned.startsWith('+')) {
+                              const digits = cleaned.substring(1)
+                              if (digits.length >= 10 && digits.length <= 15) {
+                                return cleaned
+                              }
+                            }
+                            if (cleaned.startsWith('+1')) {
+                              cleaned = cleaned.substring(2)
+                            } else if (cleaned.startsWith('1') && cleaned.length === 11) {
+                              cleaned = cleaned.substring(1)
+                            }
+                            if (/^\d{10}$/.test(cleaned)) {
+                              return `+1${cleaned}`
+                            }
+                            if (/^1\d{10}$/.test(cleaned)) {
+                              return `+${cleaned}`
+                            }
+                            return null
+                          }
+
+                          const normalizedPhone = normalizePhone(phoneToUse)
+                          if (!normalizedPhone) {
                             setSmsStatus('error')
                             setSmsMessage('Invalid phone number format. Must be in E.164 format (e.g., +13137664475)')
                             return
@@ -1097,7 +1121,7 @@ export default function LeadsManagement() {
                                 'Content-Type': 'application/json',
                               },
                               body: JSON.stringify({
-                                to: phoneToUse,
+                                to: normalizedPhone,
                                 leadId: selectedLead.id,
                                 reassignLead: smsReassignLead
                               }),

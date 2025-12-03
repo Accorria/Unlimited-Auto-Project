@@ -3,11 +3,15 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { normalizePhoneToE164 } from '@/lib/sms'
 
 export default function AdminSettings() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [savingSMS, setSavingSMS] = useState(false)
   const router = useRouter()
+  const [smsPhoneNumbers, setSmsPhoneNumbers] = useState<string[]>([])
+  const [newPhoneNumber, setNewPhoneNumber] = useState('')
 
   const [settings, setSettings] = useState({
     businessName: 'Unlimited Auto Repair & Collision LLC',
@@ -41,10 +45,68 @@ export default function AdminSettings() {
     const auth = localStorage.getItem('adminAuth')
     if (auth === 'true') {
       setIsAuthenticated(true)
+      loadSMSPhoneNumbers()
     } else {
       router.push('/admin/login')
     }
   }, [router])
+
+  const loadSMSPhoneNumbers = async () => {
+    try {
+      const response = await fetch('/api/dealers/sms-phones')
+      if (response.ok) {
+        const data = await response.json()
+        setSmsPhoneNumbers(data.phoneNumbers || [])
+      }
+    } catch (error) {
+      console.error('Error loading SMS phone numbers:', error)
+    }
+  }
+
+  const handleAddPhoneNumber = () => {
+    if (!newPhoneNumber.trim()) return
+    
+    const normalized = normalizePhoneToE164(newPhoneNumber)
+    if (!normalized) {
+      alert('Invalid phone number format. Please enter a valid phone number (e.g., 3137732380 or +13137732380)')
+      return
+    }
+    
+    if (smsPhoneNumbers.includes(normalized)) {
+      alert('This phone number is already in the list')
+      return
+    }
+    
+    setSmsPhoneNumbers([...smsPhoneNumbers, normalized])
+    setNewPhoneNumber('')
+  }
+
+  const handleRemovePhoneNumber = (phone: string) => {
+    setSmsPhoneNumbers(smsPhoneNumbers.filter(p => p !== phone))
+  }
+
+  const handleSaveSMSPhones = async () => {
+    setSavingSMS(true)
+    try {
+      const response = await fetch('/api/dealers/sms-phones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phoneNumbers: smsPhoneNumbers })
+      })
+      
+      if (response.ok) {
+        alert('SMS phone numbers saved successfully!')
+      } else {
+        const error = await response.json()
+        alert(`Error: ${error.error || 'Failed to save phone numbers'}`)
+      }
+    } catch (error) {
+      console.error('Error saving SMS phone numbers:', error)
+      alert('Failed to save phone numbers. Please try again.')
+    } finally {
+      setSavingSMS(false)
+    }
+  }
 
   const handleInputChange = (section: string, field: string, value: string) => {
     setSettings(prev => ({
@@ -233,6 +295,81 @@ export default function AdminSettings() {
                   placeholder="Separate keywords with commas"
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* SMS Notifications */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">SMS Notifications</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Configure phone numbers that will receive SMS notifications when new leads come in from the sales agent chatbot.
+            </p>
+            
+            <div className="space-y-4">
+              {/* Current Phone Numbers */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Phone Numbers Receiving SMS Notifications
+                </label>
+                {smsPhoneNumbers.length === 0 ? (
+                  <p className="text-sm text-gray-500 italic">No phone numbers configured. Add one below.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {smsPhoneNumbers.map((phone, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <span className="text-gray-900 font-medium">{phone}</span>
+                        <button
+                          onClick={() => handleRemovePhoneNumber(phone)}
+                          className="text-red-600 hover:text-red-800 text-sm font-medium"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Add New Phone Number */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Add Phone Number
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="tel"
+                    value={newPhoneNumber}
+                    onChange={(e) => setNewPhoneNumber(e.target.value)}
+                    placeholder="3137732380 or +13137732380"
+                    className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleAddPhoneNumber()
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={handleAddPhoneNumber}
+                    className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    Add
+                  </button>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  Enter phone number in any format (e.g., 3137732380, (313) 773-2380, +13137732380). Will be automatically converted to E.164 format.
+                </p>
+              </div>
+
+              {/* Save Button */}
+              <div className="pt-4 border-t">
+                <button
+                  onClick={handleSaveSMSPhones}
+                  disabled={savingSMS}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  {savingSMS ? 'Saving...' : 'Save SMS Phone Numbers'}
+                </button>
               </div>
             </div>
           </div>

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from '@/lib/auth'
 import { Resend } from 'resend'
-import { sendSMSNotificationForLead } from '@/lib/sms'
+import { sendSMSNotificationForLead, sendSMS } from '@/lib/sms'
+import { sendEmail } from '@/lib/email'
 
 // Initialize Resend only if API key is available
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
@@ -362,6 +363,66 @@ export async function POST(req: NextRequest) {
       }
     } else {
       console.log('Resend API key not configured - skipping email notification')
+    }
+
+    // Send confirmation email to customer
+    if (lead && lead.email) {
+      try {
+        const vehicleInfo = body.financing?.vehicleId 
+          ? `${body.financing?.year || ''} ${body.financing?.make || ''} ${body.financing?.model || ''}`.trim()
+          : 'your selected vehicle'
+        
+        await sendEmail({
+          to: lead.email,
+          subject: `Credit Application Received - Unlimited Auto`,
+          html: `
+            <h2>Thank You for Your Application! ✅</h2>
+            <p>Hi ${lead.name || 'there'},</p>
+            <p>We've received your credit application for ${vehicleInfo || 'financing'}.</p>
+            <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #4caf50;">
+              <h3 style="margin-top: 0; color: #155724;">📋 What Happens Next?</h3>
+              <p style="margin: 5px 0;">• Our team will review your application</p>
+              <p style="margin: 5px 0;">• We'll contact you within 24 hours</p>
+              <p style="margin: 5px 0;">• We'll work with you to find the best financing option</p>
+            </div>
+            <p><strong>Application Details:</strong></p>
+            <ul>
+              <li><strong>Name:</strong> ${lead.name || 'N/A'}</li>
+              <li><strong>Phone:</strong> ${lead.phone || 'N/A'}</li>
+              <li><strong>Vehicle:</strong> ${vehicleInfo || 'Not specified'}</li>
+              ${body.financing?.downPayment ? `<li><strong>Down Payment:</strong> ${body.financing.downPayment}</li>` : ''}
+            </ul>
+            <p>If you have any questions, please reply to this email and we'll get back to you.</p>
+            <p>We look forward to helping you get behind the wheel!</p>
+            <p style="margin-top: 20px;">Best regards,<br><strong>Unlimited Auto</strong></p>
+          `
+        })
+        console.log('✅ Customer confirmation email sent successfully')
+      } catch (customerEmailError: any) {
+        console.error('❌ Error sending customer confirmation email:', customerEmailError)
+        // Don't fail the request if customer email fails
+      }
+    }
+
+    // Send confirmation SMS to customer
+    if (lead && lead.phone) {
+      try {
+        const vehicleInfo = body.financing?.vehicleId 
+          ? `${body.financing?.year || ''} ${body.financing?.make || ''} ${body.financing?.model || ''}`.trim()
+          : 'your selected vehicle'
+        
+        const smsMessage = `Thank you ${lead.name || 'for your application'}! We've received your credit application for ${vehicleInfo || 'financing'}. Our team will review it and contact you within 24 hours. - Unlimited Auto`
+        
+        const smsResult = await sendSMS(lead.phone, smsMessage)
+        if (smsResult.success) {
+          console.log('✅ Customer confirmation SMS sent successfully')
+        } else {
+          console.error('❌ Error sending customer confirmation SMS:', smsResult.error)
+        }
+      } catch (customerSMSError: any) {
+        console.error('❌ Error sending customer confirmation SMS:', customerSMSError)
+        // Don't fail the request if customer SMS fails
+      }
     }
 
     // Send SMS notifications to configured phone numbers

@@ -335,8 +335,8 @@ export default function SalesAgentChat({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-2 sm:p-4 overflow-x-hidden">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl h-[90vh] sm:h-[80vh] max-h-[700px] flex flex-col overflow-x-hidden">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-2 sm:p-4 overflow-x-hidden" style={{ width: '100vw', maxWidth: '100vw', overflowX: 'hidden' }}>
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl h-[90vh] sm:h-[80vh] max-h-[700px] flex flex-col overflow-x-hidden" style={{ maxWidth: 'calc(100vw - 1rem)', width: '100%' }}>
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-t-lg flex justify-between items-center">
           <div>
@@ -527,11 +527,12 @@ export default function SalesAgentChat({
                 </div>
               )}
               <div
-                className={`max-w-[85%] rounded-lg p-3 ${
+                className={`max-w-[85%] rounded-lg p-3 break-words overflow-wrap-anywhere ${
                   message.role === 'user'
                     ? 'bg-blue-600 text-white'
                     : 'bg-white text-gray-800 border border-gray-200 shadow-sm'
                 }`}
+                style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
               >
                 <div className="whitespace-pre-wrap leading-relaxed text-sm">{message.content}</div>
               </div>
@@ -594,21 +595,22 @@ export default function SalesAgentChat({
         {/* Input */}
         <form
           onSubmit={handleSubmit || handleCustomSubmit}
-          className="p-4 border-t border-gray-200 bg-white rounded-b-lg overflow-x-hidden"
+          className="p-4 border-t border-gray-200 bg-white rounded-b-lg overflow-x-hidden w-full"
         >
-          <div className="flex gap-2 overflow-x-hidden">
+          <div className="flex gap-2 overflow-x-hidden w-full max-w-full">
             <input
               type="text"
               value={displayInput}
               onChange={handleInputChange || handleInputChangeFallback}
               placeholder="Type your message..."
-              className="flex-1 min-w-0 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 text-sm"
+              className="flex-1 min-w-0 max-w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 text-sm overflow-x-hidden break-words"
               disabled={displayLoading}
+              style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
             />
             <button
               type="submit"
               disabled={displayLoading || !displayInput?.trim()}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />

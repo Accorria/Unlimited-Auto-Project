@@ -1601,7 +1601,9 @@ export default function CreditApplicationForm() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">SELECT VEHICLE FROM INVENTORY</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                SELECT VEHICLE FROM INVENTORY <span className="text-red-500">*</span>
+              </label>
               <ClientOnly fallback={<div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500">Loading vehicles...</div>}>
                 <VehicleSelector
                   selectedVehicle={data.financing.vehicleId}
@@ -1619,6 +1621,7 @@ export default function CreditApplicationForm() {
                     })
                   }}
                   required
+                  hasError={errors.some(e => e.includes('vehicle') || e.includes('Please select a vehicle'))}
                 />
               </ClientOnly>
             </div>
@@ -1662,24 +1665,14 @@ export default function CreditApplicationForm() {
 
           {/* Trade-In Vehicle Information */}
           <div className="mb-4">
-            <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 mb-4 hover:bg-blue-100 transition-colors cursor-pointer" onClick={() => {
-              const newValue = !data.financing.hasTradeIn
-              set("financing", {
-                ...data.financing,
-                hasTradeIn: newValue,
-                // Clear trade-in fields if unchecked
-                tradeMake: newValue ? data.financing.tradeMake : "",
-                tradeModel: newValue ? data.financing.tradeModel : "",
-                tradeMileage: newValue ? data.financing.tradeMileage : "",
-                tradeYear: newValue ? data.financing.tradeYear : "",
-              })
-            }}>
+            <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 mb-4 hover:bg-blue-100 transition-colors">
               <div className="flex items-center">
                 <input
                   type="checkbox"
                   id="hasTradeIn"
                   checked={data.financing.hasTradeIn}
                   onChange={(e) => {
+                    e.stopPropagation()
                     const hasTradeIn = e.target.checked
                     set("financing", {
                       ...data.financing,

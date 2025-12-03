@@ -8,6 +8,46 @@ const twilioClient = process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_T
 
 const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER || '+13137664475'
 
+/**
+ * Normalize phone number to E.164 format
+ * Handles various formats: (313) 766-4475, 313-766-4475, 3137664475, +13137664475, etc.
+ * Assumes US numbers (adds +1 prefix if missing)
+ */
+export function normalizePhoneToE164(phone: string): string | null {
+  if (!phone) return null
+  
+  // Remove all non-digit characters except +
+  let cleaned = phone.replace(/[^\d+]/g, '')
+  
+  // If it already starts with +, check if it's valid
+  if (cleaned.startsWith('+')) {
+    // Remove + and check length
+    const digits = cleaned.substring(1)
+    if (digits.length >= 10 && digits.length <= 15) {
+      return cleaned // Already in E.164 format
+    }
+  }
+  
+  // Remove leading +1 or 1 if present
+  if (cleaned.startsWith('+1')) {
+    cleaned = cleaned.substring(2)
+  } else if (cleaned.startsWith('1') && cleaned.length === 11) {
+    cleaned = cleaned.substring(1)
+  }
+  
+  // If we have exactly 10 digits, assume it's a US number and add +1
+  if (/^\d{10}$/.test(cleaned)) {
+    return `+1${cleaned}`
+  }
+  
+  // If we have 11 digits starting with 1, remove the 1 and add +
+  if (/^1\d{10}$/.test(cleaned)) {
+    return `+${cleaned}`
+  }
+  
+  return null // Invalid format
+}
+
 export interface SMSNotification {
   to: string
   message: string
@@ -35,10 +75,17 @@ export async function sendSMS(to: string, message: string): Promise<{ success: b
     return { success: false, error: 'SMS not configured' }
   }
 
+  // Normalize phone number to E.164 format
+  const normalizedPhone = normalizePhoneToE164(to)
+  if (!normalizedPhone) {
+    console.error('Invalid phone number format:', to)
+    return { success: false, error: 'Invalid phone number format. Must be in E.164 format (e.g., +13137664475)' }
+  }
+
   // Validate phone number format (E.164)
   const phoneRegex = /^\+[1-9]\d{1,14}$/
-  if (!phoneRegex.test(to)) {
-    console.error('Invalid phone number format:', to)
+  if (!phoneRegex.test(normalizedPhone)) {
+    console.error('Invalid phone number format after normalization:', normalizedPhone)
     return { success: false, error: 'Invalid phone number format. Must be in E.164 format (e.g., +13137664475)' }
   }
 
@@ -46,7 +93,7 @@ export async function sendSMS(to: string, message: string): Promise<{ success: b
     const result = await twilioClient.messages.create({
       body: message,
       from: twilioPhoneNumber,
-      to: to
+      to: normalizedPhone
     })
 
     console.log('📱 SMS sent successfully:', result.sid)

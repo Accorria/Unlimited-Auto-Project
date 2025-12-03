@@ -107,10 +107,80 @@ export default function InventoryManagement() {
     }
   }
 
-  const handleStatusChange = (id: string, newStatus: string) => {
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    // Optimistically update UI
+    const previousVehicles = [...vehicles]
     setVehicles(vehicles.map(vehicle => 
       vehicle.id === id ? { ...vehicle, status: newStatus } : vehicle
     ))
+
+    // Save to database
+    try {
+      // First, fetch the current vehicle data to ensure we have all fields
+      const getResponse = await fetch(`/api/vehicles/${id}?_t=${Date.now()}`)
+      if (!getResponse.ok) {
+        throw new Error('Failed to fetch vehicle data')
+      }
+      
+      const currentVehicle = await getResponse.json()
+      
+      // Prepare the update payload with all required fields
+      const updatePayload = {
+        year: currentVehicle.year,
+        make: currentVehicle.make,
+        model: currentVehicle.model,
+        trim: currentVehicle.trim,
+        miles: currentVehicle.miles,
+        price: currentVehicle.price,
+        vin: currentVehicle.vin,
+        description: currentVehicle.description,
+        status: newStatus, // This is the key change
+        engine: currentVehicle.engine,
+        transmission: currentVehicle.transmission,
+        drivetrain: currentVehicle.drivetrain,
+        mpg: currentVehicle.mpg,
+        bodyStyle: currentVehicle.bodyStyle || currentVehicle.body_style,
+        doors: currentVehicle.doors,
+        passengers: currentVehicle.passengers,
+        fuelType: currentVehicle.fuelType || currentVehicle.fuel_type,
+        color: currentVehicle.color || currentVehicle.exterior_color,
+        interiorColor: currentVehicle.interiorColor || currentVehicle.interior_color,
+        downPayment: currentVehicle.downPayment || currentVehicle.down_payment || 999,
+        condition: currentVehicle.condition || 'Good'
+      }
+
+      const response = await fetch(`/api/vehicles/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatePayload),
+      })
+
+      if (response.ok) {
+        const statusLabel = newStatus === 'sold' ? 'Sold' : 
+                           newStatus === 'active' ? 'Active (For Sale)' :
+                           newStatus === 'pending' ? 'Pending Sale' :
+                           newStatus === 'not-for-sale' ? 'Not For Sale' :
+                           newStatus === 'maintenance' ? 'In Maintenance' :
+                           newStatus === 'reserved' ? 'Reserved' :
+                           newStatus === 'archived' ? 'Archived' : newStatus
+        addNotification(`Vehicle status updated to ${statusLabel}`, 'success')
+        // Refresh to ensure we have the latest data
+        fetchVehicles()
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Failed to update vehicle status:', errorData)
+        // Revert on error
+        setVehicles(previousVehicles)
+        addNotification('Failed to update vehicle status. Please try again.', 'error')
+      }
+    } catch (error) {
+      console.error('Error updating vehicle status:', error)
+      // Revert on error
+      setVehicles(previousVehicles)
+      addNotification('Error updating vehicle status. Please try again.', 'error')
+    }
   }
 
   const handleSelectVehicle = (id: string) => {

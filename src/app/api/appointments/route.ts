@@ -176,7 +176,7 @@ export async function POST(req: NextRequest) {
               <p style="font-size: 16px; margin: 10px 0;"><strong>Time:</strong> ${appointmentTimeFormatted}</p>
               <p style="font-size: 16px; margin: 10px 0;"><strong>Location:</strong> 24645 Plymouth Rd Unit A, Redford Township, MI 48239</p>
             </div>
-            <p>We'll reach out to confirm your appointment. If you need to reschedule, please call us at (313) 766-4475.</p>
+            <p>We'll reach out to confirm your appointment. If you need to reschedule, please reply to this email or we'll contact you.</p>
             <p>We look forward to serving you!</p>
           `
         })
