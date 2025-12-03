@@ -1066,14 +1066,31 @@ export default function CreditApplicationForm() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">EMPLOYER NAME</label>
                   <select
-                    value={data.applicant.employerName}
+                    value={data.applicant.employerName && commonEmployers.includes(data.applicant.employerName) ? data.applicant.employerName : ""}
                     onChange={(e) => {
                       const newEmployer = e.target.value;
-                      set("applicant", { 
-                        ...data.applicant, 
-                        employerName: newEmployer,
-                        positionTitle: "" // Reset position when employer changes
-                      });
+                      if (newEmployer === "Other") {
+                        // Set to "Other" to trigger showing the input field
+                        set("applicant", { 
+                          ...data.applicant, 
+                          employerName: "Other",
+                          positionTitle: "" // Reset position when employer changes
+                        });
+                      } else if (newEmployer) {
+                        // A specific employer was selected
+                        set("applicant", { 
+                          ...data.applicant, 
+                          employerName: newEmployer,
+                          positionTitle: "" // Reset position when employer changes
+                        });
+                      } else {
+                        // Clear selection
+                        set("applicant", { 
+                          ...data.applicant, 
+                          employerName: "",
+                          positionTitle: ""
+                        });
+                      }
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     required
@@ -1084,24 +1101,20 @@ export default function CreditApplicationForm() {
                         {employer}
                       </option>
                     ))}
+                    <option value="Other">Other</option>
                   </select>
                   {(data.applicant.employerName === "Other" || 
                     (data.applicant.employerName && 
-                     !commonEmployers.includes(data.applicant.employerName))) && (
+                     !commonEmployers.includes(data.applicant.employerName) &&
+                     data.applicant.employerName !== "")) && (
                     <input
                       type="text"
                       value={data.applicant.employerName === "Other" ? "" : data.applicant.employerName}
                       placeholder="Enter employer name"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md mt-2"
                       onChange={(e) => {
-                        // Keep the custom employer name even when typing
+                        // Save the typed employer name
                         set("applicant", { ...data.applicant, employerName: e.target.value });
-                      }}
-                      onFocus={(e) => {
-                        // If "Other" is selected, clear it so they can type freely
-                        if (data.applicant.employerName === "Other") {
-                          set("applicant", { ...data.applicant, employerName: "" });
-                        }
                       }}
                       onBlur={(e) => {
                         // When user finishes typing, save the employer if it's not empty and not in the list
@@ -1444,14 +1457,31 @@ export default function CreditApplicationForm() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">EMPLOYER NAME</label>
                     <select
-                      value={data.jointApplicant.employerName}
+                      value={data.jointApplicant.employerName && commonEmployers.includes(data.jointApplicant.employerName) ? data.jointApplicant.employerName : ""}
                       onChange={(e) => {
                         const newEmployer = e.target.value;
-                        set("jointApplicant", { 
-                          ...data.jointApplicant, 
-                          employerName: newEmployer,
-                          positionTitle: "" // Reset position when employer changes
-                        });
+                        if (newEmployer === "Other") {
+                          // Set to "Other" to trigger showing the input field
+                          set("jointApplicant", { 
+                            ...data.jointApplicant, 
+                            employerName: "Other",
+                            positionTitle: "" // Reset position when employer changes
+                          });
+                        } else if (newEmployer) {
+                          // A specific employer was selected
+                          set("jointApplicant", { 
+                            ...data.jointApplicant, 
+                            employerName: newEmployer,
+                            positionTitle: "" // Reset position when employer changes
+                          });
+                        } else {
+                          // Clear selection
+                          set("jointApplicant", { 
+                            ...data.jointApplicant, 
+                            employerName: "",
+                            positionTitle: ""
+                          });
+                        }
                       }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     >
@@ -1461,24 +1491,20 @@ export default function CreditApplicationForm() {
                           {employer}
                         </option>
                       ))}
+                      <option value="Other">Other</option>
                     </select>
                     {(data.jointApplicant.employerName === "Other" || 
                       (data.jointApplicant.employerName && 
-                       !commonEmployers.includes(data.jointApplicant.employerName))) && (
+                       !commonEmployers.includes(data.jointApplicant.employerName) &&
+                       data.jointApplicant.employerName !== "")) && (
                       <input
                         type="text"
                         value={data.jointApplicant.employerName === "Other" ? "" : data.jointApplicant.employerName}
                         placeholder="Enter employer name"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md mt-2"
                         onChange={(e) => {
-                          // Keep the custom employer name even when typing
+                          // Save the typed employer name
                           set("jointApplicant", { ...data.jointApplicant, employerName: e.target.value });
-                        }}
-                        onFocus={(e) => {
-                          // If "Other" is selected, clear it so they can type freely
-                          if (data.jointApplicant.employerName === "Other") {
-                            set("jointApplicant", { ...data.jointApplicant, employerName: "" });
-                          }
                         }}
                         onBlur={(e) => {
                           // When user finishes typing, save the employer if it's not empty and not in the list
