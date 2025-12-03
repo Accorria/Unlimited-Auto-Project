@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { normalizePhoneToE164 } from '@/lib/sms'
+import { normalizePhoneToE164 } from '@/lib/phone'
 
 export default function AdminSettings() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
