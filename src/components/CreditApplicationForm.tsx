@@ -391,7 +391,7 @@ export default function CreditApplicationForm() {
     "Detroit Public Schools", "Wayne State University", "University of Michigan",
     "Henry Ford Health System", "Beaumont Health", "Ascension Health",
     "DTE Energy", "Consumers Energy", "Comcast", "AT&T", "Verizon",
-    "Bank of America", "Chase", "Wells Fargo", "PNC Bank", "Other"
+    "Bank of America", "Chase", "Wells Fargo", "PNC Bank"
   ])
 
   // Load learned employers on component mount
