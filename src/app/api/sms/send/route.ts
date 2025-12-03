@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { sendSMS, sendSMSNotification, normalizePhoneToE164 } from '@/lib/sms'
+import { sendSMS, sendSMSNotification } from '@/lib/sms'
+import { normalizePhoneToE164 } from '@/lib/phone'
 import { createServerClient } from '@/lib/auth'
 
 export async function POST(req: NextRequest) {
