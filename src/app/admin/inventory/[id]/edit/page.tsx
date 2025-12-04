@@ -36,7 +36,7 @@ const commonModels: Record<string, string[]> = {
   'Chevrolet': ['Camaro', 'Colorado', 'Corvette', 'Cruze', 'Equinox', 'Express', 'Impala', 'Malibu', 'Silverado 1500', 'Silverado 2500 HD', 'Silverado 3500 HD', 'Sonic', 'Spark', 'Suburban', 'Tahoe', 'Trailblazer', 'Traverse', 'Bolt EV', 'Bolt EUV', 'Blazer', 'Trax'],
   'Chrysler': ['300', 'Pacifica', 'Voyager'],
   'Dodge': ['Challenger', 'Charger', 'Durango', 'Grand Caravan', 'Journey'],
-  'Ford': ['Bronco', 'Edge', 'EcoSport', 'Escape', 'Expedition', 'Explorer', 'F-150', 'Focus', 'Fusion', 'Maverick', 'Mustang', 'Ranger', 'Transit'],
+  'Ford': ['Bronco', 'Bronco Sport', 'Crown Victoria', 'Edge', 'EcoSport', 'E-Series', 'Escape', 'Excursion', 'Expedition', 'Explorer', 'F-150', 'F-250', 'F-350', 'F-450', 'F-550', 'Focus', 'Fusion', 'Maverick', 'Mustang', 'Ranger', 'Taurus', 'Thunderbird', 'Transit', 'Transit Connect'],
   'GMC': ['Acadia', 'Canyon', 'Savana', 'Sierra', 'Terrain', 'Yukon'],
   'Honda': ['Accord', 'Civic', 'CR-V', 'Fit', 'HR-V', 'Insight', 'Passport', 'Pilot', 'Ridgeline'],
   'Hyundai': ['Elantra', 'Genesis', 'Kona', 'Palisade', 'Santa Fe', 'Sonata', 'Tucson', 'Veloster', 'Venue'],
@@ -111,6 +111,62 @@ const makeSpecificTrims: Record<string, string[]> = {
   'Volvo': ['Base', 'Momentum', 'R-Design', 'Inscription']
 }
 
+// Model-specific trims - Comprehensive mapping for all models
+const modelSpecificTrims: Record<string, Record<string, string[]>> = {
+  // Chevrolet
+  'Chevrolet': {
+    'Cruze': ['LS', 'LT', 'Premier', 'Hatchback LS', 'Hatchback LT', 'Hatchback Premier'],
+    'Malibu': ['LS', 'LT', 'Premier', 'RS'],
+    'Camaro': ['LS', 'LT', 'SS', 'ZL1', 'RS', '1LE'],
+    'Corvette': ['Stingray', 'Grand Sport', 'Z06', 'ZR1', 'C8'],
+    'Equinox': ['LS', 'LT', 'Premier', 'RS'],
+    'Traverse': ['LS', 'LT', 'Premier', 'RS', 'High Country'],
+    'Tahoe': ['LS', 'LT', 'Premier', 'High Country', 'Z71'],
+    'Suburban': ['LS', 'LT', 'Premier', 'High Country', 'Z71'],
+    'Silverado 1500': ['Work Truck (WT)', 'Custom', 'Custom Trail Boss', 'LT', 'RST', 'LT Trail Boss', 'LTZ', 'ZR2', 'High Country'],
+    'Silverado 2500 HD': ['Work Truck (WT)', 'Custom', 'LT', 'LTZ', 'High Country'],
+    'Silverado 3500 HD': ['Work Truck (WT)', 'Custom', 'LT', 'LTZ', 'High Country'],
+    'Trailblazer': ['LS', 'LT', 'Activ', 'RS', 'Premier'],
+    'Blazer': ['LS', 'LT', 'RS', 'Premier'],
+    'Trax': ['LS', 'LT', 'Activ', 'Premier'],
+    'Sonic': ['LS', 'LT', 'RS', 'LTZ'],
+    'Spark': ['LS', '1LT', '2LT', 'Activ'],
+    'Express': ['LS', 'LT', 'LTZ'],
+    'Impala': ['Base', 'LS', 'LT', 'LTZ', 'Premier', 'SS', 'Limited'],
+    'Bolt EV': ['LT', 'Premier'],
+    'Bolt EUV': ['LT', 'Premier'],
+    'Colorado': ['Work Truck (WT)', 'LT', 'Z71', 'ZR2']
+  },
+  
+  // Ford
+  'Ford': {
+    'F-150': ['XL', 'XLT', 'Lariat', 'King Ranch', 'Platinum', 'Limited', 'Raptor', 'Tremor'],
+    'F-250': ['XL', 'XLT', 'Lariat', 'King Ranch', 'Platinum', 'FX4', 'Limited'],
+    'F-350': ['XL', 'XLT', 'Lariat', 'King Ranch', 'Platinum', 'FX4', 'Limited'],
+    'F-450': ['XL', 'XLT', 'Lariat', 'King Ranch', 'Platinum', 'Limited'],
+    'F-550': ['XL', 'XLT', 'Lariat', 'King Ranch', 'Platinum'],
+    'Bronco': ['Base', 'Big Bend', 'Black Diamond', 'Outer Banks', 'Badlands', 'Wildtrak', 'Everglades', 'Raptor'],
+    'Bronco Sport': ['Base', 'Big Bend', 'Outer Banks', 'Badlands', 'Heritage', 'Heritage Limited'],
+    'Crown Victoria': ['Base', 'LX', 'LX Sport', 'Police Interceptor'],
+    'Edge': ['SE', 'SEL', 'ST', 'Titanium', 'ST-Line'],
+    'EcoSport': ['S', 'SE', 'SES', 'Titanium'],
+    'E-Series': ['XL', 'XLT', 'Limited'],
+    'Escape': ['S', 'SE', 'SEL', 'Titanium', 'ST-Line', 'PHEV'],
+    'Excursion': ['XLT', 'Limited', 'Eddie Bauer'],
+    'Expedition': ['XL', 'XLT', 'Limited', 'King Ranch', 'Platinum', 'Timberline'],
+    'Explorer': ['XLT', 'Limited', 'ST', 'Platinum', 'King Ranch', 'Timberline'],
+    'Focus': ['S', 'SE', 'SEL', 'Titanium', 'ST', 'RS'],
+    'Fusion': ['S', 'SE', 'SEL', 'Titanium', 'Sport'],
+    'Maverick': ['XL', 'XLT', 'Lariat', 'FX4'],
+    'Mustang': ['Base', 'EcoBoost', 'EcoBoost Premium', 'GT', 'GT Premium', 'Shelby GT350', 'Shelby GT350R', 'Mach 1', 'Shelby GT500', 'Dark Horse'],
+    'Ranger': ['XL', 'XLT', 'Lariat', 'Tremor', 'Raptor'],
+    'Taurus': ['S', 'SE', 'SEL', 'Limited', 'SHO'],
+    'Thunderbird': ['Base', 'Deluxe', 'LX', 'SC'],
+    'Transit': ['XL', 'XLT', 'Limited'],
+    'Transit Connect': ['XL', 'XLT', 'Titanium']
+  }
+}
+
 // Model-specific engine options
 const modelSpecificEngines: Record<string, Record<string, string[]>> = {
   // Chevrolet
@@ -141,18 +197,29 @@ const modelSpecificEngines: Record<string, Record<string, string[]>> = {
   // Ford
   'Ford': {
     'F-150': ['3.3L V6', '2.7L Turbo V6', '3.5L Turbo V6', '5.0L V8', '3.5L PowerBoost Hybrid'],
+    'F-250': ['5.4L V8', '6.8L V10', '6.0L Power Stroke Turbo Diesel V8', '6.4L Power Stroke Turbo Diesel V8', '6.7L Power Stroke Turbo Diesel V8'],
+    'F-350': ['5.4L V8', '6.8L V10', '6.0L Power Stroke Turbo Diesel V8', '6.4L Power Stroke Turbo Diesel V8', '6.7L Power Stroke Turbo Diesel V8'],
+    'F-450': ['6.8L V10', '6.0L Power Stroke Turbo Diesel V8', '6.4L Power Stroke Turbo Diesel V8', '6.7L Power Stroke Turbo Diesel V8'],
+    'F-550': ['6.8L V10', '6.0L Power Stroke Turbo Diesel V8', '6.4L Power Stroke Turbo Diesel V8', '6.7L Power Stroke Turbo Diesel V8'],
     'Bronco': ['2.3L Turbo 4-Cylinder', '2.7L Turbo V6'],
+    'Bronco Sport': ['1.5L Turbo 3-Cylinder', '2.0L Turbo 4-Cylinder'],
+    'Crown Victoria': ['4.6L V8'],
     'Edge': ['2.0L Turbo 4-Cylinder', '2.7L Turbo V6'],
     'EcoSport': ['1.0L EcoBoost I3', '2.0L Ti-VCT I4'],
+    'E-Series': ['4.6L V8', '5.4L V8', '6.8L V10'],
     'Escape': ['1.5L Turbo 3-Cylinder', '2.0L Turbo 4-Cylinder', '2.5L Hybrid'],
+    'Excursion': ['5.4L V8', '6.8L V10', '7.3L Power Stroke Turbo Diesel V8', '6.0L Power Stroke Turbo Diesel V8'],
+    'Expedition': ['3.5L Turbo V6', '5.4L V8'],
     'Explorer': ['2.3L Turbo 4-Cylinder', '3.3L Hybrid', '3.0L Turbo V6'],
-    'Expedition': ['3.5L Turbo V6'],
     'Focus': ['2.0L 4-Cylinder', '1.0L Turbo 3-Cylinder'],
     'Fusion': ['2.5L Hybrid', '2.0L Turbo 4-Cylinder'],
     'Maverick': ['2.5L Hybrid', '2.0L Turbo 4-Cylinder'],
     'Mustang': ['2.3L Turbo 4-Cylinder', '5.0L V8', '5.2L Supercharged V8'],
     'Ranger': ['2.3L Turbo 4-Cylinder'],
-    'Transit': ['3.5L V6', '3.5L EcoBoost V6']
+    'Taurus': ['3.5L V6', '3.5L EcoBoost V6'],
+    'Thunderbird': ['3.9L V8', '4.6L V8'],
+    'Transit': ['3.5L V6', '3.5L EcoBoost V6', '3.2L Power Stroke Turbo Diesel I5'],
+    'Transit Connect': ['2.0L 4-Cylinder', '2.5L 4-Cylinder']
   },
   
   // Honda
@@ -773,6 +840,23 @@ const descriptionTemplates = [
   }
 ]
 
+// Get trim options based on make and model
+const getTrimOptions = (make: string, model: string): string[] => {
+  // Don't show any trims until both make and model are selected
+  if (!make || !model) {
+    return []
+  }
+  
+  // First, check for model-specific trims (most accurate)
+  if (modelSpecificTrims[make] && modelSpecificTrims[make][model]) {
+    return modelSpecificTrims[make][model]
+  }
+  
+  // Fall back to make-specific trims ONLY if no model-specific trims found
+  // This ensures we never show truck trims for sedans, etc.
+  return makeSpecificTrims[make] || ['Base', 'Premium', 'Limited', 'Sport']
+}
+
 export default function EditVehicle({ params }: { params: Promise<{ id: string }> }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [aiEnabled, setAiEnabled] = useState(false)
@@ -909,26 +993,49 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
   }
 
   const generateAIDescription = async () => {
-    if (!formData.images || formData.images.length === 0) {
-      alert('Please upload at least one image to generate an AI description.')
+    if (!formData.year || !formData.make || !formData.model) {
+      alert('Please fill in Year, Make, and Model before generating a description.')
       return
     }
 
     setAiLoading(true)
     try {
-      // Simulate AI API call - replace with actual AI service
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Mock AI-generated description
-      const aiDescription = `This ${formData.year} ${formData.make} ${formData.model} ${formData.trim} is in ${formData.condition.toLowerCase()} condition with ${formData.miles.toLocaleString()} miles. Features include ${formData.features || 'modern amenities'}. This vehicle offers excellent value and reliability.`
-      
-      setFormData(prev => ({
-        ...prev,
-        description: aiDescription
-      }))
-    } catch (error) {
+      const response = await fetch('/api/ai/generate-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          year: formData.year,
+          make: formData.make,
+          model: formData.model,
+          trim: formData.trim,
+          miles: formData.miles ? parseInt(String(formData.miles).replace(/,/g, '')) : null,
+          price: formData.price ? parseInt(String(formData.price).replace(/[$,]/g, '')) : null,
+          condition: formData.condition,
+          features: formData.features || [],
+          engine: formData.engine,
+          color: formData.color,
+          transmission: formData.transmission,
+          drivetrain: formData.drivetrain
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || data.details || 'Failed to generate description')
+      }
+
+      if (data.success && data.description) {
+        setFormData(prev => ({
+          ...prev,
+          description: data.description
+        }))
+      } else {
+        throw new Error('No description returned from AI')
+      }
+    } catch (error: any) {
       console.error('Error generating AI description:', error)
-      alert('Failed to generate AI description. Please try again.')
+      alert(`Failed to generate AI description: ${error.message || 'Please try again.'}`)
     } finally {
       setAiLoading(false)
     }
@@ -1146,7 +1253,7 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
                   className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-base"
                 >
                   <option value="">Select Trim</option>
-                  {formData.make && makeSpecificTrims[formData.make]?.map((trim) => (
+                  {getTrimOptions(formData.make, formData.model).map((trim) => (
                     <option key={trim} value={trim}>
                       {trim}
                     </option>

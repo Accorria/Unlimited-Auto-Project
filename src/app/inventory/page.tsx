@@ -383,12 +383,12 @@ export default function InventoryPage() {
                     ? 'border-red-300' 
                     : 'border-gray-100 hover:shadow-2xl hover:-translate-y-2'
                 }`}>
-                  <div className="relative h-64 bg-gray-200">
+                  <Link href={`/inventory/${vehicle.id}`} className="relative h-64 bg-gray-200 block cursor-pointer group">
                     <Image
                       src={vehicle.vehicle_photos?.[0]?.public_url || vehicle.coverPhoto || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop'}
                       alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
                       fill
-                      className="object-cover"
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
                       unoptimized={(vehicle.vehicle_photos?.[0]?.public_url || vehicle.coverPhoto)?.includes('supabase.co')}
                       onError={(e) => {
                         console.error('Vehicle image failed to load:', vehicle.vehicle_photos?.[0]?.public_url || vehicle.coverPhoto)
@@ -406,6 +406,12 @@ export default function InventoryPage() {
                         }
                       }}
                     />
+                    {/* Hover overlay to indicate clickability */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 px-4 py-2 rounded-lg text-sm font-semibold">
+                        View Details →
+                      </div>
+                    </div>
                     {/* Dynamic down payment badge - only show if not sold */}
                     {!isSold && (
                       <div className="absolute top-2 left-2 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-bold shadow-lg z-10">
@@ -419,7 +425,7 @@ export default function InventoryPage() {
                         SOLD
                       </div>
                     )}
-                  </div>
+                  </Link>
 
                   <div className="p-6">
                     <div className="flex justify-between items-start mb-2">

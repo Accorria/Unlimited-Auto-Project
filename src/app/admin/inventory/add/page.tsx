@@ -1453,26 +1453,49 @@ const getEngineOptions = (make: string, model: string): string[] => {
   }, [])
 
   const generateAIDescription = async () => {
-    if (!formData.images || formData.images.length === 0) {
-      alert('Please upload at least one image to generate an AI description.')
+    if (!formData.year || !formData.make || !formData.model) {
+      alert('Please fill in Year, Make, and Model before generating a description.')
       return
     }
 
     setAiLoading(true)
     try {
-      // Simulate AI API call - replace with actual AI service
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Mock AI-generated description
-      const aiDescription = `This ${formData.year} ${formData.make} ${formData.model} ${formData.trim} is in ${formData.condition.toLowerCase()} condition with ${formData.miles ? formatNumber(formData.miles) : 'low'} miles. Features include ${formData.features.join(', ') || 'modern amenities'}. This vehicle offers excellent value and reliability.`
-      
-      setFormData(prev => ({
-        ...prev,
-        description: aiDescription
-      }))
-    } catch (error) {
+      const response = await fetch('/api/ai/generate-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          year: formData.year,
+          make: formData.make,
+          model: formData.model,
+          trim: formData.trim,
+          miles: formData.miles ? parseInt(formData.miles.replace(/,/g, '')) : null,
+          price: formData.price ? parseInt(formData.price.replace(/[$,]/g, '')) : null,
+          condition: formData.condition,
+          features: formData.features || [],
+          engine: formData.engine,
+          color: formData.color,
+          transmission: formData.transmission,
+          drivetrain: formData.drivetrain
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || data.details || 'Failed to generate description')
+      }
+
+      if (data.success && data.description) {
+        setFormData(prev => ({
+          ...prev,
+          description: data.description
+        }))
+      } else {
+        throw new Error('No description returned from AI')
+      }
+    } catch (error: any) {
       console.error('Error generating AI description:', error)
-      alert('Failed to generate AI description. Please try again.')
+      alert(`Failed to generate AI description: ${error.message || 'Please try again.'}`)
     } finally {
       setAiLoading(false)
     }
