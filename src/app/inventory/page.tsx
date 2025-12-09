@@ -414,12 +414,6 @@ export default function InventoryPage() {
                         }
                       }}
                     />
-                    {/* Hover overlay to indicate clickability */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 flex items-center justify-center">
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 px-4 py-2 rounded-lg text-sm font-semibold">
-                        View Details →
-                      </div>
-                    </div>
                     {/* Dynamic down payment badge - only show if not sold */}
                     {!isSold && (
                       <div className="absolute top-2 left-2 bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-bold shadow-lg z-10">
@@ -433,6 +427,13 @@ export default function InventoryPage() {
                         SOLD
                       </div>
                     )}
+                    
+                    {/* Hover overlay to indicate clickability - must be last to appear on top */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center z-30 pointer-events-none">
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white px-6 py-3 rounded-lg text-base font-bold shadow-2xl border-2 border-blue-500 pointer-events-auto">
+                        View Details →
+                      </div>
+                    </div>
                   </Link>
 
                   <div className="p-6">
