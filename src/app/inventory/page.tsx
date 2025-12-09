@@ -445,32 +445,11 @@ export default function InventoryPage() {
                       </span>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 mb-4">
-                      <div><strong>Mileage:</strong> {vehicle.miles ? `${vehicle.miles.toLocaleString()}` : 'TBD'}</div>
-                      <div><strong>Condition:</strong> {vehicle.condition || 'Good'}</div>
-                      <div><strong>Trans:</strong> {vehicle.transmission || 'N/A'}</div>
-                      <div><strong>Drive:</strong> {vehicle.drivetrain || 'N/A'}</div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 mb-6">
-                      {vehicle.features && vehicle.features.length > 0 ? (
-                        <>
-                          {vehicle.features.slice(0, 3).map((feature, index) => (
-                            <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                              {feature}
-                            </span>
-                          ))}
-                          {vehicle.features.length > 3 && (
-                            <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                              +{vehicle.features.length - 3} more
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                          {vehicle.description || 'Features available'}
-                        </span>
-                      )}
+                    <div className="grid grid-cols-2 gap-2 text-sm text-gray-700 mb-6">
+                      <p><strong>Mileage:</strong> {vehicle.miles ? `${vehicle.miles.toLocaleString()}` : 'TBD'}</p>
+                      <p><strong>Condition:</strong> {vehicle.condition || 'Good'}</p>
+                      {vehicle.transmission && <p><strong>Trans:</strong> {vehicle.transmission}</p>}
+                      {vehicle.drivetrain && <p><strong>Drive:</strong> {vehicle.drivetrain}</p>}
                     </div>
 
                     <div className="space-y-3">
