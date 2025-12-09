@@ -391,11 +391,19 @@ export default function InventoryPage() {
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
                       unoptimized={(vehicle.vehicle_photos?.[0]?.public_url || vehicle.coverPhoto)?.includes('supabase.co')}
                       onError={(e) => {
-                        console.error('Vehicle image failed to load:', vehicle.vehicle_photos?.[0]?.public_url || vehicle.coverPhoto)
+                        const imageUrl = vehicle.vehicle_photos?.[0]?.public_url || vehicle.coverPhoto
+                        console.error('Vehicle image failed to load:', {
+                          vehicleId: vehicle.id,
+                          vehicleName: `${vehicle.year} ${vehicle.make} ${vehicle.model}`,
+                          imageUrl: imageUrl,
+                          hasPhotos: !!vehicle.vehicle_photos?.length,
+                          photoCount: vehicle.vehicle_photos?.length || 0,
+                          allPhotoUrls: vehicle.vehicle_photos?.map(p => p.public_url) || []
+                        })
                         const target = e.target as HTMLImageElement
                         if (target.parentElement) {
                           const img = document.createElement('img')
-                          img.src = vehicle.vehicle_photos?.[0]?.public_url || vehicle.coverPhoto || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop'
+                          img.src = imageUrl || 'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=500&h=300&fit=crop'
                           img.alt = `${vehicle.year} ${vehicle.make} ${vehicle.model}`
                           img.className = 'w-full h-full object-cover'
                           img.onerror = () => {
