@@ -1,0 +1,64 @@
+==========================================
+FILES TO KEEP - DO NOT DELETE THESE
+==========================================
+These are the 19 main photos for sold vehicles.
+Keep these files, delete all other files from these vehicles.
+
+==========================================
+FILENAMES TO KEEP:
+==========================================
+
+1. 1762868419648_IMG_6271.jpeg          (2005 Mini Cooper S)
+2. 1761763186048_IMG_5313.jpeg          (2014 Dodge Charger)
+3. 1761923830159_IMG_5596.jpeg          (2014 GMC Sierra)
+4. 1761763645414_IMG_5164.jpeg          (2016 Chevrolet Silverado 1500)
+5. 1761835490863_IMG_4736.jpeg          (2017 Chevrolet Malibu)
+6. 1765337850637_IMG_5485.jpeg          (2017 Ford Edge)
+7. 1762543175323_IMG_6178.jpeg          (2017 Lincoln MKC)
+8. 1765304234111_IMG_7591.jpeg          (2017 Subaru Crosstrek)
+9. 1765384665745_IMG_7636.jpeg          (2018 Chevrolet Cruze)
+10. 1766847271154_IMG_0326.jpeg         (2018 Chrysler 300)
+11. 1765391907939_IMG_7747.jpeg         (2018 Dodge Grand Caravan)
+12. 1761762388691_IMG_5146.jpeg         (2018 Jeep Wrangler)
+13. 1765337615711_IMG_5499.jpeg         (2018 Nissan Sentra)
+14. 1761832448476_IMG_4312.jpeg         (2019 Chevrolet Equinox)
+15. 1761920727541_IMG_5563.jpeg         (2019 Chevrolet Malibu)
+16. 1762543062143_IMG_5982%202.jpeg     (2019 Ford EcoSport)
+17. 1761771605467_IMG_4087.jpeg         (2020 Chevrolet Malibu)
+18. 1762104702507_IMG_5695.jpeg         (2020 Nissan Rogue)
+19. 1761762700438_IMG_5233%202.jpeg     (2021 Chrysler Voyager)
+
+==========================================
+INSTRUCTIONS:
+==========================================
+
+1. Go to Supabase Dashboard → Storage → vehicle-images
+
+2. Look for files with similar timestamps:
+   - Files starting with: 1761... (January 2025)
+   - Files starting with: 1762... (January 2025)
+   - Files starting with: 1765... (January 2025)
+   - Files starting with: 1766... (January 2025)
+
+3. For each file you see:
+   - ✅ KEEP if filename matches one above
+   - ❌ DELETE if filename does NOT match
+
+4. Delete in batches:
+   - Select multiple files using checkboxes
+   - Click "Delete" button
+   - Confirm deletion
+
+5. Verify:
+   - Check Dashboard → Usage (storage should decrease)
+   - Visit sold vehicle pages (photos should still work)
+
+==========================================
+EXPECTED RESULTS:
+==========================================
+
+Before: ~220 files in Storage
+After: 19 files (only the ones listed above)
+Storage Freed: ~300MB
+
+==========================================

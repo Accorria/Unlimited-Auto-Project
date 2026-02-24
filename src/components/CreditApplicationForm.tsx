@@ -1078,11 +1078,11 @@ export default function CreditApplicationForm() {
                         });
                       } else if (newEmployer) {
                         // A specific employer was selected
-                        set("applicant", { 
-                          ...data.applicant, 
-                          employerName: newEmployer,
-                          positionTitle: "" // Reset position when employer changes
-                        });
+                      set("applicant", { 
+                        ...data.applicant, 
+                        employerName: newEmployer,
+                        positionTitle: "" // Reset position when employer changes
+                      });
                       } else {
                         // Clear selection
                         set("applicant", { 
@@ -1469,11 +1469,11 @@ export default function CreditApplicationForm() {
                           });
                         } else if (newEmployer) {
                           // A specific employer was selected
-                          set("jointApplicant", { 
-                            ...data.jointApplicant, 
-                            employerName: newEmployer,
-                            positionTitle: "" // Reset position when employer changes
-                          });
+                        set("jointApplicant", { 
+                          ...data.jointApplicant, 
+                          employerName: newEmployer,
+                          positionTitle: "" // Reset position when employer changes
+                        });
                         } else {
                           // Clear selection
                           set("jointApplicant", { 

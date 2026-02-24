@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/auth'
 
+// Storage limits configuration
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB per file
+const MAX_PHOTOS_PER_VEHICLE = 20 // Maximum photos per vehicle
+const MAX_STORAGE_QUOTA_MB = 1000 // 1GB total storage limit (adjust based on your Supabase plan)
+const STORAGE_WARNING_THRESHOLD = 0.9 // Warn at 90% capacity
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
@@ -9,12 +15,34 @@ export async function POST(req: NextRequest) {
     const year = formData.get('year') as string
     const make = formData.get('make') as string
     const model = formData.get('model') as string
+    const vehicleId = formData.get('vehicleId') as string // Optional: for existing vehicles
     
     // Debug: Log received form data
     console.log('Upload request for:', fileName, 'Vehicle:', year, make, model)
 
     if (!file || !fileName) {
       return NextResponse.json({ error: 'File and fileName are required' }, { status: 400 })
+    }
+
+    // Check file size BEFORE processing
+    if (file.size > MAX_FILE_SIZE) {
+      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2)
+      const maxSizeMB = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(0)
+      return NextResponse.json({ 
+        error: 'File too large',
+        details: `File size is ${fileSizeMB}MB. Maximum allowed size is ${maxSizeMB}MB per photo.`,
+        hint: 'Please compress the image or use a smaller file. Photos are automatically compressed to 2MB, but the original must be under 5MB.'
+      }, { status: 400 })
+    }
+
+    // Check file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json({ 
+        error: 'Invalid file type',
+        details: `File type "${file.type}" is not allowed.`,
+        hint: 'Please upload JPG, PNG, WebP, or HEIC images only.'
+      }, { status: 400 })
     }
 
     // Create a unique filename
@@ -72,6 +100,56 @@ export async function POST(req: NextRequest) {
         details: 'The "vehicle-images" bucket does not exist in Supabase Storage',
         hint: 'Please create the "vehicle-images" bucket in your Supabase dashboard: Storage → New Bucket → Name: "vehicle-images" → Make it Public'
       }, { status: 500 })
+    }
+
+    // Check existing photos count for this vehicle (if vehicleId provided)
+    if (vehicleId) {
+      const { data: existingPhotos, error: photosError } = await supabase
+        .from('vehicle_photos')
+        .select('id')
+        .eq('vehicle_id', vehicleId)
+
+      if (!photosError && existingPhotos && existingPhotos.length >= MAX_PHOTOS_PER_VEHICLE) {
+        return NextResponse.json({ 
+          error: 'Photo limit reached',
+          details: `This vehicle already has ${existingPhotos.length} photos. Maximum allowed is ${MAX_PHOTOS_PER_VEHICLE} photos per vehicle.`,
+          hint: 'Please delete some existing photos before adding new ones, or consider consolidating photos.'
+        }, { status: 400 })
+      }
+    }
+
+    // Check storage usage (estimate based on file count)
+    try {
+      const { data: allFiles, error: listError } = await supabase.storage
+        .from('vehicle-images')
+        .list('', {
+          limit: 1000,
+          sortBy: { column: 'created_at', order: 'desc' }
+        })
+
+      if (!listError && allFiles) {
+        // Estimate storage usage (rough calculation)
+        // Note: Supabase doesn't provide exact storage usage via API, so we estimate
+        const estimatedFiles = allFiles.length
+        const avgFileSizeMB = 1.5 // Average compressed photo size
+        const estimatedUsageMB = estimatedFiles * avgFileSizeMB
+
+        if (estimatedUsageMB >= MAX_STORAGE_QUOTA_MB) {
+          return NextResponse.json({ 
+            error: 'Storage quota exceeded',
+            details: `Estimated storage usage is ${estimatedUsageMB.toFixed(0)}MB. Maximum allowed is ${MAX_STORAGE_QUOTA_MB}MB.`,
+            hint: 'Please delete unused photos or contact your administrator to increase storage quota.'
+          }, { status: 507 }) // 507 Insufficient Storage
+        }
+
+        // Warn if approaching limit
+        if (estimatedUsageMB >= MAX_STORAGE_QUOTA_MB * STORAGE_WARNING_THRESHOLD) {
+          console.warn(`⚠️ Storage warning: ${estimatedUsageMB.toFixed(0)}MB used (${((estimatedUsageMB / MAX_STORAGE_QUOTA_MB) * 100).toFixed(0)}% of quota)`)
+        }
+      }
+    } catch (storageCheckError) {
+      // Don't fail upload if storage check fails, just log it
+      console.warn('Could not check storage usage:', storageCheckError)
     }
     
     // Attempt upload with better error handling

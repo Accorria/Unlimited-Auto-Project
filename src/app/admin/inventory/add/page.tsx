@@ -1486,10 +1486,10 @@ const getEngineOptions = (make: string, model: string): string[] => {
       }
 
       if (data.success && data.description) {
-        setFormData(prev => ({
-          ...prev,
+      setFormData(prev => ({
+        ...prev,
           description: data.description
-        }))
+      }))
       } else {
         throw new Error('No description returned from AI')
       }

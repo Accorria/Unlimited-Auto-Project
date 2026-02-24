@@ -133,19 +133,44 @@ export async function GET(req: NextRequest) {
       return acc
     }, {} as Record<string, number>)
 
+    // Get vehicle names for vehicle IDs from database
+    // Collect all unique vehicle IDs from clicks and views
+    const allVehicleIds = [
+      ...Object.keys(vehiclePageClicks),
+      ...Object.keys(vehiclePageViews),
+      ...(trackingEvents?.filter(e => e.vehicle_id).map(e => e.vehicle_id) || [])
+    ].filter((id, index, self) => self.indexOf(id) === index) // Remove duplicates
+
+    // Fetch vehicle names from database
+    const vehicleNamesMap: Record<string, string> = {}
+    if (allVehicleIds.length > 0) {
+      const { data: vehicles, error: vehiclesError } = await supabase
+        .from('vehicles')
+        .select('id, year, make, model, trim')
+        .in('id', allVehicleIds)
+        .eq('dealer_id', dealer.id)
+
+      if (!vehiclesError && vehicles) {
+        vehicles.forEach(vehicle => {
+          const vehicleName = `${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.trim ? ` ${vehicle.trim}` : ''}`.trim()
+          vehicleNamesMap[vehicle.id] = vehicleName
+        })
+      }
+    }
+
     // Get vehicle names for vehicle IDs (combine with existing vehicle_name tracking)
     // This will show both vehicle_name from tracking_events and vehicle IDs from URLs
     const vehicleEngagement = { ...vehicleCounts }
     
     // Add vehicle page clicks to vehicle engagement
     Object.entries(vehiclePageClicks).forEach(([vehicleId, clicks]) => {
-      // Try to find vehicle name from tracking events
+      // Try to find vehicle name from: 1) tracking events, 2) database lookup, 3) fallback
       const vehicleEvent = trackingEvents?.find(e => 
         e.vehicle_id === vehicleId || 
         e.url?.includes(`/inventory/${vehicleId}`) ||
         e.details?.path === `/inventory/${vehicleId}`
       )
-      const vehicleName = vehicleEvent?.vehicle_name || `Vehicle ${vehicleId.slice(0, 8)}`
+      const vehicleName = vehicleEvent?.vehicle_name || vehicleNamesMap[vehicleId] || `Vehicle ${vehicleId.slice(0, 8)}`
       vehicleEngagement[vehicleName] = (vehicleEngagement[vehicleName] || 0) + clicks
     })
 
@@ -156,7 +181,7 @@ export async function GET(req: NextRequest) {
         e.url?.includes(`/inventory/${vehicleId}`) ||
         e.details?.path === `/inventory/${vehicleId}`
       )
-      const vehicleName = vehicleEvent?.vehicle_name || `Vehicle ${vehicleId.slice(0, 8)}`
+      const vehicleName = vehicleEvent?.vehicle_name || vehicleNamesMap[vehicleId] || `Vehicle ${vehicleId.slice(0, 8)}`
       vehicleEngagement[vehicleName] = (vehicleEngagement[vehicleName] || 0) + views
     })
 
@@ -184,8 +209,29 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10)
 
-    // Recent events (last 20)
-    const recentEvents = trackingEvents?.slice(0, 20) || []
+    // Recent events (last 20) - add vehicle names
+    const recentEvents = (trackingEvents?.slice(0, 20) || []).map(event => {
+      // If event has vehicle_id but no vehicle_name, look it up
+      if (event.vehicle_id && !event.vehicle_name) {
+        const vehicleName = vehicleNamesMap[event.vehicle_id]
+        if (vehicleName) {
+          return { ...event, vehicle_name: vehicleName }
+        }
+      }
+      // Also check if URL contains vehicle ID
+      if (!event.vehicle_id && !event.vehicle_name) {
+        const path = event.details?.path || event.url || ''
+        const vehicleMatch = path.match(/\/inventory\/([^\/]+)/)
+        if (vehicleMatch && vehicleMatch[1]) {
+          const vehicleId = vehicleMatch[1]
+          const vehicleName = vehicleNamesMap[vehicleId]
+          if (vehicleName) {
+            return { ...event, vehicle_id: vehicleId, vehicle_name: vehicleName }
+          }
+        }
+      }
+      return event
+    })
 
     // Get total leads count
     const { count: totalLeads, error: leadsError } = await supabase

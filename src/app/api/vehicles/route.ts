@@ -180,11 +180,20 @@ export async function POST(req: NextRequest) {
 
     // Save vehicle photos if provided
     if (body.images && body.images.length > 0) {
-      console.log('Saving photos for vehicle:', vehicle.id, 'Images:', body.images)
+      const MAX_PHOTOS_PER_VEHICLE = 20
+      
+      // Limit photos to maximum allowed
+      const photosToSave = body.images.slice(0, MAX_PHOTOS_PER_VEHICLE)
+      
+      if (body.images.length > MAX_PHOTOS_PER_VEHICLE) {
+        console.warn(`Photo limit exceeded: ${body.images.length} photos provided, saving only first ${MAX_PHOTOS_PER_VEHICLE}`)
+      }
+      
+      console.log('Saving photos for vehicle:', vehicle.id, 'Images:', photosToSave.length)
       
       const angleOrder = ['FDS','FPS','SDS','SPS','SRDS','SRPS','RDS','R','F','INT','INTB','ENG','TRK','ODOM','VIN']
       
-      const photoInserts = body.images.map((imageUrl: string, index: number) => ({
+      const photoInserts = photosToSave.map((imageUrl: string, index: number) => ({
         vehicle_id: vehicle.id,
         file_path: imageUrl,
         public_url: imageUrl,

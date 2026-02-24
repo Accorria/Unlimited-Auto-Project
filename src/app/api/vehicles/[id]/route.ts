@@ -206,7 +206,73 @@ export async function DELETE(
     // Use service role client to bypass RLS
     const supabase = createServerClient()
 
-    // First, delete all photos associated with this vehicle
+    // First, get all photos for this vehicle to delete from storage
+    const { data: photos, error: photosFetchError } = await supabase
+      .from('vehicle_photos')
+      .select('file_path')
+      .eq('vehicle_id', vehicleId)
+
+    if (photosFetchError) {
+      console.error('Error fetching vehicle photos:', photosFetchError)
+      // Continue with deletion even if fetch fails
+    }
+
+    // Delete photos from storage bucket
+    if (photos && photos.length > 0) {
+      const filePaths = photos
+        .map(photo => {
+          let path = photo.file_path
+          if (!path) return null
+          
+          // Handle different path formats:
+          // 1. Full URL: https://xxx.supabase.co/storage/v1/object/public/vehicle-images/filename.jpg
+          // 2. Relative path: vehicle-images/filename.jpg
+          // 3. Just filename: filename.jpg
+          
+          // Extract filename from URL if it's a full URL
+          if (path.startsWith('http')) {
+            // Extract filename from URL
+            try {
+              const url = new URL(path)
+              const pathParts = url.pathname.split('/')
+              return pathParts[pathParts.length - 1] || null
+            } catch {
+              // If URL parsing fails, try to extract filename manually
+              const match = path.match(/vehicle-images\/([^/?]+)/)
+              return match ? match[1] : null
+            }
+          }
+          
+          // Handle relative path: vehicle-images/filename.jpg
+          if (path.includes('vehicle-images/')) {
+            return path.split('vehicle-images/').pop() || null
+          }
+          
+          // Handle just filename: filename.jpg
+          if (path.includes('/')) {
+            return path.split('/').pop() || null
+          }
+          
+          // Already a filename
+          return path
+        })
+        .filter((path): path is string => Boolean(path))
+
+      if (filePaths.length > 0) {
+        const { error: storageDeleteError } = await supabase.storage
+          .from('vehicle-images')
+          .remove(filePaths)
+
+        if (storageDeleteError) {
+          console.error('Error deleting photos from storage:', storageDeleteError)
+          // Continue with database deletion even if storage deletion fails
+        } else {
+          console.log(`Deleted ${filePaths.length} photo(s) from storage`)
+        }
+      }
+    }
+
+    // Delete photo records from database
     const { error: photosError } = await supabase
       .from('vehicle_photos')
       .delete()
@@ -230,7 +296,8 @@ export async function DELETE(
 
     return NextResponse.json({ 
       success: true, 
-      message: 'Vehicle and all associated photos deleted successfully' 
+      message: 'Vehicle and all associated photos deleted successfully',
+      photosDeleted: photos?.length || 0
     })
 
   } catch (error: any) {

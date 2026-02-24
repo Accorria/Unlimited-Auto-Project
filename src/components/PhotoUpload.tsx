@@ -171,6 +171,33 @@ export default function PhotoUpload({ onPhotosChange, vehicleData }: PhotoUpload
   const handleFileSelect = async (files: FileList | null) => {
     if (!files) return
     
+    // Check total files limit
+    const MAX_PHOTOS_PER_VEHICLE = 20
+    const currentPhotoCount = photos.length
+    const newFileCount = files.length
+    
+    if (currentPhotoCount + newFileCount > MAX_PHOTOS_PER_VEHICLE) {
+      const remainingSlots = MAX_PHOTOS_PER_VEHICLE - currentPhotoCount
+      alert(`⚠️ Photo limit reached!\n\nYou can only add ${remainingSlots} more photo(s). Maximum allowed is ${MAX_PHOTOS_PER_VEHICLE} photos per vehicle.\n\nPlease select fewer photos or remove some existing ones.`)
+      return
+    }
+
+    // Check file sizes before uploading
+    const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+    const oversizedFiles: string[] = []
+    
+    for (let i = 0; i < files.length; i++) {
+      if (files[i].size > MAX_FILE_SIZE) {
+        const fileSizeMB = (files[i].size / (1024 * 1024)).toFixed(2)
+        oversizedFiles.push(`${files[i].name} (${fileSizeMB}MB)`)
+      }
+    }
+
+    if (oversizedFiles.length > 0) {
+      alert(`⚠️ Some files are too large!\n\nMaximum file size is 5MB per photo.\n\nOversized files:\n${oversizedFiles.join('\n')}\n\nPlease compress these images before uploading.`)
+      return
+    }
+    
     setUploading(true)
     const newPhotos: string[] = []
     
@@ -265,8 +292,13 @@ export default function PhotoUpload({ onPhotosChange, vehicleData }: PhotoUpload
           {uploading ? '📤 Uploading...' : '📸 Select Photos'}
         </label>
         <p className="text-sm text-gray-500 mt-2">
-          Supports JPG, PNG, WebP, HEIC. Photos will be uploaded to the server.
+          Supports JPG, PNG, WebP, HEIC. Max 5MB per photo, 20 photos per vehicle.
         </p>
+        {photos.length > 0 && (
+          <p className="text-xs text-gray-400 mt-1">
+            {photos.length} / 20 photos uploaded
+          </p>
+        )}
       </div>
 
       {/* Upload Progress */}
@@ -349,7 +381,11 @@ export default function PhotoUpload({ onPhotosChange, vehicleData }: PhotoUpload
             <p className="font-medium mb-1">📋 Instructions:</p>
             <p>• <strong>First photo</strong> will be used as the main photo</p>
             <p>• <strong>Click ×</strong> to remove photos</p>
-            <p>• Photos are automatically uploaded to the server</p>
+            <p>• Photos are automatically compressed and uploaded</p>
+            <p>• <strong>Limit:</strong> {photos.length} / 20 photos (max 5MB each)</p>
+            {photos.length >= 18 && (
+              <p className="text-orange-600 font-medium mt-2">⚠️ Approaching photo limit!</p>
+            )}
           </div>
         </div>
       )}

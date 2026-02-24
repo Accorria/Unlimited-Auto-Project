@@ -1026,10 +1026,10 @@ export default function EditVehicle({ params }: { params: Promise<{ id: string }
       }
 
       if (data.success && data.description) {
-        setFormData(prev => ({
-          ...prev,
+      setFormData(prev => ({
+        ...prev,
           description: data.description
-        }))
+      }))
       } else {
         throw new Error('No description returned from AI')
       }
